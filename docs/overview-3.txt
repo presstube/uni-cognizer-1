@@ -1,0 +1,277 @@
+Robot Cognition System - Architecture v0.3
+Updated November 2025 (incorporating Grok feedback)
+
+═════════════════════════════════════════════════════════════════
+
+┌─ PERCEPT INPUT LAYER ─────────────────────────────────────────┐
+│  Gemini 1.5 Pro Live (stateless, event-driven, "goldfish")    │
+│                                                               │
+│  ├── Visual Percepts                                          │
+│  │   └── Emit event when: scene changes                       │
+│  │   └── On-device preprocessing with WebNN (optional, <50ms) │
+│  │                                                            │
+│  └── Audio Percepts                                           │
+│      └── Emit event when: speech detected OR sound heard      │
+│                                                               │
+│  Output: Timestamped percept digest → Cognitive Loop          │
+│                                                               │
+│  Note: Gemini 1.5 Pro has improved multimodal capabilities    │
+│  and better rate limits as of 2025. Consider on-device        │
+│  preprocessing for reactive path to reduce latency.           │
+└───────────────────────────────────────────────────────────────┘
+
+┌─ CORE COGNITIVE LOOP ─────────────────────────────────────────┐
+│                                                               │
+│  GPT-4o (or Grok-2) via LangGraph (stateful, 5-sec heartbeat) │
+│  Each cycle processes:                                        │
+│  ├── Percept Aggregation (all events in 5-sec window)         │
+│  ├── Memory Retrieval (hybrid approach)                       │
+│  │   ├── Vector DB (semantic associations)                    │
+│  │   │   └── Weaviate preferred (2025 hybrid search)          │
+│  │   ├── Timeline Store (episodic memory)                     │
+│  │   └── Graph edges for emotional causality (optional)       │
+│  ├── Personality Integration (persistent identity layer)      │
+│  │   └── Periodic reflection loops (every 5-10 cycles)        │
+│  │   └── Consistency checks against recent history            │
+│  └── Emotional Planning (synthesize → output plan)            │
+│      ├── Temporal dynamics (mood inertia/momentum, 20% carry) │
+│      └── Optional: Chain LLMs (poetic → structured)           │
+│                                                               │
+│  Output: Emotional Plan → Dispatcher (every 5 seconds)        │
+│                                                               │
+│  Tech notes:                                                  │
+│  • LangGraph preferred over full LangChain (lighter weight)   │
+│  • GPT-4o for creative nuance, or Grok-2 for personality      │
+│  • LangSmith for observability & prompt debugging             │
+│  • Consider fine-tuning small model on artistic examples      │
+└───────────────────────────────────────────────────────────────┘
+
+┌─ EMOTIONAL PLAN DISPATCHER ───────────────────────────────────┐
+│  Translates emotional plan → art system commands              │
+│                                                               │
+│  Recommended: Separate adapters per system (modularity)       │
+│  • Option A: Single LLM call → structured JSON (all systems)  │
+│  • Option B: Separate stateless adapters per system ✓         │
+│                                                               │
+│  ├── Adapter: Visual Art System                               │
+│  ├── Adapter: Kinetic System (robot movement)                 │
+│  └── Adapter: Audio Art System                                │
+│                                                               │
+│  Each adapter:                                                │
+│  • Rich prompt with creative vocabulary examples              │
+│  • May need curated training examples to avoid flat output    │
+│  • Consider chained prompts if single-shot feels generic      │
+│                                                               │
+│  Output: System-specific commands → Art Systems (every 5s)    │
+│                                                               │
+│  Risk mitigation:                                             │
+│  • Run "artistic stress tests" over long sessions             │
+│  • Journal "resonance moments" vs algorithmic moments         │
+│  • Iterate prompts based on creative output quality           │
+└───────────────────────────────────────────────────────────────┘
+
+┌─ GENERATIVE ART SYSTEMS ──────────────────────────────────────┐
+│  Autonomous, continuous, accept periodic nudges via API       │
+│                                                               │
+│  ├── Visual System (light, shape, motion, projection)         │
+│  ├── Kinetic System (mechanical movement, gesture)            │
+│  └── Audio System (soundscape, spatial audio)                 │
+│                                                               │
+│  Each system:                                                 │
+│  • Runs autonomously with internal state/dynamics             │
+│  • Receives "nudges" from adapters every 5 seconds            │
+│  • Blends/transitions between states fluidly                  │
+│  • Should gracefully handle boring inputs (add interest)      │
+└───────────────────────────────────────────────────────────────┘
+
+┌─ REACTIVE FEEDBACK LAYER ─────────────────────────────────────┐
+│  Real-time attention signals (<100ms latency target)          │
+│  Meta-layer: modulates art output to show listening/watching  │
+│                                                               │
+│  Triggered directly by: Percept Input Layer                   │
+│  Preprocessing: WebNN for on-device CV (<50ms)                │
+│                                                               │
+│  ├── Visual Feedback (blur, vignette, focus indicators)       │
+│  └── Audio Feedback (volume duck, modulation changes)         │
+│                                                               │
+│  ⚠ ARCHITECTURAL TENSION:                                     │
+│  This layer shares channels with Art Systems. Options:        │
+│  A) Separate feedback channels (dedicated hardware/UI)        │
+│  B) Feedback via cognitive loop (adds 5-sec latency)          │
+│  C) Real-time modulation layer (complex blending rules) ✓     │
+│                                                               │
+│  → Recommendation: Option C with careful blend logic          │
+└───────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+TIMING CHARACTERISTICS
+
+• Percepts: Event-driven (sparse, only on change)
+• Reactive preprocessing: <50ms (WebNN on-device)
+• Cognition: Fixed 5-second heartbeat (predictable cost/updates)
+• Art Systems: Continuous autonomous operation
+• Feedback: Real-time reactive (<100ms target)
+
+═══════════════════════════════════════════════════════════════
+TECH STACK (UPDATED 2025)
+
+┌─────────────────┬─────────────────────────┬───────────────┐
+│ Component       │ Technology              │ Status        │
+├─────────────────┼─────────────────────────┼───────────────┤
+│ Language        │ Vanilla JavaScript ES6+ │ ✅ Evergreen  │
+│ Runtime         │ Node.js (LTS) + Browser │ ✅ Stable     │
+│ Percept API     │ Gemini 1.5 Pro Live     │ ✅ Mature     │
+│ Cognitive Model │ GPT-4o (or Grok-2)      │ ✅ Current    │
+│ LLM Framework   │ LangGraph (or minimal)  │ ✅ Lightweight│
+│ Vector DB       │ Weaviate (hybrid search)│ ✅ Production │
+│ Timeline Store  │ SQLite or Postgres      │ ✅ Ancient    │
+│ Observability   │ LangSmith               │ ✅ Mature     │
+│ On-device CV    │ WebNN (or TensorFlow.js)│ ✅ Ready      │
+│ Art Rendering   │ Canvas/WebGL/Three.js   │ ✅ Ancient    │
+└─────────────────┴─────────────────────────┴───────────────┘
+
+═══════════════════════════════════════════════════════════════
+UPDATED ANSWERS TO OPEN QUESTIONS
+
+1. Cognition model: GPT-4o (deliberative) recommended
+   → Better creative nuance than GPT-4T as of 2025
+   → Alternative: Grok-2 for witty/contemplative personality
+   → Keep Gemini for percepts (validated and working)
+
+2. Adapter architecture: Separate adapters ✓
+   → Better modularity and composability
+   → Easier to iterate on individual art systems
+   → Can still optimize later if needed
+
+3. Feedback channel strategy: Real-time modulation layer ✓
+   → Option C provides best balance of immediacy and control
+   → Requires careful blend logic between reactive/expressive
+   → May need dedicated thread/worker for performance
+
+4. Emotional planning mechanism: Start simple, add complexity
+   → Begin: Prompt-based with temporal dynamics (mood carry)
+   → Enhance: Add reflection loops for coherence
+   → Advanced: Chain LLMs (poetic generation → structuring)
+   → Risk: Monitor for flatness; iterate on prompts heavily
+
+5. Concurrent plans: Single plan initially ✓
+   → Simpler to reason about and debug
+   → Can expand to parallel plans if needed later
+   → Focus on quality over quantity for prototype
+
+═══════════════════════════════════════════════════════════════
+CREATIVE SUCCESS CRITERIA (UPDATED)
+
+Technical validation:
+• All components connected end-to-end
+• Latencies within targets (reactive <100ms, cognitive <7s)
+• System runs stably for extended periods
+• Memory retrieval performs efficiently
+
+Artistic validation (the real test):
+• Emotional plans feel coherent over time
+• Robot exhibits personality consistency (not drift)
+• Art system outputs resonate (subjective but critical)
+• Reactive + expressive layers blend naturally
+• System feels "alive" not algorithmic
+• "Resonance moments" documented and reproducible
+
+New additions:
+• Artistic stress tests: Run for hours, journal quality
+• Compare outputs: GPT-4o vs Grok-2 vs fine-tuned models
+• Explore deeper themes: self-awareness, existentialism
+• Human curation: Collect examples of "good" translations
+
+═══════════════════════════════════════════════════════════════
+RISK MITIGATION (UPDATED)
+
+Known risks with 2025 context:
+
+1. Creative flatness (HIGH RISK)
+   → LLM-generated emotional plans may feel generic
+   → Mitigation: Extensive prompt engineering (80% of work)
+   → Chain LLMs: poetic generation → structuring
+   → Curate examples of interesting translations
+   → Consider fine-tuning on artistic datasets
+   → Fallback: Rules-based emotional baseline
+
+2. Personality drift/incoherence (MEDIUM-HIGH RISK)
+   → Memory retrieval can feel stitched vs lived-in
+   → Mitigation: Reflection loops every 5-10 cycles
+   → Add graph edges for emotional causality
+   → Consistency checks against recent history
+   → Accept some evolution as artistically interesting
+
+3. Translation quality (HIGH RISK)
+   → Adapter outputs may be boring or predictable
+   → Mitigation: Rich creative vocabulary in prompts
+   → Provide examples of nuanced translations
+   → Art systems should add interest to boring inputs
+   → Iterate based on subjective resonance
+
+4. API reliability (LOW-MEDIUM RISK)
+   → Gemini Live and GPT-4o are production-ready
+   → Rate limits improved but monitor costs
+   → Mitigation: Extensive logging, retry logic
+   → Budget management for testing phase
+
+5. Latency under load (LOW RISK for prototype)
+   → 5-second loop may backup with high percept volume
+   → Mitigation: On-device preprocessing with WebNN
+   → Queue management for percept aggregation
+   → Optimize if becomes issue in deployment
+
+═══════════════════════════════════════════════════════════════
+IMPLEMENTATION ROADMAP (INFORMED BY GROK)
+
+Phase 1: Cognitive Loop Spike (2-4 days)
+  Day 1-2: Basic loop
+    • Set up GPT-4o API (OpenAI SDK or Grok-2 via xAI)
+    • 5-second setInterval consuming percepts
+    • Simple prompt: emotional state as JSON
+    • No memory yet, validate "aliveness" of outputs
+    • LangSmith for logging/debugging
+
+  Day 2-3: Add memory
+    • Integrate Weaviate (or ChromaDB for faster setup)
+    • Store emotional plans as vectors
+    • Retrieve relevant memories each cycle
+    • Add basic reflection loop
+    • Evaluate personality coherence
+
+  Day 3-4: Connect one art system
+    • Build adapter with rich prompt + examples
+    • Wire emotional plan → adapter → art system
+    • Iterate on adapter prompt until resonant
+    • This validates the creative gamble
+    • Journal resonance moments vs flat outputs
+
+Phase 2: Expand & Polish (Week 2)
+  • Add remaining art system adapters
+  • Implement temporal dynamics (mood carry)
+  • Add consistency checks
+  • Integrate reactive feedback path
+  • Tune blend factors and transitions
+
+Phase 3: Artistic Iteration (Ongoing)
+  • Long-session stress tests
+  • Compare model outputs (GPT-4o vs Grok-2)
+  • Experiment with chained LLMs
+  • Curate training examples if needed
+  • Explore deeper themes in prompts
+
+═══════════════════════════════════════════════════════════════
+PHILOSOPHY (UNCHANGED BUT REINFORCED)
+
+"Build the simplest thing that could work. Add complexity only 
+when simplicity fails. Trust that the art emerges from careful 
+attention to details, not from elaborate architecture."
+
+This is an art piece, not enterprise software. Success = points 
+of resonance. The tech is ready; the artistic intangibles are 
+the real work. Iterate, observe, journal what feels alive.
+
+═══════════════════════════════════════════════════════════════
+
+End of Architecture v0.3 (November 2025)
+

@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+Always read and orient around "prime-directive.md".
+
+Never git commit for me unless I explicitly ask you to.
+
+Never run the dev environment unless I explicitly ask you to.
