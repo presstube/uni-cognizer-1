@@ -8,7 +8,7 @@
  */
 
 import OpenAI from 'openai';
-import { ROBOT_PERSONALITY, EMOTIONAL_PLAN_SCHEMA } from './personality.js';
+import { ROBOT_PERSONALITY, EMOTIONAL_PLAN_SCHEMA } from './personality-unisphere.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY

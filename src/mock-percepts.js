@@ -14,8 +14,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Load percepts from JSON files
-const visualPerceptsPath = join(__dirname, '../data/mock-visual-percepts.json');
-const audioPerceptsPath = join(__dirname, '../data/mock-audio-percepts.json');
+const visualPerceptsPath = join(__dirname, '../data/mock-visual-percepts-visitor.json');
+const audioPerceptsPath = join(__dirname, '../data/mock-audio-percepts-2.json');
 
 const VISUAL_PERCEPTS = JSON.parse(readFileSync(visualPerceptsPath, 'utf-8'));
 const AUDIO_PERCEPTS = JSON.parse(readFileSync(audioPerceptsPath, 'utf-8'));

@@ -7,3 +7,9 @@ Always read and orient around "prime-directive.md".
 Never git commit for me unless I explicitly ask you to.
 
 Never run the dev environment unless I explicitly ask you to.
+
+NEVER start live processes (npm start, npm run, node, etc.) that call external APIs or run indefinitely. Instead:
+1. Tell the user the command to run
+2. Ask them to paste the output back
+3. Analyze the results they provide
+This prevents accidental API costs and zombie processes.

@@ -16,8 +16,9 @@ import { generateEmotionalPlan } from './cognitive-core.js';
 
 // Configuration
 const COGNITIVE_CYCLE_MS = parseInt(process.env.COGNITIVE_CYCLE_MS) || 5000;
-const VISUAL_PERCEPT_INTERVAL_MS = parseInt(process.env.VISUAL_PERCEPT_INTERVAL_MS) || 2000;
-const AUDIO_PERCEPT_INTERVAL_MS = parseInt(process.env.AUDIO_PERCEPT_INTERVAL_MS) || 3000;
+const VISUAL_PERCEPT_INTERVAL_MS = parseInt(process.env.VISUAL_PERCEPT_INTERVAL_MS) || 3000;
+const AUDIO_PERCEPT_MIN_MS = parseInt(process.env.AUDIO_PERCEPT_MIN_MS) || 7000;
+const AUDIO_PERCEPT_MAX_MS = parseInt(process.env.AUDIO_PERCEPT_MAX_MS) || 10000;
 
 // State (in-memory only for MVP)
 const perceptBuffer = [];
@@ -54,19 +55,32 @@ setInterval(() => {
 
 /**
  * Audio Percept Generation Loop
- * Simulates microphone percepts arriving less frequently
+ * Simulates microphone percepts arriving at random intervals (7-10s)
+ * Uses setTimeout with random delay to create natural speech cadence
  */
-setInterval(() => {
-  const percept = generateAudioPercept();
-  perceptBuffer.push(percept);
+function scheduleNextAudioPercept() {
+  // Random delay between min and max
+  const delay = AUDIO_PERCEPT_MIN_MS + 
+    Math.random() * (AUDIO_PERCEPT_MAX_MS - AUDIO_PERCEPT_MIN_MS);
   
-  // Only log meaningful audio (not silence)
-  if (percept.transcript) {
-    console.log(`🎤 Audio: ${percept.emoji} "${percept.transcript}"`);
-  } else if (percept.analysis !== "Silence" && percept.analysis !== "Background ambient sounds only") {
-    console.log(`🎤 Audio: ${percept.emoji} ${percept.analysis}`);
-  }
-}, AUDIO_PERCEPT_INTERVAL_MS);
+  setTimeout(() => {
+    const percept = generateAudioPercept();
+    perceptBuffer.push(percept);
+    
+    // Only log meaningful audio (not silence)
+    if (percept.transcript) {
+      console.log(`🎤 Audio: ${percept.emoji} "${percept.transcript}"`);
+    } else if (percept.analysis !== "Silence" && percept.analysis !== "Background ambient sounds only") {
+      console.log(`🎤 Audio: ${percept.emoji} ${percept.analysis}`);
+    }
+    
+    // Schedule the next audio percept
+    scheduleNextAudioPercept();
+  }, delay);
+}
+
+// Start audio percept loop
+scheduleNextAudioPercept();
 
 /**
  * Core Cognitive Loop
@@ -122,8 +136,8 @@ console.log('╚═════════════════════�
 console.log('');
 console.log('🚀 Cognitive loop started');
 console.log(`⏰ Cycle interval: ${COGNITIVE_CYCLE_MS}ms (${COGNITIVE_CYCLE_MS/1000}s)`);
-console.log(`👁️  Visual percept interval: ${VISUAL_PERCEPT_INTERVAL_MS}ms`);
-console.log(`🎤 Audio percept interval: ${AUDIO_PERCEPT_INTERVAL_MS}ms`);
+console.log(`👁️  Visual percept interval: ${VISUAL_PERCEPT_INTERVAL_MS}ms (every ${VISUAL_PERCEPT_INTERVAL_MS/1000}s)`);
+console.log(`🎤 Audio percept interval: ${AUDIO_PERCEPT_MIN_MS}-${AUDIO_PERCEPT_MAX_MS}ms (every ${AUDIO_PERCEPT_MIN_MS/1000}-${AUDIO_PERCEPT_MAX_MS/1000}s, random)`);
 console.log('');
 console.log('Press Ctrl+C to stop');
 console.log('');
