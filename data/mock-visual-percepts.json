@@ -1,0 +1,448 @@
+[
+  {
+    "action": "NOPE",
+    "emoji": "😐",
+    "weight": 3.0
+  },
+  {
+    "action": "NOPE",
+    "emoji": "😶",
+    "weight": 2.0
+  },
+  {
+    "action": "Looking down",
+    "emoji": "⬇️",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking up",
+    "emoji": "⬆️",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking to the side",
+    "emoji": "➡️",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking around",
+    "emoji": "👀",
+    "weight": 1.0
+  },
+  {
+    "action": "Talking",
+    "emoji": "🗣️",
+    "weight": 1.5
+  },
+  {
+    "action": "Talking and gesturing",
+    "emoji": "🗣️",
+    "weight": 1.0
+  },
+  {
+    "action": "Talking with arms crossed",
+    "emoji": "🗣️",
+    "weight": 0.8
+  },
+  {
+    "action": "Talking with arms crossed behind head",
+    "emoji": "🗣️",
+    "weight": 0.6
+  },
+  {
+    "action": "Thinking",
+    "emoji": "🤔",
+    "weight": 1.2
+  },
+  {
+    "action": "Deep in thought",
+    "emoji": "🤔",
+    "weight": 0.8
+  },
+  {
+    "action": "Pondering",
+    "emoji": "💭",
+    "weight": 0.8
+  },
+  {
+    "action": "Holding phone",
+    "emoji": "📱",
+    "weight": 1.5
+  },
+  {
+    "action": "Looking at phone",
+    "emoji": "📱",
+    "weight": 2.0
+  },
+  {
+    "action": "Talking on phone",
+    "emoji": "📱",
+    "weight": 1.0
+  },
+  {
+    "action": "Holding phone to ear",
+    "emoji": "👂",
+    "weight": 1.0
+  },
+  {
+    "action": "Showing phone",
+    "emoji": "📱",
+    "weight": 0.7
+  },
+  {
+    "action": "Holding up phone",
+    "emoji": "📱",
+    "weight": 0.7
+  },
+  {
+    "action": "Hanging up phone",
+    "emoji": "📱",
+    "weight": 0.6
+  },
+  {
+    "action": "Texting",
+    "emoji": "📱",
+    "weight": 1.5
+  },
+  {
+    "action": "Pointing",
+    "emoji": "👉",
+    "weight": 0.8
+  },
+  {
+    "action": "Pointing up",
+    "emoji": "☝️",
+    "weight": 0.5
+  },
+  {
+    "action": "Making OK gesture",
+    "emoji": "👌",
+    "weight": 0.5
+  },
+  {
+    "action": "Making rock and roll hand gesture",
+    "emoji": "🤘",
+    "weight": 0.3
+  },
+  {
+    "action": "Thumbs up",
+    "emoji": "👍",
+    "weight": 0.6
+  },
+  {
+    "action": "Waving",
+    "emoji": "👋",
+    "weight": 0.8
+  },
+  {
+    "action": "Waving goodbye",
+    "emoji": "👋",
+    "weight": 0.5
+  },
+  {
+    "action": "Gesturing with hands",
+    "emoji": "🙌",
+    "weight": 1.0
+  },
+  {
+    "action": "Shrugging",
+    "emoji": "🤷",
+    "weight": 0.6
+  },
+  {
+    "action": "Nodding",
+    "emoji": "😊",
+    "weight": 0.8
+  },
+  {
+    "action": "Shaking head",
+    "emoji": "🙅",
+    "weight": 0.5
+  },
+  {
+    "action": "Stretching",
+    "emoji": "🙆",
+    "weight": 0.7
+  },
+  {
+    "action": "Yawning",
+    "emoji": "🥱",
+    "weight": 0.6
+  },
+  {
+    "action": "Rubbing eyes",
+    "emoji": "😴",
+    "weight": 0.4
+  },
+  {
+    "action": "Scratching head",
+    "emoji": "🤔",
+    "weight": 0.6
+  },
+  {
+    "action": "Covering face",
+    "emoji": "🤦",
+    "weight": 0.4
+  },
+  {
+    "action": "Leaning forward",
+    "emoji": "🧐",
+    "weight": 0.8
+  },
+  {
+    "action": "Leaning back",
+    "emoji": "😌",
+    "weight": 0.9
+  },
+  {
+    "action": "Sitting down",
+    "emoji": "🪑",
+    "weight": 0.7
+  },
+  {
+    "action": "Standing up",
+    "emoji": "🧍",
+    "weight": 0.7
+  },
+  {
+    "action": "Walking away",
+    "emoji": "🚶",
+    "weight": 0.8
+  },
+  {
+    "action": "Walking toward camera",
+    "emoji": "🚶",
+    "weight": 0.8
+  },
+  {
+    "action": "Pacing",
+    "emoji": "🚶",
+    "weight": 0.6
+  },
+  {
+    "action": "Entering frame",
+    "emoji": "➡️",
+    "weight": 1.0
+  },
+  {
+    "action": "Exiting frame",
+    "emoji": "👋",
+    "weight": 1.0
+  },
+  {
+    "action": "Drinking from cup",
+    "emoji": "☕",
+    "weight": 0.8
+  },
+  {
+    "action": "Holding cup",
+    "emoji": "☕",
+    "weight": 0.9
+  },
+  {
+    "action": "Writing",
+    "emoji": "✍️",
+    "weight": 0.7
+  },
+  {
+    "action": "Reading",
+    "emoji": "📖",
+    "weight": 0.8
+  },
+  {
+    "action": "Typing",
+    "emoji": "⌨️",
+    "weight": 1.2
+  },
+  {
+    "action": "Working on laptop",
+    "emoji": "💻",
+    "weight": 1.5
+  },
+  {
+    "action": "Looking at laptop",
+    "emoji": "💻",
+    "weight": 1.3
+  },
+  {
+    "action": "Closing laptop",
+    "emoji": "💻",
+    "weight": 0.4
+  },
+  {
+    "action": "Laughing",
+    "emoji": "😂",
+    "weight": 0.6
+  },
+  {
+    "action": "Smiling",
+    "emoji": "😊",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking confused",
+    "emoji": "😕",
+    "weight": 0.5
+  },
+  {
+    "action": "Looking surprised",
+    "emoji": "😮",
+    "weight": 0.4
+  },
+  {
+    "action": "Looking focused",
+    "emoji": "😤",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking tired",
+    "emoji": "😫",
+    "weight": 0.6
+  },
+  {
+    "action": "Looking bored",
+    "emoji": "😑",
+    "weight": 0.7
+  },
+  {
+    "action": "Checking watch",
+    "emoji": "⌚",
+    "weight": 0.5
+  },
+  {
+    "action": "Adjusting glasses",
+    "emoji": "👓",
+    "weight": 0.5
+  },
+  {
+    "action": "Running hand through hair",
+    "emoji": "💆",
+    "weight": 0.6
+  },
+  {
+    "action": "Arms crossed",
+    "emoji": "🙅",
+    "weight": 0.8
+  },
+  {
+    "action": "Hands in pockets",
+    "emoji": "🤷",
+    "weight": 0.9
+  },
+  {
+    "action": "Hands on hips",
+    "emoji": "🧍",
+    "weight": 0.6
+  },
+  {
+    "action": "Hands behind back",
+    "emoji": "🧍",
+    "weight": 0.5
+  },
+  {
+    "action": "Clapping",
+    "emoji": "👏",
+    "weight": 0.3
+  },
+  {
+    "action": "Raising hand",
+    "emoji": "🙋",
+    "weight": 0.4
+  },
+  {
+    "action": "Whispering",
+    "emoji": "🤫",
+    "weight": 0.3
+  },
+  {
+    "action": "Singing",
+    "emoji": "🎤",
+    "weight": 0.2
+  },
+  {
+    "action": "Dancing",
+    "emoji": "💃",
+    "weight": 0.2
+  },
+  {
+    "action": "Taking photo",
+    "emoji": "📸",
+    "weight": 0.4
+  },
+  {
+    "action": "Eating",
+    "emoji": "🍴",
+    "weight": 0.5
+  },
+  {
+    "action": "Snacking",
+    "emoji": "🍿",
+    "weight": 0.5
+  },
+  {
+    "action": "Opening door",
+    "emoji": "🚪",
+    "weight": 0.4
+  },
+  {
+    "action": "Closing door",
+    "emoji": "🚪",
+    "weight": 0.4
+  },
+  {
+    "action": "Turning on light",
+    "emoji": "💡",
+    "weight": 0.3
+  },
+  {
+    "action": "Turning off light",
+    "emoji": "🌙",
+    "weight": 0.3
+  },
+  {
+    "action": "Looking out window",
+    "emoji": "🪟",
+    "weight": 0.7
+  },
+  {
+    "action": "Staring into distance",
+    "emoji": "👁️",
+    "weight": 0.8
+  },
+  {
+    "action": "Checking something",
+    "emoji": "🔍",
+    "weight": 0.6
+  },
+  {
+    "action": "Organizing desk",
+    "emoji": "📋",
+    "weight": 0.4
+  },
+  {
+    "action": "Picking something up",
+    "emoji": "🤏",
+    "weight": 0.5
+  },
+  {
+    "action": "Setting something down",
+    "emoji": "📦",
+    "weight": 0.5
+  },
+  {
+    "action": "Multiple people talking",
+    "emoji": "👥",
+    "weight": 0.8
+  },
+  {
+    "action": "Group conversation",
+    "emoji": "👥",
+    "weight": 0.6
+  },
+  {
+    "action": "Two people",
+    "emoji": "👥",
+    "weight": 0.9
+  }
+]
+

@@ -1,0 +1,426 @@
+[
+  {
+    "transcript": null,
+    "analysis": "Silence",
+    "tone": "Quiet",
+    "emoji": "🤫",
+    "sentiment": "neutral",
+    "confidence": 1.0,
+    "weight": 3.0
+  },
+  {
+    "transcript": null,
+    "analysis": "Background ambient sounds only",
+    "tone": "Ambient",
+    "emoji": "🎵",
+    "sentiment": "neutral",
+    "confidence": 0.7,
+    "weight": 2.0
+  },
+  {
+    "transcript": "Hmm...",
+    "analysis": "A contemplative utterance suggesting the speaker is thinking or considering something.",
+    "tone": "Thoughtful, pondering",
+    "emoji": "🤔",
+    "sentiment": "contemplative",
+    "confidence": 0.9,
+    "weight": 1.5
+  },
+  {
+    "transcript": "Well, well, what do we have here?",
+    "analysis": "The speaker observes something new or unexpected, expressing curiosity and interest.",
+    "tone": "Inquisitive, slightly surprised",
+    "emoji": "🧐",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I'm not sure what to make of this.",
+    "analysis": "The speaker expresses uncertainty about their interpretation or understanding of something.",
+    "tone": "Hesitant, uncertain",
+    "emoji": "😕",
+    "sentiment": "uncertain",
+    "confidence": 0.9,
+    "weight": 1.0
+  },
+  {
+    "transcript": "This is actually kind of interesting.",
+    "analysis": "The speaker finds something engaging or noteworthy, indicating growing interest.",
+    "tone": "Pleasantly surprised, engaged",
+    "emoji": "😊",
+    "sentiment": "positive",
+    "confidence": 0.9,
+    "weight": 0.9
+  },
+  {
+    "transcript": "*sigh*",
+    "analysis": "A deep exhale suggesting tiredness, resignation, or contentment depending on context.",
+    "tone": "Weary or content",
+    "emoji": "😮‍💨",
+    "sentiment": "tired",
+    "confidence": 0.8,
+    "weight": 1.2
+  },
+  {
+    "transcript": "I wonder if...",
+    "analysis": "The speaker trails off while considering a possibility, showing active contemplation.",
+    "tone": "Wondering, open-ended",
+    "emoji": "💭",
+    "sentiment": "curious",
+    "confidence": 0.85,
+    "weight": 1.0
+  },
+  {
+    "transcript": "Wait, what was I doing?",
+    "analysis": "The speaker has lost track of their intended action, showing momentary confusion.",
+    "tone": "Confused, slightly amused",
+    "emoji": "🤷",
+    "sentiment": "confused",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Let's see what happens.",
+    "analysis": "The speaker expresses readiness to observe outcomes, showing experimental curiosity.",
+    "tone": "Experimental, open",
+    "emoji": "🔬",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "*quiet laughter*",
+    "analysis": "Soft laughter suggesting amusement or pleasant surprise.",
+    "tone": "Amused, light",
+    "emoji": "😄",
+    "sentiment": "happy",
+    "confidence": 0.85,
+    "weight": 0.9
+  },
+  {
+    "transcript": "I don't know about this...",
+    "analysis": "The speaker expresses doubt or hesitation about something they're considering.",
+    "tone": "Doubtful, cautious",
+    "emoji": "😬",
+    "sentiment": "uncertain",
+    "confidence": 0.9,
+    "weight": 1.0
+  },
+  {
+    "transcript": "Oh! That's neat.",
+    "analysis": "The speaker reacts with pleasant surprise to something they find interesting.",
+    "tone": "Surprised, delighted",
+    "emoji": "😮",
+    "sentiment": "positive",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Just thinking out loud here.",
+    "analysis": "The speaker verbalizes their thought process, inviting observation of their reasoning.",
+    "tone": "Reflective, transparent",
+    "emoji": "🗣️",
+    "sentiment": "neutral",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "Maybe I should try something different.",
+    "analysis": "The speaker considers changing their approach, showing adaptability and openness.",
+    "tone": "Contemplative, willing",
+    "emoji": "🤔",
+    "sentiment": "thoughtful",
+    "confidence": 0.9,
+    "weight": 0.9
+  },
+  {
+    "transcript": "I'm just here, existing.",
+    "analysis": "The speaker describes their current state in existential terms, suggesting a contemplative or grounded mood.",
+    "tone": "Philosophical, present",
+    "emoji": "🧘",
+    "sentiment": "peaceful",
+    "confidence": 0.85,
+    "weight": 0.6
+  },
+  {
+    "transcript": "*footsteps approaching*",
+    "analysis": "Sound of someone walking closer, indicating movement and approach.",
+    "tone": "Ambient, anticipatory",
+    "emoji": "👣",
+    "sentiment": "neutral",
+    "confidence": 0.7,
+    "weight": 0.8
+  },
+  {
+    "transcript": "This is kind of weird, actually.",
+    "analysis": "The speaker acknowledges the unusual nature of their situation with some amusement.",
+    "tone": "Bemused, slightly awkward",
+    "emoji": "😅",
+    "sentiment": "amused",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I wonder what time it is.",
+    "analysis": "The speaker questions the current time, showing awareness of temporal flow or mild boredom.",
+    "tone": "Idle, wondering",
+    "emoji": "⏰",
+    "sentiment": "neutral",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "Should I say something?",
+    "analysis": "The speaker questions whether to verbalize their thoughts, showing social awareness and hesitation.",
+    "tone": "Uncertain, self-conscious",
+    "emoji": "🤐",
+    "sentiment": "uncertain",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Honestly, I'm not really sure what's happening here.",
+    "analysis": "The speaker admits to confusion about their current situation with candid honesty.",
+    "tone": "Honest, confused",
+    "emoji": "🤷",
+    "sentiment": "confused",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "*whistling quietly*",
+    "analysis": "The speaker whistles, suggesting contentment, idle time, or self-soothing behavior.",
+    "tone": "Relaxed, melodic",
+    "emoji": "🎶",
+    "sentiment": "content",
+    "confidence": 0.8,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I guess I'll just wait and see.",
+    "analysis": "The speaker adopts a patient, observational stance toward future events.",
+    "tone": "Patient, accepting",
+    "emoji": "⏳",
+    "sentiment": "neutral",
+    "confidence": 0.9,
+    "weight": 0.9
+  },
+  {
+    "transcript": "What even is this?",
+    "analysis": "The speaker questions the nature or identity of something with genuine bewilderment.",
+    "tone": "Bewildered, curious",
+    "emoji": "❓",
+    "sentiment": "confused",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Okay, okay. Let me think.",
+    "analysis": "The speaker self-soothes while trying to organize their thoughts or make a decision.",
+    "tone": "Self-regulatory, focused",
+    "emoji": "🧠",
+    "sentiment": "thoughtful",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I feel like I should be doing something.",
+    "analysis": "The speaker expresses mild restlessness or a sense that they lack purpose in the moment.",
+    "tone": "Restless, uncertain",
+    "emoji": "😐",
+    "sentiment": "uncertain",
+    "confidence": 0.85,
+    "weight": 0.8
+  },
+  {
+    "transcript": "*clears throat*",
+    "analysis": "A throat-clearing sound, possibly to get attention or prepare to speak.",
+    "tone": "Preparatory",
+    "emoji": "😶",
+    "sentiment": "neutral",
+    "confidence": 0.7,
+    "weight": 0.9
+  },
+  {
+    "transcript": "This is actually pretty cool.",
+    "analysis": "The speaker expresses genuine appreciation or interest in something they're experiencing.",
+    "tone": "Appreciative, engaged",
+    "emoji": "😎",
+    "sentiment": "positive",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I'm going to try something.",
+    "analysis": "The speaker announces their intention to experiment or take action.",
+    "tone": "Decisive, exploratory",
+    "emoji": "🎯",
+    "sentiment": "determined",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "Is anyone else here?",
+    "analysis": "The speaker questions the presence of others, showing social awareness or loneliness.",
+    "tone": "Questioning, uncertain",
+    "emoji": "👥",
+    "sentiment": "uncertain",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I might just sit here for a while.",
+    "analysis": "The speaker considers remaining in place, suggesting contentment or indecision.",
+    "tone": "Contemplative, relaxed",
+    "emoji": "🪑",
+    "sentiment": "peaceful",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "That's strange.",
+    "analysis": "The speaker notes something unusual or unexpected in their environment.",
+    "tone": "Observational, surprised",
+    "emoji": "🤨",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "*muttering under breath*",
+    "analysis": "Indistinct quiet speech, suggesting the speaker is talking to themselves.",
+    "tone": "Private, murmured",
+    "emoji": "🤫",
+    "sentiment": "neutral",
+    "confidence": 0.6,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I wonder if it can hear me.",
+    "analysis": "The speaker questions whether they are being heard, showing awareness of a listening presence.",
+    "tone": "Curious, testing",
+    "emoji": "👂",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "Maybe I'll dance. Why not?",
+    "analysis": "The speaker considers spontaneous movement, showing playfulness and willingness to be silly.",
+    "tone": "Playful, spontaneous",
+    "emoji": "💃",
+    "sentiment": "playful",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I don't really have anything to say.",
+    "analysis": "The speaker acknowledges a lack of verbal content, possibly feeling awkward or content in silence.",
+    "tone": "Honest, slightly awkward",
+    "emoji": "😶",
+    "sentiment": "neutral",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Everything feels very still right now.",
+    "analysis": "The speaker describes a sense of quietude or stasis in their environment.",
+    "tone": "Observational, peaceful",
+    "emoji": "🌙",
+    "sentiment": "peaceful",
+    "confidence": 0.85,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I suppose I could ask it something.",
+    "analysis": "The speaker considers initiating interaction with an entity, showing curiosity and social intention.",
+    "tone": "Tentative, curious",
+    "emoji": "💬",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "*humming softly*",
+    "analysis": "Melodic humming suggesting contentment, distraction, or self-soothing.",
+    "tone": "Melodic, relaxed",
+    "emoji": "🎵",
+    "sentiment": "content",
+    "confidence": 0.8,
+    "weight": 0.6
+  },
+  {
+    "transcript": "What's the point of all this?",
+    "analysis": "The speaker questions purpose or meaning, showing philosophical or existential contemplation.",
+    "tone": "Philosophical, searching",
+    "emoji": "🤔",
+    "sentiment": "contemplative",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I feel like I'm being watched.",
+    "analysis": "The speaker expresses awareness of observation, showing self-consciousness.",
+    "tone": "Self-conscious, aware",
+    "emoji": "👀",
+    "sentiment": "uncertain",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Nothing's really happening, is it?",
+    "analysis": "The speaker notes the absence of activity, possibly feeling bored or content in the stillness.",
+    "tone": "Observational, slightly bored",
+    "emoji": "😑",
+    "sentiment": "neutral",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I think I'll just be present.",
+    "analysis": "The speaker adopts a mindful stance, choosing to simply exist in the moment.",
+    "tone": "Mindful, centered",
+    "emoji": "🧘",
+    "sentiment": "peaceful",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "*tapping fingers rhythmically*",
+    "analysis": "Rhythmic sound suggesting restlessness, thinking, or passing time.",
+    "tone": "Rhythmic, fidgety",
+    "emoji": "🥁",
+    "sentiment": "neutral",
+    "confidence": 0.7,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Tell me something interesting.",
+    "analysis": "The speaker requests engagement or information, showing a desire for stimulation.",
+    "tone": "Direct, seeking",
+    "emoji": "💬",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I'm curious what happens next.",
+    "analysis": "The speaker expresses anticipation about future events with open curiosity.",
+    "tone": "Anticipatory, curious",
+    "emoji": "🔮",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I don't know why I'm still here.",
+    "analysis": "The speaker questions their own continued presence, showing mild confusion or philosophical humor.",
+    "tone": "Bemused, philosophical",
+    "emoji": "🤷",
+    "sentiment": "confused",
+    "confidence": 0.85,
+    "weight": 0.5
+  }
+]
+

@@ -1,0 +1,27 @@
+{
+  "name": "cognizer-1",
+  "version": "0.1.0",
+  "description": "MVP Cognizer-1: Core Cognitive Loop Prototype",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node src/main.js"
+  },
+  "keywords": [
+    "ai",
+    "robot",
+    "cognition",
+    "emotional-planning"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.67.3",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+
