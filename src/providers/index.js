@@ -19,8 +19,13 @@ switch (LLM_PROVIDER.toLowerCase()) {
     console.log('🤖 Using Anthropic provider (Claude Sonnet 4.5)');
     break;
     
+  case 'gemini':
+    provider = await import('./gemini.js');
+    console.log('🤖 Using Google Gemini provider (Gemini 2.0 Flash)');
+    break;
+    
   default:
-    throw new Error(`Unknown LLM provider: ${LLM_PROVIDER}. Must be 'openai' or 'anthropic'`);
+    throw new Error(`Unknown LLM provider: ${LLM_PROVIDER}. Must be 'openai', 'anthropic', or 'gemini'`);
 }
 
 // Validate API key is present
@@ -30,6 +35,10 @@ if (LLM_PROVIDER.toLowerCase() === 'openai' && !process.env.OPENAI_API_KEY) {
 
 if (LLM_PROVIDER.toLowerCase() === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY not found in environment');
+}
+
+if (LLM_PROVIDER.toLowerCase() === 'gemini' && !process.env.GEMINI_API_KEY) {
+  throw new Error('GEMINI_API_KEY not found in environment');
 }
 
 // Export the provider's callLLM function
