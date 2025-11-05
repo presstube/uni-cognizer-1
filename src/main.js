@@ -4,7 +4,7 @@ import { cognize, onMindMoment, getHistory } from './real-cog.js';
 
 const DEPTH = 3;
 
-onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) => {
+onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
   console.log(`${'─'.repeat(50)}`);
   console.log(`📊 HISTORY STATUS`);
   console.log(`${'─'.repeat(50)}`);
@@ -20,7 +20,8 @@ onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) =>
   if (completedCycles.length > 0) {
     console.log(`\nRecent Mind Moments:`);
     completedCycles.slice(-3).forEach(c => {
-      console.log(`   #${c}: "${history[c].mindMoment}"`);
+      const entry = history[c];
+      console.log(`   #${c}: "${entry.mindMoment}"${entry.sigilPhrase ? ` → [${entry.sigilPhrase}]` : ''}`);
     });
   }
   console.log('');

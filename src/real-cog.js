@@ -31,7 +31,16 @@ Generate a single "mind moment" - one clear thought/observation from UNI's persp
 Respond with ONLY the mind moment text (1-2 sentences max), nothing else.`;
 
   const response = await callLLM(prompt);
-  return response.trim();
+  const text = response.trim();
+  
+  // Parse the response to extract mind moment and sigil phrase
+  const mindMomentMatch = text.match(/MIND MOMENT:\s*(.+?)(?=\n\nSIGIL PHRASE:|$)/s);
+  const sigilPhraseMatch = text.match(/SIGIL PHRASE:\s*(.+?)$/s);
+  
+  const mindMoment = mindMomentMatch ? mindMomentMatch[1].trim() : text;
+  const sigilPhrase = sigilPhraseMatch ? sigilPhraseMatch[1].trim() : null;
+  
+  return { mindMoment, sigilPhrase };
 }
 
 function timestamp() {
@@ -56,9 +65,9 @@ function getPriorMindMoments(depth) {
     .slice(0, depth);
 }
 
-function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) {
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) {
   mindMomentListeners.forEach(listener => {
-    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments);
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase);
   });
 }
 
@@ -72,7 +81,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   cognitiveHistory[thisCycle] = {
     visualPercepts,
     audioPercepts,
-    mindMoment: "awaiting"
+    mindMoment: "awaiting",
+    sigilPhrase: "awaiting"
   };
   
   const priorMoments = getPriorMindMoments(depth);
@@ -107,22 +117,28 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   console.log('');
   
   realLLMCall(visualPercepts, audioPercepts, priorMoments)
-    .then(mindMoment => {
-      cognitiveHistory[thisCycle].mindMoment = mindMoment;
+    .then(result => {
+      cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
+      cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
       
       console.log(`${'═'.repeat(50)}`);
       console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
       console.log(`${'═'.repeat(50)}`);
       console.log(`Mind Moment:`);
-      console.log(`   ${mindMoment}`);
+      console.log(`   ${result.mindMoment}`);
+      if (result.sigilPhrase) {
+        console.log(`Sigil Phrase:`);
+        console.log(`   "${result.sigilPhrase}"`);
+      }
       console.log(`Context Depth: ${priorMoments.length}`);
       console.log('');
       
-      dispatchMindMoment(thisCycle, mindMoment, visualPercepts, audioPercepts, priorMoments);
+      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
     })
     .catch(err => {
       console.error(`\n❌ ERROR in Cycle ${thisCycle}:`, err.message);
       cognitiveHistory[thisCycle].mindMoment = `[error: ${err.message}]`;
+      cognitiveHistory[thisCycle].sigilPhrase = null;
     });
 }
 
