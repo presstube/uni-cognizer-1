@@ -1,5 +1,6 @@
+import 'dotenv/config';
 import { dumpPercepts } from './fake-percepts.js';
-import { cognize, onMindMoment, getHistory } from './fake-cog.js';
+import { cognize, onMindMoment, getHistory } from './real-cog.js';
 
 const DEPTH = 3;
 
@@ -31,13 +32,12 @@ setInterval(() => {
 }, 5000);
 
 console.log('╔═══════════════════════════════════════════════════════════╗');
-console.log('║  FAKE LAND - Mind Moment Architecture                    ║');
+console.log('║  COGNIZER - UNI Mind Moment System                       ║');
 console.log('╚═══════════════════════════════════════════════════════════╝');
 console.log('');
 console.log('👁️  Visual percepts: every 3s');
 console.log('🎤 Audio percepts: every 7-10s (random)');
 console.log('🧠 Cognitive cycles: every 5s');
-console.log('⏱️  Mock LLM latency: 6-8s');
 console.log(`🧵 Context depth: ${DEPTH} prior mind moments`);
 console.log('');
 console.log('Running...\n');
