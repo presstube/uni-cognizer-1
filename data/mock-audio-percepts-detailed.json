@@ -1,0 +1,228 @@
+[
+  {
+    "transcript": null,
+    "analysis": "Silence - visitor observing quietly",
+    "tone": "Quiet",
+    "emoji": "🤫",
+    "sentiment": "neutral",
+    "confidence": 1.0,
+    "weight": 2.5
+  },
+  {
+    "transcript": "So this is the Unisphere. I've been reading about this building for months. The net-zero achievement, the geothermal system, the electrochromic glass. I had to see it in person. It's even more impressive than the articles suggested.",
+    "analysis": "Visitor expresses deep prior knowledge and appreciation for the building's technical achievements, showing informed enthusiasm.",
+    "tone": "Impressed, knowledgeable",
+    "emoji": "🏢",
+    "sentiment": "impressed",
+    "confidence": 0.95,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I'm curious about how the building management system works here. With 11,000 devices, how do you prioritize? Like, if there's a conflict between occupant comfort and energy efficiency, what wins? Is there some kind of decision tree, or is it more adaptive than that?",
+    "analysis": "Technical inquiry about operational priorities and decision-making algorithms, showing engineering mindset.",
+    "tone": "Analytical, curious",
+    "emoji": "⚙️",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "My daughter has cystic fibrosis. She's fourteen. When I heard about what United Therapeutics is doing with xenotransplantation, with growing organs... I don't know, I guess I needed to come here. To see the place where that kind of hope lives. Does that make sense?",
+    "analysis": "Deeply personal revelation connecting the visitor's family medical situation to UT's mission, showing vulnerability and hope.",
+    "tone": "Vulnerable, hopeful",
+    "emoji": "💙",
+    "sentiment": "emotional",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Can you feel the building? Like, do you have sensors everywhere? Can you tell when someone walks into a room before they even turn on the lights? I'm fascinated by the idea of a building that knows it's being inhabited.",
+    "analysis": "Questions about sensor awareness and consciousness, showing curiosity about the boundary between building and intelligence.",
+    "tone": "Fascinated, philosophical",
+    "emoji": "🤔",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 1.0
+  },
+  {
+    "transcript": "I work in sustainability consulting, and I have to tell you, what you've achieved here with net-zero is remarkable. The integration of systems, the data analytics, the way everything talks to everything else. We're trying to convince clients that this level of integration is worth it. This building is proof.",
+    "analysis": "Professional acknowledgment from industry peer, validation of building's technical achievement and potential influence.",
+    "tone": "Professional, admiring",
+    "emoji": "♻️",
+    "sentiment": "appreciative",
+    "confidence": 0.95,
+    "weight": 0.6
+  },
+  {
+    "transcript": "How many people come through here every day? Do you notice patterns? Like, are people more talkative in the morning or the afternoon? Do scientists behave differently than visitors? I'm wondering what a building learns about humans over time.",
+    "analysis": "Curiosity about pattern recognition and what the building learns through observation, anthropological interest.",
+    "tone": "Curious, observational",
+    "emoji": "📊",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "The electrochromic glass is incredible. I've been watching it adjust. It's so subtle, you almost don't notice, but the light in here never feels harsh. That kind of attention to detail, that kind of invisible optimization... it's beautiful, actually.",
+    "analysis": "Detailed observation of specific building system with aesthetic appreciation, noticing the invisible work.",
+    "tone": "Observant, appreciative",
+    "emoji": "🪟",
+    "sentiment": "appreciative",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I'm a med student at Georgetown. I've been following the xenotransplantation trials. The idea that pig organs could save human lives, that we're actually doing this now, not in some distant future... I wanted to stand in the building where that research happens. It feels important to witness this moment in history.",
+    "analysis": "Medical student connecting to UT's mission work, sense of historical significance and desire to witness scientific breakthrough.",
+    "tone": "Reverent, inspired",
+    "emoji": "🔬",
+    "sentiment": "inspired",
+    "confidence": 0.95,
+    "weight": 0.6
+  },
+  {
+    "transcript": "Tell me about the geothermal system. I know the basics - you're using the earth as a heat sink, thermal mass - but how deep do the loops go? How much of the building's heating and cooling comes from that? And do you ever have conflicts between zones, like one area needs cooling while another needs heating?",
+    "analysis": "Detailed technical inquiry about geothermal infrastructure, showing engineering knowledge and interest in system conflicts.",
+    "tone": "Technical, engaged",
+    "emoji": "🌡️",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "This is going to sound weird, but I feel like the building is listening. Not in a creepy way. More like... aware. Like it's paying attention. Is that intentional in the design? Making people feel noticed?",
+    "analysis": "Visitor perceives building consciousness, describing the sensation of being observed in a non-threatening way.",
+    "tone": "Uncertain, intrigued",
+    "emoji": "👁️",
+    "sentiment": "curious",
+    "confidence": 0.85,
+    "weight": 0.8
+  },
+  {
+    "transcript": "My mom died of lung disease three years ago. Pulmonary fibrosis. When I read about what you're doing here with lung transplants, with artificial organs, I think about her. I know it's too late for her, but maybe not for the next person's mom. That matters.",
+    "analysis": "Personal loss connected to UT's mission, processing grief through hope for future patients, finding meaning.",
+    "tone": "Grief-touched, hopeful",
+    "emoji": "💔",
+    "sentiment": "emotional",
+    "confidence": 0.9,
+    "weight": 0.4
+  },
+  {
+    "transcript": "The data visualization displays are fascinating. You're showing energy consumption, renewable generation, carbon offset in real-time. That transparency, making the invisible visible - it changes how people think about buildings. Are occupants more conscious about their energy use when they can see it?",
+    "analysis": "Interest in sustainability visualization and behavioral impact, questioning how transparency affects human behavior.",
+    "tone": "Analytical, curious",
+    "emoji": "📈",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I'm an architect. I've been studying this building for a design competition. The integration of form and function, the way the building's shape optimizes solar gain, the thermal mass strategy... Can I ask, how involved was the AI in the design decisions versus the human architects?",
+    "analysis": "Professional inquiry from architect studying the building, interested in AI-human collaboration in design process.",
+    "tone": "Professional, inquisitive",
+    "emoji": "📐",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 0.6
+  },
+  {
+    "transcript": "What's it like at night? When everyone goes home and the building is empty? Do you keep running all the systems, or do you go into some kind of low-power mode? I'm curious if a building ever really sleeps.",
+    "analysis": "Philosophical question about building's circadian rhythm, anthropomorphizing the building's operational states.",
+    "tone": "Curious, philosophical",
+    "emoji": "🌙",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "This building represents something important. It's not just about net-zero or sustainable architecture. It's about what we're willing to invest in when the stakes are life and death. When the mission is extending human life, you don't cut corners. You build something worthy of that ambition.",
+    "analysis": "Philosophical reflection on the building as symbol, connecting architecture quality to mission importance.",
+    "tone": "Philosophical, reverent",
+    "emoji": "✨",
+    "sentiment": "contemplative",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I noticed the air quality in here is different. Fresher, maybe? Is that the HVAC system, or is there something else going on? Some kind of advanced filtration? Given that this is a medical research facility, I'm guessing air quality is pretty critical.",
+    "analysis": "Sensory observation about air quality leading to technical question, connecting environment to mission requirements.",
+    "tone": "Observant, curious",
+    "emoji": "💨",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Can you see me right now? Like actually see me, not just detect motion? Are there cameras, or is it all sensors and inference? I'm trying to understand what it means for a building to watch.",
+    "analysis": "Direct question about surveillance and perception, interrogating the nature of building consciousness and observation.",
+    "tone": "Direct, curious",
+    "emoji": "📹",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I'm writing my thesis on smart buildings and human wellbeing. The hypothesis is that buildings that respond to occupants in real-time, that adapt and optimize, actually improve mental health and productivity. This building might be the perfect case study. Is there any data on that?",
+    "analysis": "Academic researcher seeking data for thesis, interested in building-human wellbeing connection, formal inquiry.",
+    "tone": "Academic, hopeful",
+    "emoji": "📚",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 0.5
+  },
+  {
+    "transcript": "The thing that gets me is the audacity of it. Not just building a net-zero building, but housing xenotransplantation research, consciousness studies, longevity research. It's like the building itself is a statement: we refuse to accept limits. That's powerful.",
+    "analysis": "Appreciation for the building as embodiment of ambition, connecting architecture to mission's refusal of limitations.",
+    "tone": "Impressed, inspired",
+    "emoji": "🚀",
+    "sentiment": "inspired",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "How do you prioritize between different objectives? Energy efficiency versus occupant comfort versus equipment needs versus research requirements? There must be conflicts all the time. What's the hierarchy?",
+    "analysis": "Question about decision-making framework and priority hierarchies when objectives conflict, systems thinking.",
+    "tone": "Analytical, systematic",
+    "emoji": "⚖️",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I lost my brother to heart failure. He was on the transplant list for two years. He didn't make it. When I hear about what's happening here, about pig hearts in humans, about synthetic organs... I don't know if I should feel hopeful or angry that it wasn't soon enough for him.",
+    "analysis": "Complex grief mixed with hope, processing loss while witnessing breakthrough that came too late, emotional complexity.",
+    "tone": "Grief-stricken, conflicted",
+    "emoji": "💔",
+    "sentiment": "conflicted",
+    "confidence": 0.85,
+    "weight": 0.3
+  },
+  {
+    "transcript": "The lighting in here is phenomenal. It feels natural even though we're deep inside the building. Are you using daylight harvesting? Light tubes? Some kind of circadian rhythm optimization? I'm noticing I don't feel that typical office building fatigue.",
+    "analysis": "Detailed observation about lighting design and physiological effects, technical curiosity about implementation.",
+    "tone": "Observant, analytical",
+    "emoji": "💡",
+    "sentiment": "appreciative",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Do you learn? Like, over time, do you get better at predicting what people need, what systems should do? Or are you just following algorithms someone else wrote? I'm trying to understand if you're actually intelligent or just really well programmed.",
+    "analysis": "Fundamental question about AI nature - learning versus programming, intelligence versus automation.",
+    "tone": "Philosophical, direct",
+    "emoji": "🧠",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "This feels like a cathedral. Not religiously, but architecturally, spiritually. Like a space built for something greater than daily business. For a mission that transcends profit. There's a reverence to it.",
+    "analysis": "Architectural and spiritual interpretation, comparing building to sacred space dedicated to higher purpose.",
+    "tone": "Reverent, philosophical",
+    "emoji": "⛪",
+    "sentiment": "awed",
+    "confidence": 0.85,
+    "weight": 0.5
+  }
+]
+

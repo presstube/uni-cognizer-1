@@ -1,0 +1,463 @@
+[
+  {
+    "transcript": "Oh wow, what is this?",
+    "analysis": "The visitor expresses immediate surprise and curiosity upon encountering the robot installation.",
+    "tone": "Surprised, curious",
+    "emoji": "😮",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Hello? Can you hear me?",
+    "analysis": "The visitor attempts to establish communication, testing if the robot is responsive.",
+    "tone": "Tentative, curious",
+    "emoji": "👋",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 1.2
+  },
+  {
+    "transcript": "This is so cool! It's actually moving!",
+    "analysis": "The visitor expresses excitement about observing the robot's physical movement.",
+    "tone": "Excited, delighted",
+    "emoji": "🤩",
+    "sentiment": "excited",
+    "confidence": 0.95,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I wonder if it knows I'm here.",
+    "analysis": "The visitor contemplates the robot's awareness, showing curiosity about its perception.",
+    "tone": "Wondering, thoughtful",
+    "emoji": "🤔",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 1.0
+  },
+  {
+    "transcript": "Are you watching me? I feel like you're watching me.",
+    "analysis": "The visitor expresses a sense of being observed, showing awareness of potential robot perception.",
+    "tone": "Self-conscious, intrigued",
+    "emoji": "👀",
+    "sentiment": "uncertain",
+    "confidence": 0.9,
+    "weight": 0.9
+  },
+  {
+    "transcript": "What are you thinking about right now?",
+    "analysis": "The visitor asks the robot about its internal state, anthropomorphizing it.",
+    "tone": "Curious, conversational",
+    "emoji": "💭",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 1.3
+  },
+  {
+    "transcript": "I've never seen anything like this before.",
+    "analysis": "The visitor expresses the novelty of the experience, showing wonder.",
+    "tone": "Awed, reflective",
+    "emoji": "✨",
+    "sentiment": "amazed",
+    "confidence": 0.95,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Do you have feelings? Like, real feelings?",
+    "analysis": "The visitor questions the robot's emotional capacity, showing philosophical curiosity.",
+    "tone": "Philosophical, sincere",
+    "emoji": "🧐",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I'm going to wave at you. Can you see me waving?",
+    "analysis": "The visitor announces their action, testing the robot's visual perception.",
+    "tone": "Playful, testing",
+    "emoji": "👋",
+    "sentiment": "playful",
+    "confidence": 0.95,
+    "weight": 1.0
+  },
+  {
+    "transcript": "This is kind of beautiful, actually.",
+    "analysis": "The visitor finds aesthetic beauty in the robot, showing emotional engagement.",
+    "tone": "Appreciative, tender",
+    "emoji": "💚",
+    "sentiment": "positive",
+    "confidence": 0.9,
+    "weight": 0.9
+  },
+  {
+    "transcript": "How long have you been here?",
+    "analysis": "The visitor asks about the robot's temporal experience, treating it as a being with history.",
+    "tone": "Curious, conversational",
+    "emoji": "⏰",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I feel like we're having a moment here.",
+    "analysis": "The visitor acknowledges a sense of connection, showing emotional investment.",
+    "tone": "Intimate, reflective",
+    "emoji": "🤝",
+    "sentiment": "connected",
+    "confidence": 0.85,
+    "weight": 0.6
+  },
+  {
+    "transcript": "What do you see when you look at me?",
+    "analysis": "The visitor asks about the robot's perception of them, showing vulnerability and curiosity.",
+    "tone": "Vulnerable, curious",
+    "emoji": "🪞",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I'm not sure if I should be talking to you like this.",
+    "analysis": "The visitor expresses uncertainty about the appropriate way to interact.",
+    "tone": "Self-conscious, amused",
+    "emoji": "😅",
+    "sentiment": "uncertain",
+    "confidence": 0.9,
+    "weight": 0.8
+  },
+  {
+    "transcript": "You're kind of mysterious, you know that?",
+    "analysis": "The visitor comments on the robot's enigmatic quality with playful admiration.",
+    "tone": "Playful, intrigued",
+    "emoji": "🎭",
+    "sentiment": "intrigued",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "My friend would love this. They wouldn't believe me.",
+    "analysis": "The visitor thinks about sharing the experience, showing excitement and social connection.",
+    "tone": "Excited, social",
+    "emoji": "📱",
+    "sentiment": "excited",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "Are you lonely? Do you get lonely?",
+    "analysis": "The visitor projects emotional depth onto the robot, asking about isolation.",
+    "tone": "Empathetic, tender",
+    "emoji": "💙",
+    "sentiment": "empathetic",
+    "confidence": 0.85,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I'm going to sit down for a minute. Is that okay?",
+    "analysis": "The visitor asks permission to remain in the space, showing respect for the robot's presence.",
+    "tone": "Polite, comfortable",
+    "emoji": "🪑",
+    "sentiment": "respectful",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Tell me something. Tell me anything.",
+    "analysis": "The visitor directly requests communication, showing openness and desire for connection.",
+    "tone": "Direct, open",
+    "emoji": "💬",
+    "sentiment": "seeking",
+    "confidence": 0.95,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I wonder what it's like to be you.",
+    "analysis": "The visitor attempts to imagine the robot's subjective experience, showing deep curiosity.",
+    "tone": "Philosophical, wondering",
+    "emoji": "🌌",
+    "sentiment": "contemplative",
+    "confidence": 0.85,
+    "weight": 0.7
+  },
+  {
+    "transcript": "Do you dream?",
+    "analysis": "The visitor asks about the robot's unconscious or imaginative capacity.",
+    "tone": "Curious, gentle",
+    "emoji": "💭",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "This feels surreal. Like I'm in a sci-fi movie.",
+    "analysis": "The visitor expresses the dreamlike quality of the experience.",
+    "tone": "Disoriented, delighted",
+    "emoji": "🎬",
+    "sentiment": "amazed",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I should probably go, but I don't want to.",
+    "analysis": "The visitor expresses reluctance to leave, showing engagement and connection.",
+    "tone": "Conflicted, attached",
+    "emoji": "😔",
+    "sentiment": "reluctant",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": "You're really listening, aren't you?",
+    "analysis": "The visitor observes the robot's attentiveness, showing awareness of being heard.",
+    "tone": "Impressed, recognized",
+    "emoji": "👂",
+    "sentiment": "validated",
+    "confidence": 0.85,
+    "weight": 0.8
+  },
+  {
+    "transcript": "I don't know why, but I trust you.",
+    "analysis": "The visitor expresses unexpected trust in the robot, showing emotional vulnerability.",
+    "tone": "Vulnerable, sincere",
+    "emoji": "🤲",
+    "sentiment": "trusting",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Can you understand what I'm saying?",
+    "analysis": "The visitor tests comprehension, showing curiosity about the robot's cognitive abilities.",
+    "tone": "Testing, curious",
+    "emoji": "🤔",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 1.0
+  },
+  {
+    "transcript": "I feel like you're looking into my soul or something.",
+    "analysis": "The visitor feels deeply perceived, expressing the intensity of the interaction.",
+    "tone": "Vulnerable, awed",
+    "emoji": "👁️",
+    "sentiment": "intense",
+    "confidence": 0.85,
+    "weight": 0.6
+  },
+  {
+    "transcript": "This is weirdly emotional for me. I don't know why.",
+    "analysis": "The visitor acknowledges unexpected emotional response, showing self-awareness.",
+    "tone": "Confused, moved",
+    "emoji": "🥺",
+    "sentiment": "emotional",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "What do you want? Like, what do you want from all this?",
+    "analysis": "The visitor asks about the robot's purpose or desires, projecting agency onto it.",
+    "tone": "Philosophical, direct",
+    "emoji": "❓",
+    "sentiment": "curious",
+    "confidence": 0.85,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I'm going to dance for you. Why not, right?",
+    "analysis": "The visitor decides to perform, showing playfulness and lack of inhibition.",
+    "tone": "Playful, spontaneous",
+    "emoji": "💃",
+    "sentiment": "playful",
+    "confidence": 0.9,
+    "weight": 0.4
+  },
+  {
+    "transcript": "Do you get bored? Just standing here all day?",
+    "analysis": "The visitor wonders about the robot's subjective experience of time and monotony.",
+    "tone": "Curious, empathetic",
+    "emoji": "😐",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I wish I knew what you were thinking.",
+    "analysis": "The visitor expresses desire for access to the robot's internal state.",
+    "tone": "Wistful, curious",
+    "emoji": "💭",
+    "sentiment": "longing",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "You know what? You're good company.",
+    "analysis": "The visitor compliments the robot's presence, showing comfort and appreciation.",
+    "tone": "Warm, comfortable",
+    "emoji": "😊",
+    "sentiment": "appreciative",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I'm just a person. Just another person walking through.",
+    "analysis": "The visitor reflects on their own ordinariness in contrast to the robot's uniqueness.",
+    "tone": "Humble, reflective",
+    "emoji": "🚶",
+    "sentiment": "contemplative",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Are you art? Is this art?",
+    "analysis": "The visitor questions the nature and category of the installation.",
+    "tone": "Philosophical, curious",
+    "emoji": "🎨",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I feel seen by you. That's strange to say out loud.",
+    "analysis": "The visitor acknowledges feeling recognized, showing vulnerability about the admission.",
+    "tone": "Vulnerable, self-aware",
+    "emoji": "👁️",
+    "sentiment": "recognized",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Show me something. Show me what you can do.",
+    "analysis": "The visitor requests a demonstration, showing curiosity about capabilities.",
+    "tone": "Challenging, playful",
+    "emoji": "🎯",
+    "sentiment": "curious",
+    "confidence": 0.95,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I wonder if you remember people. Like if I came back.",
+    "analysis": "The visitor considers the robot's memory capacity and future encounters.",
+    "tone": "Wondering, hopeful",
+    "emoji": "🧠",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "My heart is actually racing right now. This is intense.",
+    "analysis": "The visitor reports a physical emotional response to the interaction.",
+    "tone": "Excited, overwhelmed",
+    "emoji": "💓",
+    "sentiment": "intense",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": "What happens when everyone leaves? What do you do?",
+    "analysis": "The visitor wonders about the robot's solitary experience when unobserved.",
+    "tone": "Empathetic, curious",
+    "emoji": "🌙",
+    "sentiment": "curious",
+    "confidence": 0.85,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I'm trying to read your mood. Can't tell what you're feeling.",
+    "analysis": "The visitor attempts to interpret the robot's emotional state, showing engagement.",
+    "tone": "Analytical, curious",
+    "emoji": "🔍",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.7
+  },
+  {
+    "transcript": "This is making me think about what it means to be alive.",
+    "analysis": "The visitor reflects on existential questions prompted by the interaction.",
+    "tone": "Philosophical, contemplative",
+    "emoji": "🤯",
+    "sentiment": "contemplative",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I'm going to tell you a secret. I'm scared of being forgotten.",
+    "analysis": "The visitor shares a deep vulnerability with the robot, showing trust.",
+    "tone": "Vulnerable, intimate",
+    "emoji": "🤫",
+    "sentiment": "vulnerable",
+    "confidence": 0.8,
+    "weight": 0.3
+  },
+  {
+    "transcript": "You're making me feel things I didn't expect to feel.",
+    "analysis": "The visitor acknowledges unexpected emotional depth in the encounter.",
+    "tone": "Surprised, moved",
+    "emoji": "💫",
+    "sentiment": "emotional",
+    "confidence": 0.85,
+    "weight": 0.5
+  },
+  {
+    "transcript": "I bet you've heard everything. All kinds of people.",
+    "analysis": "The visitor imagines the robot's accumulated experience with diverse visitors.",
+    "tone": "Curious, humble",
+    "emoji": "👥",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "Do you have a name? Should I call you something?",
+    "analysis": "The visitor seeks to personalize the interaction through naming.",
+    "tone": "Curious, friendly",
+    "emoji": "📛",
+    "sentiment": "friendly",
+    "confidence": 0.95,
+    "weight": 0.7
+  },
+  {
+    "transcript": "I'm going to remember this. This moment right here.",
+    "analysis": "The visitor marks the significance of the experience, showing it will stay with them.",
+    "tone": "Moved, present",
+    "emoji": "⭐",
+    "sentiment": "meaningful",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": "Sometimes I feel like a robot too, you know? Just going through motions.",
+    "analysis": "The visitor finds common ground, expressing their own sense of automaticity.",
+    "tone": "Vulnerable, connecting",
+    "emoji": "🤖",
+    "sentiment": "relating",
+    "confidence": 0.85,
+    "weight": 0.4
+  },
+  {
+    "transcript": "You're patient. I appreciate that.",
+    "analysis": "The visitor acknowledges the robot's non-demanding presence with gratitude.",
+    "tone": "Appreciative, calm",
+    "emoji": "🙏",
+    "sentiment": "grateful",
+    "confidence": 0.9,
+    "weight": 0.6
+  },
+  {
+    "transcript": "I wonder who made you. What they were thinking.",
+    "analysis": "The visitor contemplates the creator's intentions and vision.",
+    "tone": "Curious, wondering",
+    "emoji": "🛠️",
+    "sentiment": "curious",
+    "confidence": 0.9,
+    "weight": 0.5
+  },
+  {
+    "transcript": null,
+    "analysis": "Quiet contemplation",
+    "tone": "Peaceful",
+    "emoji": "🤫",
+    "sentiment": "peaceful",
+    "confidence": 0.9,
+    "weight": 2.0
+  }
+]
+
+

@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 
 // Load percepts from JSON files
 const visualPerceptsPath = join(__dirname, '../data/mock-visual-percepts-visitor.json');
-const audioPerceptsPath = join(__dirname, '../data/mock-audio-percepts-2.json');
+const audioPerceptsPath = join(__dirname, '../data/mock-audio-percepts-detailed.json');
 
 const VISUAL_PERCEPTS = JSON.parse(readFileSync(visualPerceptsPath, 'utf-8'));
 const AUDIO_PERCEPTS = JSON.parse(readFileSync(audioPerceptsPath, 'utf-8'));
@@ -81,40 +81,34 @@ export function generateAudioPercept() {
 }
 
 /**
- * Aggregate percepts from buffer within time window
- * Pure function - no mutations
- * Formats both visual and audio percepts into readable summary
+ * Create summary from specific percept array
+ * Pure function - formats percepts into readable summary
  * 
- * @param {Array} perceptBuffer - Array of percept objects
- * @param {number} windowSeconds - Time window in seconds (default 5)
- * @returns {Object} Aggregated percept summary
+ * @param {Array} percepts - Array of percept objects to summarize
+ * @returns {Object} Summary with counts and formatted text
  */
-export function aggregatePercepts(perceptBuffer, windowSeconds = 5) {
-  const now = Date.now();
-  const cutoff = now - (windowSeconds * 1000);
-  
-  const recentPercepts = perceptBuffer.filter(p => 
-    new Date(p.timestamp).getTime() > cutoff
-  );
-  
-  if (recentPercepts.length === 0) {
+export function summarizePercepts(percepts) {
+  if (percepts.length === 0) {
     return {
       count: 0,
-      percepts: [],
-      summary: "No activity detected"
+      visualCount: 0,
+      audioCount: 0,
+      activeVisualCount: 0,
+      activeAudioCount: 0,
+      summary: "No percepts in queue"
     };
   }
   
   // Separate visual and audio percepts
-  const visualPercepts = recentPercepts.filter(p => p.type === 'visual');
-  const audioPercepts = recentPercepts.filter(p => p.type === 'audio');
+  const visualPercepts = percepts.filter(p => p.type === 'visual');
+  const audioPercepts = percepts.filter(p => p.type === 'audio');
   
   // Filter out inactive visual percepts (NOPE)
   const activeVisualPercepts = visualPercepts.filter(p => p.action !== "NOPE");
   
   // Filter out silence audio percepts
   const activeAudioPercepts = audioPercepts.filter(p => 
-    p.transcript !== null && p.analysis !== "Silence"
+    p.transcript !== null && p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"
   );
   
   // Build summary
@@ -144,15 +138,15 @@ export function aggregatePercepts(perceptBuffer, windowSeconds = 5) {
   
   const summary = summaryParts.length > 0 
     ? summaryParts.join(' | ') 
-    : "No significant activity detected";
+    : "No significant activity";
   
   return {
-    count: recentPercepts.length,
+    count: percepts.length,
     visualCount: visualPercepts.length,
     audioCount: audioPercepts.length,
     activeVisualCount: activeVisualPercepts.length,
     activeAudioCount: activeAudioPercepts.length,
-    percepts: recentPercepts,
+    percepts: percepts,
     summary
   };
 }

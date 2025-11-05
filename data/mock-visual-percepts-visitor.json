@@ -1,0 +1,454 @@
+[
+  {
+    "action": "Entering the space slowly",
+    "emoji": "🚶",
+    "weight": 0.3
+  },
+  {
+    "action": "Approaching cautiously",
+    "emoji": "👣",
+    "weight": 0.5
+  },
+  {
+    "action": "Stopping to observe",
+    "emoji": "🧍",
+    "weight": 1.0
+  },
+  {
+    "action": "Taking a step closer",
+    "emoji": "➡️",
+    "weight": 0.8
+  },
+  {
+    "action": "Waving at robot",
+    "emoji": "👋",
+    "weight": 1.2
+  },
+  {
+    "action": "Waving both hands",
+    "emoji": "🙌",
+    "weight": 0.6
+  },
+  {
+    "action": "Leaning in to look closely",
+    "emoji": "🧐",
+    "weight": 1.0
+  },
+  {
+    "action": "Leaning back, observing",
+    "emoji": "🤔",
+    "weight": 1.2
+  },
+  {
+    "action": "Tilting head curiously",
+    "emoji": "🤨",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking up at robot",
+    "emoji": "⬆️",
+    "weight": 0.9
+  },
+  {
+    "action": "Looking around the installation",
+    "emoji": "👀",
+    "weight": 0.8
+  },
+  {
+    "action": "Circling around to see from different angle",
+    "emoji": "🔄",
+    "weight": 0.5
+  },
+  {
+    "action": "Sitting down on floor",
+    "emoji": "🧘",
+    "weight": 0.7
+  },
+  {
+    "action": "Sitting cross-legged, watching",
+    "emoji": "🪑",
+    "weight": 0.8
+  },
+  {
+    "action": "Standing up from sitting",
+    "emoji": "🧍",
+    "weight": 0.6
+  },
+  {
+    "action": "Pointing at robot",
+    "emoji": "👉",
+    "weight": 0.9
+  },
+  {
+    "action": "Pointing at own chest",
+    "emoji": "👈",
+    "weight": 0.5
+  },
+  {
+    "action": "Gesturing expressively while talking",
+    "emoji": "🙋",
+    "weight": 1.5
+  },
+  {
+    "action": "Gesturing with open hands",
+    "emoji": "🤲",
+    "weight": 0.8
+  },
+  {
+    "action": "Hands clasped together",
+    "emoji": "🙏",
+    "weight": 0.6
+  },
+  {
+    "action": "Arms crossed, contemplating",
+    "emoji": "🤔",
+    "weight": 1.0
+  },
+  {
+    "action": "Hand on chin, thinking",
+    "emoji": "🧐",
+    "weight": 1.0
+  },
+  {
+    "action": "Hands on hips, confident",
+    "emoji": "🧍",
+    "weight": 0.6
+  },
+  {
+    "action": "Reaching hand toward robot",
+    "emoji": "🤚",
+    "weight": 0.7
+  },
+  {
+    "action": "Touching or almost touching robot",
+    "emoji": "👆",
+    "weight": 0.5
+  },
+  {
+    "action": "Pulling hand back gently",
+    "emoji": "✋",
+    "weight": 0.4
+  },
+  {
+    "action": "Smiling broadly",
+    "emoji": "😊",
+    "weight": 0.8
+  },
+  {
+    "action": "Laughing",
+    "emoji": "😄",
+    "weight": 0.6
+  },
+  {
+    "action": "Looking surprised, mouth open",
+    "emoji": "😮",
+    "weight": 0.5
+  },
+  {
+    "action": "Looking moved, emotional",
+    "emoji": "🥺",
+    "weight": 0.6
+  },
+  {
+    "action": "Wiping eyes or face",
+    "emoji": "😢",
+    "weight": 0.3
+  },
+  {
+    "action": "Covering mouth in surprise",
+    "emoji": "🤭",
+    "weight": 0.4
+  },
+  {
+    "action": "Hand over heart",
+    "emoji": "❤️",
+    "weight": 0.5
+  },
+  {
+    "action": "Taking out phone to photograph",
+    "emoji": "📱",
+    "weight": 0.7
+  },
+  {
+    "action": "Holding phone up to take photo",
+    "emoji": "📸",
+    "weight": 0.6
+  },
+  {
+    "action": "Putting phone away",
+    "emoji": "📱",
+    "weight": 0.4
+  },
+  {
+    "action": "Looking at phone briefly",
+    "emoji": "📱",
+    "weight": 0.5
+  },
+  {
+    "action": "Dancing playfully",
+    "emoji": "💃",
+    "weight": 0.4
+  },
+  {
+    "action": "Swaying gently",
+    "emoji": "🌊",
+    "weight": 0.5
+  },
+  {
+    "action": "Taking a small bow",
+    "emoji": "🙇",
+    "weight": 0.3
+  },
+  {
+    "action": "Pacing slowly back and forth",
+    "emoji": "🚶",
+    "weight": 0.8
+  },
+  {
+    "action": "Pacing in thought",
+    "emoji": "🤔",
+    "weight": 0.7
+  },
+  {
+    "action": "Standing very still, staring",
+    "emoji": "🗿",
+    "weight": 1.0
+  },
+  {
+    "action": "Nodding slowly",
+    "emoji": "😌",
+    "weight": 0.8
+  },
+  {
+    "action": "Shaking head slightly",
+    "emoji": "🙅",
+    "weight": 0.5
+  },
+  {
+    "action": "Shrugging",
+    "emoji": "🤷",
+    "weight": 0.6
+  },
+  {
+    "action": "Looking down at floor",
+    "emoji": "⬇️",
+    "weight": 0.8
+  },
+  {
+    "action": "Looking off to the side, processing",
+    "emoji": "➡️",
+    "weight": 1.0
+  },
+  {
+    "action": "Staring intently at robot",
+    "emoji": "👁️",
+    "weight": 1.2
+  },
+  {
+    "action": "Making eye contact with robot",
+    "emoji": "👀",
+    "weight": 1.0
+  },
+  {
+    "action": "Adjusting posture, settling in",
+    "emoji": "🧘",
+    "weight": 0.6
+  },
+  {
+    "action": "Stretching arms up",
+    "emoji": "🙆",
+    "weight": 0.5
+  },
+  {
+    "action": "Running hand through hair",
+    "emoji": "💆",
+    "weight": 0.7
+  },
+  {
+    "action": "Rubbing neck, thinking",
+    "emoji": "🤔",
+    "weight": 0.6
+  },
+  {
+    "action": "Hugging self",
+    "emoji": "🤗",
+    "weight": 0.4
+  },
+  {
+    "action": "Kneeling down to robot level",
+    "emoji": "🧎",
+    "weight": 0.4
+  },
+  {
+    "action": "Crouching to observe closely",
+    "emoji": "🔍",
+    "weight": 0.5
+  },
+  {
+    "action": "Getting up from kneeling",
+    "emoji": "🧍",
+    "weight": 0.4
+  },
+  {
+    "action": "Backing away a step",
+    "emoji": "⬅️",
+    "weight": 0.6
+  },
+  {
+    "action": "Walking around to see back",
+    "emoji": "🔄",
+    "weight": 0.4
+  },
+  {
+    "action": "Returning to front position",
+    "emoji": "↩️",
+    "weight": 0.5
+  },
+  {
+    "action": "Giving thumbs up",
+    "emoji": "👍",
+    "weight": 0.5
+  },
+  {
+    "action": "Making peace sign",
+    "emoji": "✌️",
+    "weight": 0.3
+  },
+  {
+    "action": "Making heart shape with hands",
+    "emoji": "💗",
+    "weight": 0.3
+  },
+  {
+    "action": "Looking at watch",
+    "emoji": "⌚",
+    "weight": 0.5
+  },
+  {
+    "action": "Glancing toward exit",
+    "emoji": "🚪",
+    "weight": 0.4
+  },
+  {
+    "action": "Looking back at robot after glancing away",
+    "emoji": "🔙",
+    "weight": 0.6
+  },
+  {
+    "action": "Settling into comfortable stance",
+    "emoji": "😌",
+    "weight": 0.8
+  },
+  {
+    "action": "Shifting weight, restless",
+    "emoji": "🦵",
+    "weight": 0.7
+  },
+  {
+    "action": "Very still, meditative presence",
+    "emoji": "🧘",
+    "weight": 1.2
+  },
+  {
+    "action": "Breathing deeply, centering",
+    "emoji": "🌬️",
+    "weight": 0.5
+  },
+  {
+    "action": "Leaning against wall, relaxed",
+    "emoji": "😌",
+    "weight": 0.5
+  },
+  {
+    "action": "Writing or taking notes",
+    "emoji": "✍️",
+    "weight": 0.3
+  },
+  {
+    "action": "Reading something on wall or placard",
+    "emoji": "📖",
+    "weight": 0.4
+  },
+  {
+    "action": "Looking between placard and robot",
+    "emoji": "↔️",
+    "weight": 0.3
+  },
+  {
+    "action": "Putting hands in pockets",
+    "emoji": "🧍",
+    "weight": 0.8
+  },
+  {
+    "action": "Taking hands out of pockets",
+    "emoji": "🙌",
+    "weight": 0.5
+  },
+  {
+    "action": "Fidgeting with hands",
+    "emoji": "🤲",
+    "weight": 0.7
+  },
+  {
+    "action": "Biting lip, uncertain",
+    "emoji": "😬",
+    "weight": 0.4
+  },
+  {
+    "action": "Slight smile forming",
+    "emoji": "🙂",
+    "weight": 0.9
+  },
+  {
+    "action": "Grinning widely",
+    "emoji": "😁",
+    "weight": 0.5
+  },
+  {
+    "action": "Looking contemplative, serious",
+    "emoji": "😐",
+    "weight": 1.0
+  },
+  {
+    "action": "Looking awestruck",
+    "emoji": "😲",
+    "weight": 0.4
+  },
+  {
+    "action": "Starting to leave, then hesitating",
+    "emoji": "🚶",
+    "weight": 0.4
+  },
+  {
+    "action": "Staying put, deciding not to leave",
+    "emoji": "🧍",
+    "weight": 0.5
+  },
+  {
+    "action": "Slowly backing away",
+    "emoji": "⬅️",
+    "weight": 0.4
+  },
+  {
+    "action": "Exiting the space",
+    "emoji": "🚪",
+    "weight": 0.3
+  },
+  {
+    "action": "Final wave goodbye",
+    "emoji": "👋",
+    "weight": 0.4
+  },
+  {
+    "action": "Looking back one more time",
+    "emoji": "👀",
+    "weight": 0.4
+  },
+  {
+    "action": "NOPE",
+    "emoji": "😐",
+    "weight": 2.0
+  }
+]
+
+

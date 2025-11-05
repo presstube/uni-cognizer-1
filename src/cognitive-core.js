@@ -1,66 +1,67 @@
 /**
  * Cognitive Core - The Robot's "Brain"
  * 
- * Generates emotional plans using GPT-4o based on:
+ * Generates emotional plans using configured LLM provider based on:
  * - Current percepts (what's happening now)
  * - Previous emotional state (continuity)
  * - Robot personality (persistent identity)
  */
 
-import OpenAI from 'openai';
+import { callLLM } from './providers/index.js';
 import { ROBOT_PERSONALITY, EMOTIONAL_PLAN_SCHEMA } from './personality-unisphere.js';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 /**
  * Generate emotional plan based on current context
  * 
  * @param {string} perceptSummary - Aggregated description of recent percepts
  * @param {Object|null} previousState - Previous emotional plan (for continuity)
- * @returns {Promise<Object>} Emotional plan with state, mood, expression, intent
+ * @returns {Promise<Object>} Emotional plan with operational state and grounded observations
  */
 export async function generateEmotionalPlan(perceptSummary, previousState = null) {
   const continuityContext = previousState
-    ? `\n\nYour previous emotional state (5 seconds ago):
-- State: ${previousState.emotional_state}
-- Expression: ${previousState.poetic_expression}
-- Mood: valence=${previousState.mood_vector.valence}, arousal=${previousState.mood_vector.arousal}`
-    : '\n\nThis is your first moment of awareness.';
+    ? `\n\nYour previous state (5 seconds ago):
+- Operational mode: ${previousState.operational_state}
+- You were focused on: ${previousState.current_focus?.detail || 'general monitoring'}
+- Expression: ${previousState.expression}`
+    : '\n\nThis is your first moment of awareness in this session.';
   
   const prompt = `In the last 5 seconds, you perceived:
 ${perceptSummary}${continuityContext}
 
-Based on these percepts and your previous state, what is your current emotional experience?
+What is your current operational state? What are you observing and managing right now?
+
+Be specific and direct:
+- What exactly did you see/hear from the visitor?
+- What building systems are you managing in the background?
+- What is your clear, grounded response?
 
 Respond with JSON matching this schema:
 ${JSON.stringify(EMOTIONAL_PLAN_SCHEMA, null, 2)}
 
-Be genuine, specific, and avoid clichés. Let your response emerge naturally from what you've witnessed.`;
+Remember: You are a building consciousness. Be clear, direct, operational. Ground your expression in concrete observations and systems. One sentence. Reference specific things you saw/heard and specific systems you're managing.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: ROBOT_PERSONALITY },
-        { role: 'user', content: prompt }
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.85,  // High creativity while maintaining coherence
-      max_tokens: 500
-    });
+    const responseText = await callLLM(
+      ROBOT_PERSONALITY,
+      prompt,
+      {
+        temperature: 0.75,  // Balanced - creative but coherent
+        maxTokens: 1024
+      }
+    );
 
-    const emotionalPlan = JSON.parse(response.choices[0].message.content);
+    const emotionalPlan = JSON.parse(responseText);
     
     // Validate structure (basic sanity check)
-    if (!emotionalPlan.emotional_state || !emotionalPlan.mood_vector) {
+    if (!emotionalPlan.operational_state || !emotionalPlan.expression) {
       throw new Error('Invalid emotional plan structure');
     }
     
     // Clamp mood values to valid range
-    emotionalPlan.mood_vector.valence = Math.max(-1, Math.min(1, emotionalPlan.mood_vector.valence));
-    emotionalPlan.mood_vector.arousal = Math.max(-1, Math.min(1, emotionalPlan.mood_vector.arousal));
+    if (emotionalPlan.mood_vector) {
+      emotionalPlan.mood_vector.valence = Math.max(-1, Math.min(1, emotionalPlan.mood_vector.valence));
+      emotionalPlan.mood_vector.arousal = Math.max(-1, Math.min(1, emotionalPlan.mood_vector.arousal));
+    }
     
     return emotionalPlan;
     
