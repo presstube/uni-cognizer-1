@@ -1,5 +1,5 @@
 import { callLLM } from './providers/index.js';
-import { ROBOT_PERSONALITY } from './personality-unisphere.js';
+import { ROBOT_PERSONALITY } from './personality-uni-v2.js';
 
 const cognitiveHistory = {};
 let cycleIndex = 0;

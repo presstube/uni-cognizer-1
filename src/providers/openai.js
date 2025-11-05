@@ -13,12 +13,11 @@ const openai = new OpenAI({
 /**
  * Call OpenAI's API
  * 
- * @param {string} systemPrompt - System/personality prompt
- * @param {string} userPrompt - User prompt with percepts and instructions
+ * @param {string} prompt - Complete prompt (personality + percepts + instructions)
  * @param {Object} options - Configuration options
- * @returns {Promise<string>} Response text (JSON string)
+ * @returns {Promise<string>} Response text
  */
-export async function callLLM(systemPrompt, userPrompt, options = {}) {
+export async function callLLM(prompt, options = {}) {
   const {
     model = 'gpt-4o',
     temperature = 0.85,
@@ -29,10 +28,8 @@ export async function callLLM(systemPrompt, userPrompt, options = {}) {
     const response = await openai.chat.completions.create({
       model,
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+        { role: 'user', content: prompt }
       ],
-      response_format: { type: 'json_object' },  // Native JSON mode
       temperature,
       max_tokens: maxTokens
     });
