@@ -66,7 +66,14 @@ setInterval(() => {
   
   // Only log active percepts (not "NOPE")
   if (percept.action !== "NOPE") {
-    console.log(`   👁️  Visual: ${percept.emoji} ${percept.action}`);
+    const timestamp = new Date(percept.timestamp).toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    });
+    console.log(`[${timestamp}] 👁️  CAM: ${percept.emoji} ${percept.action}`);
   }
 }, VISUAL_PERCEPT_INTERVAL_MS);
 
@@ -84,12 +91,20 @@ function scheduleNextAudioPercept() {
     const percept = generateAudioPercept();
     perceptBuffer.push(percept);
     
+    const timestamp = new Date(percept.timestamp).toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    });
+    
     // Only log meaningful audio (not silence)
     if (percept.transcript) {
-      console.log(`\n   🎤 Audio: ${percept.emoji}`);
+      console.log(`\n[${timestamp}] 🎤 MIC: ${percept.emoji}`);
       console.log(`      "${percept.transcript}"`);
     } else if (percept.analysis !== "Silence" && percept.analysis !== "Silence - visitor observing quietly") {
-      console.log(`\n   🎤 Audio: ${percept.emoji} ${percept.analysis}`);
+      console.log(`\n[${timestamp}] 🎤 MIC: ${percept.emoji} ${percept.analysis}`);
     }
     
     // Schedule the next audio percept
@@ -100,10 +115,17 @@ function scheduleNextAudioPercept() {
 // Start audio percept loop
 scheduleNextAudioPercept();
 
+/*
+ * ============================================================================
+ * COGNITIVE LOOP - CURRENTLY DISABLED
+ * ============================================================================
+ * Uncomment this section to enable the full cognitive processing loop
+ * 
 /**
  * Core Cognitive Loop
  * Runs every 5 seconds - the robot's deliberative "heartbeat"
- */
+ *\/
+/*
 setInterval(async () => {
   cycleCount++;
   
@@ -148,17 +170,21 @@ setInterval(async () => {
   }
   
 }, COGNITIVE_CYCLE_MS);
+*/
+
+// ============================================================================
 
 // Startup message
 console.log('╔═══════════════════════════════════════════════════════════╗');
-console.log('║         MVP Cognizer-1: Core Cognitive Loop              ║');
+console.log('║         PERCEPT GENERATOR TEST MODE                      ║');
+console.log('║         Simulating Gemini Live Camera + Microphone       ║');
 console.log('╚═══════════════════════════════════════════════════════════╝');
 console.log('');
-console.log('🚀 Cognitive loop started');
-console.log(`⏰ Cycle interval: ${COGNITIVE_CYCLE_MS}ms (${COGNITIVE_CYCLE_MS/1000}s)`);
-console.log(`👁️  Visual percept interval: ${VISUAL_PERCEPT_INTERVAL_MS}ms (every ${VISUAL_PERCEPT_INTERVAL_MS/1000}s)`);
-console.log(`🎤 Audio percept interval: ${AUDIO_PERCEPT_MIN_MS}-${AUDIO_PERCEPT_MAX_MS}ms (every ${AUDIO_PERCEPT_MIN_MS/1000}-${AUDIO_PERCEPT_MAX_MS/1000}s, random)`);
+console.log('👁️  CAM:  Visual percepts every 3 seconds');
+console.log('🎤 MIC:  Audio percepts every 7-10 seconds (random)');
 console.log('');
 console.log('Press Ctrl+C to stop');
+console.log('');
+console.log('─'.repeat(70));
 console.log('');
 
