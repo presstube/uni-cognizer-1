@@ -25,17 +25,15 @@ function timestamp() {
 }
 
 function getPriorMindMoments(depth) {
-  const cycles = Object.keys(cognitiveHistory)
+  return Object.keys(cognitiveHistory)
     .map(Number)
     .sort((a, b) => b - a)
-    .slice(0, depth);
-  
-  return cycles
     .map(c => ({
       cycle: c,
       mindMoment: cognitiveHistory[c].mindMoment
     }))
-    .filter(m => m.mindMoment !== "awaiting");
+    .filter(m => m.mindMoment !== "awaiting")
+    .slice(0, depth);
 }
 
 function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) {
