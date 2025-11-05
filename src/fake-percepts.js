@@ -64,7 +64,9 @@ setInterval(() => {
   visualPerceptsArr.push(percept);
   
   if (percept.action !== "NOPE") {
+    console.log(`${'═'.repeat(50)}`);
     console.log(`[${formatTimestamp()}] 👁️  ${percept.emoji} ${percept.action}`);
+    console.log(`${'═'.repeat(50)}\n`);
   }
 }, 3000);
 
@@ -75,9 +77,13 @@ function scheduleNextAudio() {
     audioPerceptsArr.push(percept);
     
     if (percept.transcript) {
+      console.log(`${'═'.repeat(50)}`);
       console.log(`[${formatTimestamp()}] 🎤 ${percept.emoji} "${percept.transcript.slice(0, 60)}${percept.transcript.length > 60 ? '...' : ''}"`);
+      console.log(`${'═'.repeat(50)}\n`);
     } else if (percept.analysis !== "Silence" && percept.analysis !== "Silence - visitor observing quietly") {
+      console.log(`${'═'.repeat(50)}`);
       console.log(`[${formatTimestamp()}] 🎤 ${percept.emoji} ${percept.analysis}`);
+      console.log(`${'═'.repeat(50)}\n`);
     }
     
     scheduleNextAudio();

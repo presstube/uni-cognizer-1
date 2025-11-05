@@ -1,19 +1,44 @@
 import { dumpPercepts } from './fake-percepts.js';
-import { cognize } from './fake-cog.js';
+import { cognize, onMindMoment, getHistory } from './fake-cog.js';
+
+const DEPTH = 3;
+
+onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) => {
+  console.log(`${'─'.repeat(50)}`);
+  console.log(`📊 HISTORY STATUS`);
+  console.log(`${'─'.repeat(50)}`);
+  const history = getHistory();
+  const completedCycles = Object.keys(history)
+    .map(Number)
+    .filter(c => history[c].mindMoment !== "awaiting");
+  
+  console.log(`Total cycles: ${Object.keys(history).length}`);
+  console.log(`Completed: ${completedCycles.length}`);
+  console.log(`Awaiting: ${Object.keys(history).length - completedCycles.length}`);
+  
+  if (completedCycles.length > 0) {
+    console.log(`\nRecent Mind Moments:`);
+    completedCycles.slice(-3).forEach(c => {
+      console.log(`   #${c}: "${history[c].mindMoment}"`);
+    });
+  }
+  console.log('');
+});
 
 setInterval(() => {
   const { visualPercepts, audioPercepts } = dumpPercepts();
-  cognize(visualPercepts, audioPercepts);
+  cognize(visualPercepts, audioPercepts, DEPTH);
 }, 5000);
 
 console.log('╔═══════════════════════════════════════════════════════════╗');
-console.log('║  FAKE LAND - Timing Architecture Test                    ║');
+console.log('║  FAKE LAND - Mind Moment Architecture                    ║');
 console.log('╚═══════════════════════════════════════════════════════════╝');
 console.log('');
 console.log('👁️  Visual percepts: every 3s');
 console.log('🎤 Audio percepts: every 7-10s (random)');
 console.log('🧠 Cognitive cycles: every 5s');
 console.log('⏱️  Mock LLM latency: 6-8s');
+console.log(`🧵 Context depth: ${DEPTH} prior mind moments`);
 console.log('');
 console.log('Running...\n');
 

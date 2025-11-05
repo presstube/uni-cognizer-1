@@ -1,10 +1,16 @@
 const cognitiveHistory = {};
 let cycleIndex = 0;
+let mindMomentListeners = [];
 
-function mockLLMCall() {
+function mockLLMCall(visualPercepts, audioPercepts, priorMoments) {
   const latency = 6000 + Math.random() * 2000;
   return new Promise((resolve) => {
-    setTimeout(() => resolve("an emotional plan"), latency);
+    setTimeout(() => {
+      const vCount = visualPercepts.filter(p => p.action !== "NOPE").length;
+      const aCount = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly")).length;
+      const moment = `Mind sensing ${vCount}v/${aCount}a with context depth ${priorMoments.length}`;
+      resolve(moment);
+    }, latency);
   });
 }
 
@@ -18,59 +24,82 @@ function timestamp() {
   });
 }
 
-export function cognize(visualPercepts, audioPercepts) {
+function getPriorMindMoments(depth) {
+  const cycles = Object.keys(cognitiveHistory)
+    .map(Number)
+    .sort((a, b) => b - a)
+    .slice(0, depth);
+  
+  return cycles
+    .map(c => ({
+      cycle: c,
+      mindMoment: cognitiveHistory[c].mindMoment
+    }))
+    .filter(m => m.mindMoment !== "awaiting");
+}
+
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) {
+  mindMomentListeners.forEach(listener => {
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments);
+  });
+}
+
+export function onMindMoment(listener) {
+  mindMomentListeners.push(listener);
+}
+
+export function cognize(visualPercepts, audioPercepts, depth = 3) {
   const thisCycle = ++cycleIndex;
   
   cognitiveHistory[thisCycle] = {
     visualPercepts,
     audioPercepts,
-    emotionalPlan: "awaiting"
+    mindMoment: "awaiting"
   };
   
-  console.log(`\n[${timestamp()}] 📤 Cycle ${thisCycle} → LLM`);
-  console.log(`   Visual: ${visualPercepts.length} percepts`);
-  visualPercepts.filter(p => p.action !== "NOPE").forEach(p => {
-    console.log(`      ${p.emoji} ${p.action}`);
+  const priorMoments = getPriorMindMoments(depth);
+  
+  console.log(`${'═'.repeat(50)}`);
+  console.log(`[${timestamp()}] CYCLE ${thisCycle} SENT (depth: ${priorMoments.length})`);
+  console.log(`${'═'.repeat(50)}`);
+  
+  const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
+  const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
+  
+  console.log(`Visual: ${activeVisual.length} percepts`);
+  activeVisual.forEach(p => {
+    console.log(`   ${p.emoji} ${p.action}`);
   });
-  console.log(`   Audio: ${audioPercepts.length} percepts`);
-  audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly")).forEach(p => {
+  
+  console.log(`Audio: ${activeAudio.length} percepts`);
+  activeAudio.forEach(p => {
     if (p.transcript) {
-      console.log(`      ${p.emoji} "${p.transcript.slice(0, 50)}..."`);
+      console.log(`   ${p.emoji} "${p.transcript.slice(0, 50)}..."`);
     } else {
-      console.log(`      ${p.emoji} ${p.analysis}`);
+      console.log(`   ${p.emoji} ${p.analysis}`);
     }
   });
   
-  mockLLMCall().then(emotionalPlan => {
-    cognitiveHistory[thisCycle].emotionalPlan = emotionalPlan;
+  if (priorMoments.length > 0) {
+    console.log(`Prior Context (${priorMoments.length} moments):`);
+    priorMoments.forEach((m, i) => {
+      console.log(`   ${i + 1} cycles ago: "${m.mindMoment}"`);
+    });
+  }
+  console.log('');
+  
+  mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(mindMoment => {
+    cognitiveHistory[thisCycle].mindMoment = mindMoment;
     
-    console.log(`\n[${timestamp()}] 📥 Cycle ${thisCycle} ← LLM`);
     console.log(`${'═'.repeat(50)}`);
-    console.log(`CYCLE ${thisCycle} RESPONSE`);
+    console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
     console.log(`${'═'.repeat(50)}`);
-    console.log(`Visual Percepts Processed:`);
-    const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
-    if (activeVisual.length === 0) {
-      console.log(`   (none)`);
-    } else {
-      activeVisual.forEach(p => console.log(`   ${p.emoji} ${p.action}`));
-    }
-    console.log(`Audio Percepts Processed:`);
-    const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
-    if (activeAudio.length === 0) {
-      console.log(`   (none)`);
-    } else {
-      activeAudio.forEach(p => {
-        if (p.transcript) {
-          console.log(`   ${p.emoji} "${p.transcript.slice(0, 50)}..."`);
-        } else {
-          console.log(`   ${p.emoji} ${p.analysis}`);
-        }
-      });
-    }
-    console.log(`Emotional Plan:`);
-    console.log(`   ${emotionalPlan}`);
-    console.log(`${'═'.repeat(50)}\n`);
+    console.log(`Mind Moment:`);
+    console.log(`   ${mindMoment}`);
+    console.log(`Context Depth: ${priorMoments.length}`);
+    console.log('');
+    
+    dispatchMindMoment(thisCycle, mindMoment, visualPercepts, audioPercepts, priorMoments);
   });
 }
 
