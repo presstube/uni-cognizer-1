@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { dumpPercepts } from './fake-percepts.js';
-import { cognize, onMindMoment, getHistory } from './fake-cog.js';
+import { cognize, onMindMoment, getHistory } from './real-cog.js';
 
 const DEPTH = 3;
 
