@@ -47,19 +47,16 @@ io.on('connection', (socket) => {
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
       startCognitiveLoop((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
-        // Broadcast mind moment to all active sessions
-        for (const sid of activeSessions) {
-          io.emit('mindMoment', {
-            cycle,
-            mindMoment,
-            sigilPhrase,
-            visualPercepts,
-            audioPercepts,
-            priorMoments,
-            timestamp: new Date().toISOString(),
-            sessionId: sid
-          });
-        }
+        // Broadcast mind moment once to all connected clients
+        io.emit('mindMoment', {
+          cycle,
+          mindMoment,
+          sigilPhrase,
+          visualPercepts,
+          audioPercepts,
+          priorMoments,
+          timestamp: new Date().toISOString()
+        });
       });
     }
     
