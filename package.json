@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
     "test-fake": "node src/main-fake.js",
-    "host": "npx http-server -p 8080 -c-1 --cors",
+    "host": "./scripts/host.sh",
     "dev:full": "./scripts/dev.sh"
   },
   "keywords": [
