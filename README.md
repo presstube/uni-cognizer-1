@@ -127,11 +127,15 @@ Open `http://localhost:8080/host/`
 
 ---
 
-## Integration API
+## Integration with Aggregator-1
 
-For real aggregator integration:
+**📘 [Complete Integration Guide](docs/AGGREGATOR_INTEGRATION.md)**
 
-### WebSocket Events
+Step-by-step guide for connecting Aggregator-1's percept capture system with Cognizer-1's cognitive loop.
+
+### Quick Reference
+
+**WebSocket Events:**
 
 **Client → Server:**
 ```javascript
@@ -169,6 +173,24 @@ socket.on('sessionTimeout', (data) => {
   // Session ended due to inactivity
 });
 ```
+
+**Integration Flow:**
+```
+Aggregator-1 (Vercel)                Cognizer-1 (Railway)
+┌─────────────────────┐              ┌──────────────────────┐
+│ CamTick Module      │              │ WebSocket Server     │
+│ MicAudioToText      │──percepts──▶ │ Session Manager      │
+│ Socket.io Client    │◀──moments──  │ Cognitive Loop       │
+└─────────────────────┘              └──────────────────────┘
+```
+
+See the [full integration guide](docs/AGGREGATOR_INTEGRATION.md) for:
+- Environment setup
+- Step-by-step integration
+- Testing procedures
+- Production deployment
+- Troubleshooting
+- Complete API reference
 
 ---
 
@@ -253,7 +275,8 @@ See `docs/deploy-plan.md` for detailed step-by-step guide.
 ## Next Steps
 
 - [x] Deploy to Railway ✅
-- [ ] Connect real aggregator (cam/mic)
+- [x] Write Aggregator-1 integration guide ✅
+- [ ] Integrate Aggregator-1 with Cognizer-1 ([see guide](docs/AGGREGATOR_INTEGRATION.md))
 - [ ] Add persistent storage for session digests
 - [ ] Implement facial recognition for user continuity
 
