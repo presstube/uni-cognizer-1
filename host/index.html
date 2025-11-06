@@ -130,17 +130,54 @@
         .percepts {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 15px;
         }
 
         .percepts h3 {
             grid-column: 1 / -1;
         }
 
+        .percept-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
         .percept-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             font-size: 18px;
+            min-height: 56px;
+            height: 56px;
+        }
+
+        .percept-readout {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 100px;
+            height: 100px;
+            font-size: 13px;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+            overflow-y: auto;
+            display: flex;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .percept-readout em {
+            font-style: italic;
+        }
+
+        .percept-readout .emoji {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        .percept-readout .text {
+            color: #374151;
+            font-weight: 500;
         }
 
         .mind-moment-card {
@@ -266,8 +303,18 @@
 
         <section class="percepts">
             <h3>Send Percepts</h3>
-            <button class="percept-btn" data-type="visual" disabled>👁️ Visual</button>
-            <button class="percept-btn" data-type="audio" disabled>🎤 Audio</button>
+            <div class="percept-column">
+                <button class="percept-btn" data-type="visual" disabled>👁️ Visual</button>
+                <div id="visualReadout" class="percept-readout">
+                    <em>No visual percept sent yet</em>
+                </div>
+            </div>
+            <div class="percept-column">
+                <button class="percept-btn" data-type="audio" disabled>🎤 Audio</button>
+                <div id="audioReadout" class="percept-readout">
+                    <em>No audio percept sent yet</em>
+                </div>
+            </div>
         </section>
 
         <section class="output">
@@ -308,62 +355,54 @@
         let durationInterval = null;
         let history = [];
         
-        // Mock percepts (matching the data structure from mock files)
-        const MOCK_VISUAL_PERCEPTS = [
-            { action: "Visitor approaching", emoji: "🚶" },
-            { action: "Looking up at ceiling", emoji: "⬆️" },
-            { action: "Taking photo", emoji: "📱" },
-            { action: "Reading plaque", emoji: "👀" },
-            { action: "Pointing at something", emoji: "👉" },
-            { action: "Talking with friend", emoji: "🗣️" },
-            { action: "Thinking deeply", emoji: "🤔" },
-            { action: "Smiling", emoji: "😊" },
-            { action: "Looking around room", emoji: "👁️" },
-            { action: "Touching wall", emoji: "🤚" }
-        ];
+        // Mock percepts - loaded from data files
+        let MOCK_VISUAL_PERCEPTS = [];
+        let MOCK_AUDIO_PERCEPTS = [];
         
-        const MOCK_AUDIO_PERCEPTS = [
-            { 
-                transcript: "Wow, this is amazing!",
-                analysis: "Visitor expressing wonder and excitement about the space",
-                tone: "Enthusiastic, awed",
-                emoji: "😮",
-                sentiment: "positive",
-                confidence: 0.9
-            },
-            {
-                transcript: "What is this place?",
-                analysis: "Visitor seeking information about the building and its purpose",
-                tone: "Curious, inquisitive",
-                emoji: "🤔",
-                sentiment: "curious",
-                confidence: 0.85
-            },
-            {
-                transcript: "I've never seen anything like this before.",
-                analysis: "Visitor acknowledging uniqueness of the space",
-                tone: "Impressed, contemplative",
-                emoji: "🧐",
-                sentiment: "positive",
-                confidence: 0.88
-            },
-            {
-                transcript: "Tell me more about United Therapeutics.",
-                analysis: "Visitor requesting information about the company",
-                tone: "Engaged, interested",
-                emoji: "💬",
-                sentiment: "curious",
-                confidence: 0.92
-            },
-            {
-                transcript: "This building is incredible.",
-                analysis: "Visitor expressing admiration for the architecture",
-                tone: "Appreciative, amazed",
-                emoji: "✨",
-                sentiment: "positive",
-                confidence: 0.95
+        // Load mock percepts from data files
+        async function loadMockPercepts() {
+            try {
+                const visualResponse = await fetch('../data/mock-visual-percepts-visitor.json');
+                const audioResponse = await fetch('../data/mock-audio-percepts-detailed.json');
+                
+                MOCK_VISUAL_PERCEPTS = await visualResponse.json();
+                MOCK_AUDIO_PERCEPTS = await audioResponse.json();
+                
+                console.log(`✅ Loaded ${MOCK_VISUAL_PERCEPTS.length} visual percepts`);
+                console.log(`✅ Loaded ${MOCK_AUDIO_PERCEPTS.length} audio percepts`);
+            } catch (error) {
+                console.error('❌ Failed to load mock percepts:', error);
+                // Fallback to basic percepts if loading fails
+                MOCK_VISUAL_PERCEPTS = [
+                    { action: "Visitor approaching", emoji: "🚶", weight: 1 },
+                    { action: "Looking up at ceiling", emoji: "⬆️", weight: 1 },
+                    { action: "Taking photo", emoji: "📱", weight: 1 }
+                ];
+                MOCK_AUDIO_PERCEPTS = [
+                    { 
+                        transcript: "Wow, this is amazing!",
+                        analysis: "Visitor expressing wonder",
+                        tone: "Enthusiastic",
+                        emoji: "😮",
+                        sentiment: "positive",
+                        confidence: 0.9,
+                        weight: 1
+                    }
+                ];
             }
-        ];
+        }
+        
+        // Weighted random selection (matches fake-percepts.js logic)
+        function weightedRandom(items) {
+            const totalWeight = items.reduce((sum, p) => sum + (p.weight || 1), 0);
+            let random = Math.random() * totalWeight;
+            
+            for (const item of items) {
+                random -= (item.weight || 1);
+                if (random <= 0) return item;
+            }
+            return items[0];
+        }
         
         // Socket event handlers
         socket.on('connect', () => {
@@ -442,6 +481,12 @@
         }
         
         function addToHistory(data) {
+            // Prevent duplicates - check if this cycle is already in history
+            if (history.length > 0 && history[0].cycle === data.cycle) {
+                console.log('⚠️ Duplicate mind moment for cycle', data.cycle, '- skipping');
+                return;
+            }
+            
             history.unshift(data);
             if (history.length > 5) history.pop();
             
@@ -478,8 +523,8 @@
         
         function sendPercept(type) {
             const data = type === 'visual' 
-                ? MOCK_VISUAL_PERCEPTS[Math.floor(Math.random() * MOCK_VISUAL_PERCEPTS.length)]
-                : MOCK_AUDIO_PERCEPTS[Math.floor(Math.random() * MOCK_AUDIO_PERCEPTS.length)];
+                ? weightedRandom(MOCK_VISUAL_PERCEPTS)
+                : weightedRandom(MOCK_AUDIO_PERCEPTS);
             
             socket.emit('percept', {
                 sessionId: SESSION_ID,
@@ -490,7 +535,25 @@
             
             perceptCount++;
             updateStats();
+            updatePerceptReadout(type, data);
             console.log(`📤 Sent ${type} percept:`, data);
+        }
+        
+        function updatePerceptReadout(type, data) {
+            const readoutId = type === 'visual' ? 'visualReadout' : 'audioReadout';
+            const readoutEl = document.getElementById(readoutId);
+            
+            if (type === 'visual') {
+                readoutEl.innerHTML = `
+                    <span class="emoji">${data.emoji}</span>
+                    <span class="text">${data.action}</span>
+                `;
+            } else {
+                readoutEl.innerHTML = `
+                    <span class="emoji">${data.emoji}</span>
+                    <div class="text">"${data.transcript}"</div>
+                `;
+            }
         }
         
         // Button handlers
@@ -517,9 +580,14 @@
         });
         
         // Initialize
-        updateControls();
-        console.log('🚀 Cognizer-1 Test Host initialized');
-        console.log('📡 Connecting to:', SOCKET_URL);
+        async function init() {
+            await loadMockPercepts();
+            updateControls();
+            console.log('🚀 Cognizer-1 Test Host initialized');
+            console.log('📡 Connecting to:', SOCKET_URL);
+        }
+        
+        init();
     </script>
 </body>
 </html>
