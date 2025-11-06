@@ -8,8 +8,9 @@ function mockLLMCall(visualPercepts, audioPercepts, priorMoments) {
     setTimeout(() => {
       const vCount = visualPercepts.filter(p => p.action !== "NOPE").length;
       const aCount = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly")).length;
-      const moment = `Mind sensing ${vCount}v/${aCount}a with context depth ${priorMoments.length}`;
-      resolve(moment);
+      const mindMoment = `Mind sensing ${vCount}v/${aCount}a with context depth ${priorMoments.length}`;
+      const sigilPhrase = `${vCount}v + ${aCount}a → depth ${priorMoments.length}`;
+      resolve({ mindMoment, sigilPhrase });
     }, latency);
   });
 }
@@ -36,9 +37,9 @@ function getPriorMindMoments(depth) {
     .slice(0, depth);
 }
 
-function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments) {
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) {
   mindMomentListeners.forEach(listener => {
-    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments);
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase);
   });
 }
 
@@ -52,7 +53,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   cognitiveHistory[thisCycle] = {
     visualPercepts,
     audioPercepts,
-    mindMoment: "awaiting"
+    mindMoment: "awaiting",
+    sigilPhrase: "awaiting"
   };
   
   const priorMoments = getPriorMindMoments(depth);
@@ -86,18 +88,21 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   }
   console.log('');
   
-  mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(mindMoment => {
-    cognitiveHistory[thisCycle].mindMoment = mindMoment;
+  mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(result => {
+    cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
+    cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
     
     console.log(`${'═'.repeat(50)}`);
     console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
     console.log(`${'═'.repeat(50)}`);
     console.log(`Mind Moment:`);
-    console.log(`   ${mindMoment}`);
+    console.log(`   ${result.mindMoment}`);
+    console.log(`Sigil Phrase:`);
+    console.log(`   "${result.sigilPhrase}"`);
     console.log(`Context Depth: ${priorMoments.length}`);
     console.log('');
     
-    dispatchMindMoment(thisCycle, mindMoment, visualPercepts, audioPercepts, priorMoments);
+    dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
   });
 }
 
