@@ -1,0 +1,11 @@
+node_modules/
+host/
+scripts/
+data/mock-*.json
+src/fake-*.js
+src/main-fake.js
+.env
+.git/
+*.md
+docs/
+
