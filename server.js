@@ -15,17 +15,34 @@ const io = new Server(httpServer, {
   }
 });
 
-const sessionManager = new SessionManager(SESSION_TIMEOUT_MS);
+const sessionManager = new SessionManager(SESSION_TIMEOUT_MS, (sessionId) => {
+  // Session timed out - clean up server state
+  console.log(`⏰ Cleaning up timed out session: ${sessionId}`);
+  activeSessions.delete(sessionId);
+  socketToSession.forEach((sid, socketId) => {
+    if (sid === sessionId) socketToSession.delete(socketId);
+  });
+  
+  // Stop cognitive loop if no active sessions
+  if (activeSessions.size === 0) {
+    stopCognitiveLoop();
+  }
+  
+  // Notify all clients about timeout
+  io.emit('sessionTimeout', { sessionId });
+});
 let activeSessions = new Set();
+let socketToSession = new Map(); // Track socket.id -> sessionId mapping
 
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
 
   socket.on('startSession', ({ sessionId }) => {
-    console.log(`▶️  Starting session: ${sessionId}`);
+    console.log(`▶️  Starting session: ${sessionId} (socket: ${socket.id})`);
     
     const session = sessionManager.startSession(sessionId);
     activeSessions.add(sessionId);
+    socketToSession.set(socket.id, sessionId);
     
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
@@ -36,6 +53,9 @@ io.on('connection', (socket) => {
             cycle,
             mindMoment,
             sigilPhrase,
+            visualPercepts,
+            audioPercepts,
+            priorMoments,
             timestamp: new Date().toISOString(),
             sessionId: sid
           });
@@ -73,6 +93,7 @@ io.on('connection', (socket) => {
     
     const session = sessionManager.endSession(sessionId);
     activeSessions.delete(sessionId);
+    socketToSession.delete(socket.id);
     
     // Stop cognitive loop if no active sessions
     if (activeSessions.size === 0) {
@@ -86,13 +107,31 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('getHistory', ({ sessionId }) => {
-    const history = getHistory();
-    socket.emit('history', { sessionId, history });
+  socket.on('ping', ({ sessionId }) => {
+    const session = sessionManager.getSession(sessionId);
+    socket.emit('pong', { 
+      sessionId, 
+      valid: !!session 
+    });
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔌 Client disconnected: ${socket.id}`);
+    const sessionId = socketToSession.get(socket.id);
+    if (sessionId) {
+      console.log(`🔌 Client disconnected (socket: ${socket.id}), ending session: ${sessionId}`);
+      
+      // Clean up session
+      sessionManager.endSession(sessionId);
+      activeSessions.delete(sessionId);
+      socketToSession.delete(socket.id);
+      
+      // Stop cognitive loop if no active sessions
+      if (activeSessions.size === 0) {
+        stopCognitiveLoop();
+      }
+    } else {
+      console.log(`🔌 Client disconnected: ${socket.id} (no active session)`);
+    }
   });
 });
 

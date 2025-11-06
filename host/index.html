@@ -254,6 +254,13 @@
             margin-bottom: 8px;
             font-size: 14px;
             color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: #e5e7eb;
+            transform: translateX(4px);
         }
 
         .history-item:last-child {
@@ -272,6 +279,47 @@
             display: block;
             text-align: center;
             padding: 20px;
+        }
+
+        .details {
+            background: #f9fafb;
+        }
+
+        .details-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #374151;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .details-content em {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .details-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .details-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .details-label {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 8px;
         }
 
         @media (max-width: 600px) {
@@ -336,6 +384,13 @@
         <section class="history">
             <h3>History (last 5)</h3>
             <div id="history"></div>
+        </section>
+
+        <section class="details">
+            <h3>Mind Moment Details</h3>
+            <div id="details" class="details-content">
+                <em>Click on a history item to see details...</em>
+            </div>
         </section>
     </div>
 
@@ -443,6 +498,26 @@
             updateControls();
         });
         
+        socket.on('sessionTimeout', (data) => {
+            if (data.sessionId === SESSION_ID) {
+                console.log('⏰ Session timed out due to inactivity');
+                sessionActive = false;
+                stopDurationTimer();
+                updateControls();
+                alert('Session timed out due to inactivity. Please start a new session.');
+            }
+        });
+        
+        socket.on('pong', (data) => {
+            if (!data.valid && sessionActive && data.sessionId === SESSION_ID) {
+                console.error('⚠️ Session no longer valid on server');
+                sessionActive = false;
+                stopDurationTimer();
+                updateControls();
+                alert('Session is no longer valid. Please start a new session.');
+            }
+        });
+        
         socket.on('error', (error) => {
             console.error('⚠️ Socket error:', error);
             alert('Error: ' + error.message);
@@ -490,13 +565,77 @@
             history.unshift(data);
             if (history.length > 5) history.pop();
             
-            const historyHTML = history.map(h => `
-                <div class="history-item">
+            const historyHTML = history.map((h, index) => `
+                <div class="history-item" onclick="showDetails(${index})">
                     <strong>Cycle ${h.cycle}</strong>: ${h.sigilPhrase}
                 </div>
             `).join('');
             
             document.getElementById('history').innerHTML = historyHTML;
+        }
+        
+        function showDetails(index) {
+            const data = history[index];
+            if (!data) return;
+            
+            const activeVisual = (data.visualPercepts || []).filter(p => p.action !== "NOPE");
+            const activeAudio = (data.audioPercepts || []).filter(p => 
+                p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly")
+            );
+            
+            let details = '';
+            
+            details += `<div class="details-section">`;
+            details += `<div class="details-label">CYCLE #${data.cycle}</div>`;
+            details += `Time: ${new Date(data.timestamp).toLocaleString()}\n`;
+            details += `</div>`;
+            
+            details += `<div class="details-section">`;
+            details += `<div class="details-label">MIND MOMENT</div>`;
+            details += `${data.mindMoment}\n`;
+            details += `</div>`;
+            
+            details += `<div class="details-section">`;
+            details += `<div class="details-label">SIGIL PHRASE</div>`;
+            details += `${data.sigilPhrase}\n`;
+            details += `</div>`;
+            
+            details += `<div class="details-section">`;
+            details += `<div class="details-label">VISUAL PERCEPTS (${activeVisual.length})</div>`;
+            if (activeVisual.length > 0) {
+                activeVisual.forEach(p => {
+                    details += `${p.emoji} ${p.action}\n`;
+                });
+            } else {
+                details += `(none)\n`;
+            }
+            details += `</div>`;
+            
+            details += `<div class="details-section">`;
+            details += `<div class="details-label">AUDIO PERCEPTS (${activeAudio.length})</div>`;
+            if (activeAudio.length > 0) {
+                activeAudio.forEach(p => {
+                    if (p.transcript) {
+                        details += `${p.emoji} "${p.transcript}"\n`;
+                    } else {
+                        details += `${p.emoji} ${p.analysis}\n`;
+                    }
+                });
+            } else {
+                details += `(none)\n`;
+            }
+            details += `</div>`;
+            
+            if (data.priorMoments && data.priorMoments.length > 0) {
+                details += `<div class="details-section">`;
+                details += `<div class="details-label">PRIOR CONTEXT (${data.priorMoments.length} moments)</div>`;
+                data.priorMoments.forEach((m, i) => {
+                    details += `${i + 1} cycles ago: "${m.mindMoment}"\n`;
+                });
+                details += `</div>`;
+            }
+            
+            document.getElementById('details').innerHTML = details;
         }
         
         function updateStats() {
@@ -585,7 +724,24 @@
             updateControls();
             console.log('🚀 Cognizer-1 Test Host initialized');
             console.log('📡 Connecting to:', SOCKET_URL);
+            
+            // Set up session health check
+            setInterval(() => {
+                if (sessionActive) {
+                    socket.emit('ping', { sessionId: SESSION_ID });
+                }
+            }, 15000); // Ping every 15 seconds
         }
+        
+        // Handle page unload - end session gracefully
+        window.addEventListener('beforeunload', (e) => {
+            if (sessionActive) {
+                console.log('🚪 Page unloading, ending session...');
+                socket.emit('endSession', { sessionId: SESSION_ID });
+                // Give socket a moment to send (synchronous doesn't guarantee delivery)
+                // Browser will handle cleanup
+            }
+        });
         
         init();
     </script>

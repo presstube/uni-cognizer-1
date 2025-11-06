@@ -1,7 +1,8 @@
 export class SessionManager {
-  constructor(timeoutMs = 60000) {
+  constructor(timeoutMs = 60000, onTimeout = null) {
     this.sessions = new Map();
     this.timeoutMs = timeoutMs;
+    this.onTimeout = onTimeout;
   }
 
   startSession(sessionId) {
@@ -31,6 +32,10 @@ export class SessionManager {
     if (session.timeoutId) clearTimeout(session.timeoutId);
 
     session.timeoutId = setTimeout(() => {
+      console.log(`⏰ Session ${sessionId} timed out due to inactivity`);
+      if (this.onTimeout) {
+        this.onTimeout(sessionId);
+      }
       this.endSession(sessionId);
     }, this.timeoutMs);
   }
