@@ -222,9 +222,37 @@ socket.on('sessionTimeout', (data) => {
 
 ---
 
+## Deployment
+
+### Production (Railway)
+
+**Live URL:** `https://uni-cognizer-1-production.up.railway.app`
+
+The WebSocket server is deployed on Railway with:
+- ✅ Automatic deployments from GitHub
+- ✅ HTTPS/WSS (secure WebSocket)
+- ✅ Environment variables encrypted
+- ✅ Free tier ($5/month credit)
+
+**To use in your aggregator:**
+```javascript
+const socket = io('https://uni-cognizer-1-production.up.railway.app');
+```
+
+**Deploy your own:**
+1. Fork this repo
+2. Create Railway account: https://railway.app
+3. Connect GitHub repo
+4. Add environment variables (see `.env` template above)
+5. Railway auto-deploys!
+
+See `docs/deploy-plan.md` for detailed step-by-step guide.
+
+---
+
 ## Next Steps
 
-- [ ] Deploy to Railway
+- [x] Deploy to Railway ✅
 - [ ] Connect real aggregator (cam/mic)
 - [ ] Add persistent storage for session digests
 - [ ] Implement facial recognition for user continuity
