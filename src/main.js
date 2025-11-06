@@ -1,45 +1,55 @@
 import 'dotenv/config';
-import { dumpPercepts } from './fake-percepts.js';
 import { cognize, onMindMoment, getHistory } from './real-cog.js';
 
 const DEPTH = 3;
+let cognitiveIntervalId = null;
+let perceptQueue = {
+  visualPercepts: [],
+  audioPercepts: []
+};
 
-onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
-  console.log(`${'─'.repeat(50)}`);
-  console.log(`📊 HISTORY STATUS`);
-  console.log(`${'─'.repeat(50)}`);
-  const history = getHistory();
-  const completedCycles = Object.keys(history)
-    .map(Number)
-    .filter(c => history[c].mindMoment !== "awaiting");
-  
-  console.log(`Total cycles: ${Object.keys(history).length}`);
-  console.log(`Completed: ${completedCycles.length}`);
-  console.log(`Awaiting: ${Object.keys(history).length - completedCycles.length}`);
-  
-  if (completedCycles.length > 0) {
-    console.log(`\nRecent Mind Moments:`);
-    completedCycles.slice(-3).forEach(c => {
-      const entry = history[c];
-      console.log(`   #${c}: "${entry.mindMoment}"${entry.sigilPhrase ? ` → [${entry.sigilPhrase}]` : ''}`);
-    });
+export function addPercept(percept) {
+  if (percept.type === 'visual') {
+    perceptQueue.visualPercepts.push(percept);
+  } else if (percept.type === 'audio') {
+    perceptQueue.audioPercepts.push(percept);
   }
-  console.log('');
-});
+}
 
-setInterval(() => {
-  const { visualPercepts, audioPercepts } = dumpPercepts();
-  cognize(visualPercepts, audioPercepts, DEPTH);
-}, 5000);
+function dumpPercepts() {
+  const snapshot = {
+    visualPercepts: [...perceptQueue.visualPercepts],
+    audioPercepts: [...perceptQueue.audioPercepts]
+  };
+  
+  perceptQueue.visualPercepts.length = 0;
+  perceptQueue.audioPercepts.length = 0;
+  
+  return snapshot;
+}
 
-console.log('╔═══════════════════════════════════════════════════════════╗');
-console.log('║  COGNIZER - UNI Mind Moment System                       ║');
-console.log('╚═══════════════════════════════════════════════════════════╝');
-console.log('');
-console.log('👁️  Visual percepts: every 3s');
-console.log('🎤 Audio percepts: every 7-10s (random)');
-console.log('🧠 Cognitive cycles: every 5s');
-console.log(`🧵 Context depth: ${DEPTH} prior mind moments`);
-console.log('');
-console.log('Running...\n');
+export function startCognitiveLoop(callback) {
+  if (cognitiveIntervalId) return;
+  
+  cognitiveIntervalId = setInterval(() => {
+    const { visualPercepts, audioPercepts } = dumpPercepts();
+    cognize(visualPercepts, audioPercepts, DEPTH);
+  }, 5000);
+  
+  if (callback) {
+    onMindMoment(callback);
+  }
+  
+  console.log('🧠 Cognitive loop started');
+}
+
+export function stopCognitiveLoop() {
+  if (cognitiveIntervalId) {
+    clearInterval(cognitiveIntervalId);
+    cognitiveIntervalId = null;
+    console.log('🛑 Cognitive loop stopped');
+  }
+}
+
+export { getHistory };
 

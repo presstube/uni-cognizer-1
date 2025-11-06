@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognizer-1 Test Host</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status::before {
+            content: '●';
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .status.connected::before {
+            color: #4ade80;
+        }
+
+        .status.disconnected::before {
+            color: #f87171;
+        }
+
+        section {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        h3 {
+            color: #374151;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #startBtn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        #endBtn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .percepts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .percepts h3 {
+            grid-column: 1 / -1;
+        }
+
+        .percept-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 18px;
+        }
+
+        .mind-moment-card {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mind-moment-card em {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .cycle {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .moment {
+            font-size: 18px;
+            color: #1f2937;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .sigil {
+            font-size: 16px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .time {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .stats {
+            background: #f9fafb;
+        }
+
+        #stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        #stats p {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #stats span {
+            display: block;
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-top: 8px;
+        }
+
+        .history-item {
+            background: #f9fafb;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-item strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        #history:empty::after {
+            content: 'No history yet...';
+            color: #9ca3af;
+            font-style: italic;
+            display: block;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            #stats {
+                grid-template-columns: 1fr;
+            }
+
+            .percepts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 Cognizer-1 Test Host</h1>
+            <div id="status" class="status disconnected">● Disconnected</div>
+        </header>
+
+        <section class="controls">
+            <button id="startBtn">▶️ Start Session</button>
+            <button id="endBtn" disabled>⏸️ End Session</button>
+        </section>
+
+        <section class="percepts">
+            <h3>Send Percepts</h3>
+            <button class="percept-btn" data-type="visual" disabled>👁️ Visual</button>
+            <button class="percept-btn" data-type="audio" disabled>🎤 Audio</button>
+        </section>
+
+        <section class="output">
+            <h3>Latest Mind Moment</h3>
+            <div id="mindMoment" class="mind-moment-card">
+                <em>Waiting for mind moment...</em>
+            </div>
+        </section>
+
+        <section class="stats">
+            <h3>Session Stats</h3>
+            <div id="stats">
+                <p>Duration<span id="duration">--</span></p>
+                <p>Percepts Sent<span id="perceptCount">0</span></p>
+                <p>Mind Moments<span id="momentCount">0</span></p>
+            </div>
+        </section>
+
+        <section class="history">
+            <h3>History (last 5)</h3>
+            <div id="history"></div>
+        </section>
+    </div>
+
+    <script>
+        // Configuration
+        const SOCKET_URL = 'http://localhost:3001';
+        const SESSION_ID = 'test-session-' + Date.now();
+        
+        // Socket connection
+        const socket = io(SOCKET_URL);
+        
+        // State
+        let sessionActive = false;
+        let sessionStartTime = null;
+        let perceptCount = 0;
+        let momentCount = 0;
+        let durationInterval = null;
+        let history = [];
+        
+        // Mock percepts (matching the data structure from mock files)
+        const MOCK_VISUAL_PERCEPTS = [
+            { action: "Visitor approaching", emoji: "🚶" },
+            { action: "Looking up at ceiling", emoji: "⬆️" },
+            { action: "Taking photo", emoji: "📱" },
+            { action: "Reading plaque", emoji: "👀" },
+            { action: "Pointing at something", emoji: "👉" },
+            { action: "Talking with friend", emoji: "🗣️" },
+            { action: "Thinking deeply", emoji: "🤔" },
+            { action: "Smiling", emoji: "😊" },
+            { action: "Looking around room", emoji: "👁️" },
+            { action: "Touching wall", emoji: "🤚" }
+        ];
+        
+        const MOCK_AUDIO_PERCEPTS = [
+            { 
+                transcript: "Wow, this is amazing!",
+                analysis: "Visitor expressing wonder and excitement about the space",
+                tone: "Enthusiastic, awed",
+                emoji: "😮",
+                sentiment: "positive",
+                confidence: 0.9
+            },
+            {
+                transcript: "What is this place?",
+                analysis: "Visitor seeking information about the building and its purpose",
+                tone: "Curious, inquisitive",
+                emoji: "🤔",
+                sentiment: "curious",
+                confidence: 0.85
+            },
+            {
+                transcript: "I've never seen anything like this before.",
+                analysis: "Visitor acknowledging uniqueness of the space",
+                tone: "Impressed, contemplative",
+                emoji: "🧐",
+                sentiment: "positive",
+                confidence: 0.88
+            },
+            {
+                transcript: "Tell me more about United Therapeutics.",
+                analysis: "Visitor requesting information about the company",
+                tone: "Engaged, interested",
+                emoji: "💬",
+                sentiment: "curious",
+                confidence: 0.92
+            },
+            {
+                transcript: "This building is incredible.",
+                analysis: "Visitor expressing admiration for the architecture",
+                tone: "Appreciative, amazed",
+                emoji: "✨",
+                sentiment: "positive",
+                confidence: 0.95
+            }
+        ];
+        
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('✅ Connected to Cognizer-1');
+            updateStatus('connected');
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('❌ Disconnected from Cognizer-1');
+            updateStatus('disconnected');
+            if (sessionActive) {
+                sessionActive = false;
+                stopDurationTimer();
+                updateControls();
+            }
+        });
+        
+        socket.on('sessionStarted', (data) => {
+            console.log('▶️ Session started:', data);
+            sessionActive = true;
+            sessionStartTime = Date.now();
+            startDurationTimer();
+            updateControls();
+        });
+        
+        socket.on('mindMoment', (data) => {
+            console.log('🧠 Mind moment received:', data);
+            displayMindMoment(data);
+            addToHistory(data);
+            momentCount++;
+            updateStats();
+        });
+        
+        socket.on('sessionEnded', (data) => {
+            console.log('⏸️ Session ended:', data);
+            sessionActive = false;
+            stopDurationTimer();
+            updateControls();
+        });
+        
+        socket.on('error', (error) => {
+            console.error('⚠️ Socket error:', error);
+            alert('Error: ' + error.message);
+        });
+        
+        // UI Functions
+        function updateStatus(status) {
+            const statusEl = document.getElementById('status');
+            if (status === 'connected') {
+                statusEl.textContent = '● Connected';
+                statusEl.className = 'status connected';
+            } else {
+                statusEl.textContent = '● Disconnected';
+                statusEl.className = 'status disconnected';
+            }
+        }
+        
+        function updateControls() {
+            document.getElementById('startBtn').disabled = sessionActive;
+            document.getElementById('endBtn').disabled = !sessionActive;
+            document.querySelectorAll('.percept-btn').forEach(btn => {
+                btn.disabled = !sessionActive;
+            });
+        }
+        
+        function displayMindMoment(data) {
+            const { cycle, mindMoment, sigilPhrase, timestamp } = data;
+            const time = new Date(timestamp).toLocaleTimeString();
+            
+            document.getElementById('mindMoment').innerHTML = `
+                <div class="cycle">Cycle #${cycle}</div>
+                <div class="moment">🧠 ${mindMoment}</div>
+                <div class="sigil">🔮 ${sigilPhrase}</div>
+                <div class="time">🕐 ${time}</div>
+            `;
+        }
+        
+        function addToHistory(data) {
+            history.unshift(data);
+            if (history.length > 5) history.pop();
+            
+            const historyHTML = history.map(h => `
+                <div class="history-item">
+                    <strong>Cycle ${h.cycle}</strong>: ${h.sigilPhrase}
+                </div>
+            `).join('');
+            
+            document.getElementById('history').innerHTML = historyHTML;
+        }
+        
+        function updateStats() {
+            document.getElementById('perceptCount').textContent = perceptCount;
+            document.getElementById('momentCount').textContent = momentCount;
+        }
+        
+        function startDurationTimer() {
+            durationInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('duration').textContent = 
+                    `${minutes}m ${seconds}s`;
+            }, 1000);
+        }
+        
+        function stopDurationTimer() {
+            if (durationInterval) {
+                clearInterval(durationInterval);
+                durationInterval = null;
+            }
+        }
+        
+        function sendPercept(type) {
+            const data = type === 'visual' 
+                ? MOCK_VISUAL_PERCEPTS[Math.floor(Math.random() * MOCK_VISUAL_PERCEPTS.length)]
+                : MOCK_AUDIO_PERCEPTS[Math.floor(Math.random() * MOCK_AUDIO_PERCEPTS.length)];
+            
+            socket.emit('percept', {
+                sessionId: SESSION_ID,
+                type: type,
+                data: data,
+                timestamp: new Date().toISOString()
+            });
+            
+            perceptCount++;
+            updateStats();
+            console.log(`📤 Sent ${type} percept:`, data);
+        }
+        
+        // Button handlers
+        document.getElementById('startBtn').addEventListener('click', () => {
+            socket.emit('startSession', { sessionId: SESSION_ID });
+            perceptCount = 0;
+            momentCount = 0;
+            history = [];
+            document.getElementById('history').innerHTML = '';
+            updateStats();
+            console.log('▶️ Starting session:', SESSION_ID);
+        });
+        
+        document.getElementById('endBtn').addEventListener('click', () => {
+            socket.emit('endSession', { sessionId: SESSION_ID });
+            console.log('⏸️ Ending session:', SESSION_ID);
+        });
+        
+        document.querySelectorAll('.percept-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                sendPercept(type);
+            });
+        });
+        
+        // Initialize
+        updateControls();
+        console.log('🚀 Cognizer-1 Test Host initialized');
+        console.log('📡 Connecting to:', SOCKET_URL);
+    </script>
+</body>
+</html>
+

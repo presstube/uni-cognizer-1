@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "description": "MVP Cognizer-1: Core Cognitive Loop Prototype",
   "type": "module",
-  "main": "src/main.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/main.js",
-    "test": "node src/main.js"
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "test-fake": "node src/main-fake.js"
   },
   "keywords": [
     "ai",
@@ -20,7 +21,8 @@
     "@anthropic-ai/sdk": "^0.32.1",
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^16.4.5",
-    "openai": "^4.67.3"
+    "openai": "^4.67.3",
+    "socket.io": "^4.8.1"
   },
   "engines": {
     "node": ">=20.0.0"
