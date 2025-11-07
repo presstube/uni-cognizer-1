@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory } from './src/main.js';
 import { SessionManager } from './src/session-manager.js';
+import { loadReferenceImage } from './src/sigil/image.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -59,6 +60,19 @@ io.on('connection', (socket) => {
             priorMoments,
             timestamp: new Date().toISOString()
           });
+          
+          // Transition to VISUALIZING state after mind moment
+          io.emit('cognitiveState', { state: 'VISUALIZING' });
+        },
+        // Sigil callback
+        (cycle, sigilCode, sigilPhrase) => {
+          // Broadcast sigil once to all connected clients
+          io.emit('sigil', {
+            cycle,
+            sigilCode,
+            sigilPhrase,
+            timestamp: new Date().toISOString()
+          });
         },
         // State event callback
         (eventType, data) => {
@@ -78,6 +92,9 @@ io.on('connection', (socket) => {
             io.emit('cognitiveState', { state: 'READY' });
             // Detailed cycle event
             io.emit('cycleFailed', data);
+          } else if (eventType === 'sigilFailed') {
+            // Sigil generation failed (optional notification)
+            io.emit('sigilFailed', data);
           }
         }
       );
@@ -163,6 +180,11 @@ httpServer.listen(PORT, () => {
   console.log(`🌐 Listening on port ${PORT}`);
   console.log(`⏱️  Session timeout: ${SESSION_TIMEOUT_MS}ms`);
   console.log(`🧵 Context depth: 3 prior mind moments`);
+  
+  // Load sigil reference image
+  const sigilImage = loadReferenceImage();
+  console.log(`🎨 Sigil reference image: ${sigilImage ? '✓ loaded' : '✗ not found'}`);
+  
   console.log('');
   console.log('Ready for connections...\n');
 });

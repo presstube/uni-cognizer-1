@@ -1,6 +1,7 @@
 const cognitiveHistory = {};
 let cycleIndex = 0;
 let mindMomentListeners = [];
+let sigilListeners = [];
 
 function mockLLMCall(visualPercepts, audioPercepts, priorMoments) {
   const latency = 6000 + Math.random() * 2000;
@@ -11,6 +12,16 @@ function mockLLMCall(visualPercepts, audioPercepts, priorMoments) {
       const mindMoment = `Mind sensing ${vCount}v/${aCount}a with context depth ${priorMoments.length}`;
       const sigilPhrase = `${vCount}v + ${aCount}a → depth ${priorMoments.length}`;
       resolve({ mindMoment, sigilPhrase });
+    }, latency);
+  });
+}
+
+function mockSigilGeneration() {
+  const latency = 2000 + Math.random() * 1000;
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const mockCode = `ctx.beginPath();\nctx.moveTo(50, 20);\nctx.lineTo(80, 80);\nctx.lineTo(20, 80);\nctx.closePath();\nctx.stroke();`;
+      resolve(mockCode);
     }, latency);
   });
 }
@@ -43,9 +54,27 @@ function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, pr
   });
 }
 
+function dispatchSigil(cycle, sigilCode, sigilPhrase) {
+  sigilListeners.forEach(listener => {
+    listener(cycle, sigilCode, sigilPhrase);
+  });
+}
+
 export function onMindMoment(listener) {
   mindMomentListeners.push(listener);
 }
+
+export function onSigil(listener) {
+  sigilListeners.push(listener);
+}
+
+export function clearListeners() {
+  mindMomentListeners = [];
+  sigilListeners = [];
+}
+
+// Stub for fake-cog (not needed but exported for compatibility)
+export function onStateEvent() {}
 
 export function cognize(visualPercepts, audioPercepts, depth = 3) {
   const thisCycle = ++cycleIndex;
@@ -54,7 +83,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     visualPercepts,
     audioPercepts,
     mindMoment: "awaiting",
-    sigilPhrase: "awaiting"
+    sigilPhrase: "awaiting",
+    sigilCode: "awaiting"
   };
   
   const priorMoments = getPriorMindMoments(depth);
@@ -88,7 +118,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   }
   console.log('');
   
-  mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(result => {
+  mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(async result => {
     cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
     cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
     
@@ -102,7 +132,25 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     console.log(`Context Depth: ${priorMoments.length}`);
     console.log('');
     
+    // Emit mind moment event (early notification)
     dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
+    
+    // Generate mock sigil
+    if (result.sigilPhrase) {
+      console.log(`🎨 Generating mock sigil for: "${result.sigilPhrase}"`);
+      
+      const sigilCode = await mockSigilGeneration();
+      cognitiveHistory[thisCycle].sigilCode = sigilCode;
+      
+      console.log(`✓ Mock sigil generated`);
+      console.log(`  Code length: ${sigilCode.length} chars`);
+      console.log('');
+      
+      // Emit sigil event
+      dispatchSigil(thisCycle, sigilCode, result.sigilPhrase);
+    } else {
+      cognitiveHistory[thisCycle].sigilCode = null;
+    }
   });
 }
 

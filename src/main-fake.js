@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { dumpPercepts } from './fake-percepts.js';
-import { cognize, onMindMoment, getHistory } from './fake-cog.js';
+import { cognize, onMindMoment, onSigil, getHistory } from './fake-cog.js';
 
 const DEPTH = 3;
 
@@ -27,19 +27,29 @@ onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, si
   console.log('');
 });
 
+onSigil((cycle, sigilCode, sigilPhrase) => {
+  console.log(`${'─'.repeat(50)}`);
+  console.log(`🎨 SIGIL GENERATED FOR CYCLE ${cycle}`);
+  console.log(`${'─'.repeat(50)}`);
+  console.log(`Phrase: "${sigilPhrase}"`);
+  console.log(`Code preview: ${sigilCode.substring(0, 50)}...`);
+  console.log('');
+});
+
 setInterval(() => {
   const { visualPercepts, audioPercepts } = dumpPercepts();
   cognize(visualPercepts, audioPercepts, DEPTH);
 }, 5000);
 
 console.log('╔═══════════════════════════════════════════════════════════╗');
-console.log('║  COGNIZER - UNI Mind Moment System                       ║');
+console.log('║  COGNIZER - UNI Mind Moment + Sigil System              ║');
 console.log('╚═══════════════════════════════════════════════════════════╝');
 console.log('');
 console.log('👁️  Visual percepts: every 3s');
 console.log('🎤 Audio percepts: every 7-10s (random)');
 console.log('🧠 Cognitive cycles: every 5s');
 console.log(`🧵 Context depth: ${DEPTH} prior mind moments`);
+console.log('🎨 Sigil generation: enabled (mock)');
 console.log('');
 console.log('Running...\n');
 

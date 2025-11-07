@@ -1,9 +1,11 @@
 import { callLLM } from './providers/index.js';
 import { ROBOT_PERSONALITY } from './personality-uni-v2.js';
+import { generateSigil } from './sigil/generator.js';
 
 const cognitiveHistory = {};
 let cycleIndex = 0;
 let mindMomentListeners = [];
+let sigilListeners = [];
 let stateListeners = [];
 
 async function realLLMCall(visualPercepts, audioPercepts, priorMoments) {
@@ -86,8 +88,19 @@ export function onStateEvent(listener) {
   stateListeners.push(listener);
 }
 
+export function onSigil(listener) {
+  sigilListeners.push(listener);
+}
+
+function dispatchSigil(cycle, sigilCode, sigilPhrase) {
+  sigilListeners.forEach(listener => {
+    listener(cycle, sigilCode, sigilPhrase);
+  });
+}
+
 export function clearListeners() {
   mindMomentListeners = [];
+  sigilListeners = [];
   stateListeners = [];
 }
 
@@ -99,7 +112,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     visualPercepts,
     audioPercepts,
     mindMoment: "awaiting",
-    sigilPhrase: "awaiting"
+    sigilPhrase: "awaiting",
+    sigilCode: "awaiting"
   };
   
   const priorMoments = getPriorMindMoments(depth);
@@ -143,20 +157,11 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   console.log('');
   
   realLLMCall(visualPercepts, audioPercepts, priorMoments)
-    .then(result => {
-      const duration = Date.now() - startTime;
+    .then(async result => {
+      const mindMomentDuration = Date.now() - startTime;
       
       cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
       cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
-      
-      // Emit cycle completed event
-      dispatchStateEvent('cycleCompleted', {
-        cycle: thisCycle,
-        mindMoment: result.mindMoment,
-        sigilPhrase: result.sigilPhrase,
-        duration,
-        timestamp: new Date().toISOString()
-      });
       
       console.log(`${'═'.repeat(50)}`);
       console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
@@ -168,9 +173,62 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
         console.log(`   "${result.sigilPhrase}"`);
       }
       console.log(`Context Depth: ${priorMoments.length}`);
+      console.log(`Duration: ${mindMomentDuration}ms`);
       console.log('');
       
+      // Emit mind moment event (early notification)
       dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
+      
+      // STEP 2: Generate sigil if we have a phrase
+      if (result.sigilPhrase) {
+        console.log(`🎨 Generating sigil for: "${result.sigilPhrase}"`);
+        const sigilStartTime = Date.now();
+        
+        try {
+          const sigilCode = await generateSigil(result.sigilPhrase);
+          const sigilDuration = Date.now() - sigilStartTime;
+          
+          // Update history with sigil code
+          cognitiveHistory[thisCycle].sigilCode = sigilCode;
+          
+          console.log(`✓ Sigil generated (${sigilDuration}ms)`);
+          console.log(`  Code length: ${sigilCode.length} chars`);
+          console.log('');
+          
+          // Emit sigil event
+          dispatchSigil(thisCycle, sigilCode, result.sigilPhrase);
+          
+        } catch (sigilError) {
+          console.error(`❌ Sigil generation failed:`, sigilError.message);
+          cognitiveHistory[thisCycle].sigilCode = null;
+          
+          // Emit sigil failed event
+          dispatchStateEvent('sigilFailed', {
+            cycle: thisCycle,
+            error: sigilError.message,
+            sigilPhrase: result.sigilPhrase
+          });
+        }
+      } else {
+        cognitiveHistory[thisCycle].sigilCode = null;
+      }
+      
+      const totalDuration = Date.now() - startTime;
+      
+      // Emit cycle completed with full data
+      dispatchStateEvent('cycleCompleted', {
+        cycle: thisCycle,
+        mindMoment: result.mindMoment,
+        sigilPhrase: result.sigilPhrase,
+        sigilCode: cognitiveHistory[thisCycle].sigilCode,
+        duration: totalDuration,
+        timestamp: new Date().toISOString()
+      });
+      
+      console.log(`${'═'.repeat(50)}`);
+      console.log(`[${timestamp()}] CYCLE ${thisCycle} COMPLETE`);
+      console.log(`Total Duration: ${totalDuration}ms`);
+      console.log(`${'═'.repeat(50)}\n`);
     })
     .catch(err => {
       const duration = Date.now() - startTime;
@@ -178,6 +236,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       console.error(`\n❌ ERROR in Cycle ${thisCycle}:`, err.message);
       cognitiveHistory[thisCycle].mindMoment = `[error: ${err.message}]`;
       cognitiveHistory[thisCycle].sigilPhrase = null;
+      cognitiveHistory[thisCycle].sigilCode = null;
       
       // Emit cycle failed event
       dispatchStateEvent('cycleFailed', {

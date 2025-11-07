@@ -21,13 +21,16 @@ Open `http://localhost:8080/host/` to test.
 
 ```
 Visual Percepts (cam) ──┐
-                        ├──> Cognitive Loop (5s) ──> LLM ──> Mind Moment + Sigil Phrase
+                        ├──> Cognitive Loop (5s) ──> LLM ──> Mind Moment + Sigil Phrase ──> Sigil Code
 Audio Percepts (mic) ───┘
 ```
 
 - **Percepts In**: Camera observations + microphone transcripts
 - **Cognition**: Context-aware processing (3 prior moments)
-- **Output**: Emotional "mind moment" + visual "sigil phrase"
+- **Output**: 
+  - Emotional "mind moment" (text observation)
+  - Visual "sigil phrase" (essence distillation)
+  - Canvas "sigil code" (visual representation)
 - **Session Management**: Auto-cleanup on disconnect/timeout
 
 ---
@@ -35,9 +38,10 @@ Audio Percepts (mic) ───┘
 ## Architecture
 
 ### Backend (Port 3001)
-- **WebSocket Server**: Handles percepts, broadcasts mind moments
+- **WebSocket Server**: Handles percepts, broadcasts mind moments & sigils
 - **Cognitive Loop**: 5-second cycle, processes queued percepts
 - **LLM Integration**: Swappable providers (OpenAI, Anthropic, Gemini)
+- **Sigil Generation**: Internal AI-powered visual code generation
 - **Session Manager**: 60s timeout, graceful cleanup
 
 ### Frontend (Port 8080)
@@ -81,22 +85,29 @@ CORS_ORIGIN=*
 
 ```
 src/
-├── main.js              # Cognitive loop orchestration
-├── real-cog.js          # LLM-based cognition
-├── fake-cog.js          # Mock cognition for testing
-├── session-manager.js   # Session lifecycle
-├── personality-uni-v2.js # UNI's tripartite consciousness
-└── providers/           # LLM abstraction (OpenAI, Anthropic, Gemini)
+├── main.js                # Cognitive loop orchestration
+├── real-cog.js            # LLM-based cognition + sigil pipeline
+├── fake-cog.js            # Mock cognition for testing
+├── session-manager.js     # Session lifecycle
+├── personality-uni-v2.js  # UNI's tripartite consciousness
+├── providers/             # LLM abstraction (OpenAI, Anthropic, Gemini)
+└── sigil/                 # Sigil generation module
+    ├── generator.js       # Main sigil generation logic
+    ├── prompt.js          # Sigil prompt builder
+    └── image.js           # Reference image handler
+
+assets/
+└── sigil-grid-original.png  # Reference image for sigil style
 
 host/
-└── index.html           # Test client UI
+└── index.html             # Test client UI
 
 data/
 ├── mock-visual-percepts-visitor.json  # 93 cam percepts
 └── mock-audio-percepts-detailed.json  # 25 mic percepts
 
-server.js                # WebSocket server
-scripts/dev.sh           # Development startup script
+server.js                  # WebSocket server
+scripts/dev.sh             # Development startup script
 ```
 
 ---
@@ -168,6 +179,17 @@ socket.on('mindMoment', (data) => {
   // }
 });
 
+// Sigil code generated (NEW)
+socket.on('sigil', (data) => {
+  // data = {
+  //   cycle: 42,
+  //   sigilCode: "ctx.beginPath();\nctx.moveTo(50, 20);\n...",
+  //   sigilPhrase: "Threshold of Wonder",
+  //   timestamp: "2025-11-06T10:30:07.500Z"
+  // }
+  // Execute sigilCode on a canvas element to render the visual
+});
+
 // Session timeout
 socket.on('sessionTimeout', (data) => {
   // Session ended due to inactivity
@@ -197,8 +219,9 @@ socket.on('cycleCompleted', (data) => {
   //   cycle: 42,
   //   mindMoment: "...",
   //   sigilPhrase: "...",
-  //   duration: 1200,  // milliseconds
-  //   timestamp: "2025-11-06T10:30:06.200Z"
+  //   sigilCode: "ctx.beginPath()...",  // NEW
+  //   duration: 4200,  // milliseconds (includes mind moment + sigil generation)
+  //   timestamp: "2025-11-06T10:30:07.500Z"
   // }
 });
 
@@ -279,6 +302,7 @@ See the [full integration guide](docs/AGGREGATOR_INTEGRATION.md) for:
 **Output Format**: Every cognitive cycle produces:
 1. **Mind Moment**: 1-2 sentence observation/thought
 2. **Sigil Phrase**: Concise phrase for visual generation (1-5 words)
+3. **Sigil Code**: Canvas drawing commands for visual representation
 
 ---
 

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { cognize, onMindMoment, onStateEvent, clearListeners, getHistory } from './real-cog.js';
+import { cognize, onMindMoment, onSigil, onStateEvent, clearListeners, getHistory } from './real-cog.js';
 
 const DEPTH = 3;
 const COGNITIVE_CYCLE_MS = process.env.COGNITIVE_CYCLE_MS || 5000;
@@ -29,7 +29,7 @@ function dumpPercepts() {
   return snapshot;
 }
 
-export function startCognitiveLoop(callback, stateCallback) {
+export function startCognitiveLoop(callback, sigilCallback, stateCallback) {
   if (cognitiveIntervalId) return;
   
   cognitiveIntervalId = setInterval(() => {
@@ -39,6 +39,10 @@ export function startCognitiveLoop(callback, stateCallback) {
   
   if (callback) {
     onMindMoment(callback);
+  }
+  
+  if (sigilCallback) {
+    onSigil(sigilCallback);
   }
   
   if (stateCallback) {
