@@ -29,21 +29,44 @@ Visual: ${visualStr}
 Audio: ${audioStr}
 ${contextStr}
 
-Generate a single "mind moment" - one clear thought/observation from UNI's perspective right now. Be specific about what you notice. Reference building systems when relevant. Stay grounded.
+Generate a complete cognitive response as JSON. Be specific about what you notice. Reference building systems when relevant. Stay grounded.
 
-Respond with ONLY the mind moment text (1-2 sentences max), nothing else.`;
+Respond with ONLY valid JSON, nothing else.`;
 
   const response = await callLLM(prompt);
   const text = response.trim();
   
-  // Parse the response to extract mind moment and sigil phrase
-  const mindMomentMatch = text.match(/MIND MOMENT:\s*(.+?)(?=\n\nSIGIL PHRASE:|$)/s);
-  const sigilPhraseMatch = text.match(/SIGIL PHRASE:\s*(.+?)$/s);
-  
-  const mindMoment = mindMomentMatch ? mindMomentMatch[1].trim() : text;
-  const sigilPhrase = sigilPhraseMatch ? sigilPhraseMatch[1].trim() : null;
-  
-  return { mindMoment, sigilPhrase };
+  // Try to parse as JSON first
+  try {
+    // Remove markdown code blocks if present
+    let jsonText = text;
+    if (text.includes('```json')) {
+      jsonText = text.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || text;
+    } else if (text.includes('```')) {
+      jsonText = text.match(/```\s*([\s\S]*?)\s*```/)?.[1] || text;
+    }
+    
+    const parsed = JSON.parse(jsonText.trim());
+    
+    return {
+      mindMoment: parsed.mindMoment || parsed.mind_moment || '',
+      sigilPhrase: parsed.sigilPhrase || parsed.sigil_phrase || null,
+      kinetic: parsed.kinetic || { pattern: 'IDLE' },
+      lighting: parsed.lighting || { color: '0xffffff', pattern: 'IDLE', speed: 0 }
+    };
+  } catch (error) {
+    // Fallback to old text parsing format
+    console.warn('[Cognition] Failed to parse JSON, falling back to text parsing:', error.message);
+    const mindMomentMatch = text.match(/MIND MOMENT:\s*(.+?)(?=\n\nSIGIL PHRASE:|$)/s);
+    const sigilPhraseMatch = text.match(/SIGIL PHRASE:\s*(.+?)$/s);
+    
+    return {
+      mindMoment: mindMomentMatch ? mindMomentMatch[1].trim() : text,
+      sigilPhrase: sigilPhraseMatch ? sigilPhraseMatch[1].trim() : null,
+      kinetic: { pattern: 'IDLE' },
+      lighting: { color: '0xffffff', pattern: 'IDLE', speed: 0 }
+    };
+  }
 }
 
 function timestamp() {
@@ -68,9 +91,9 @@ function getPriorMindMoments(depth) {
     .slice(0, depth);
 }
 
-function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) {
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) {
   mindMomentListeners.forEach(listener => {
-    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase);
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting);
   });
 }
 
@@ -113,6 +136,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     audioPercepts,
     mindMoment: "awaiting",
     sigilPhrase: "awaiting",
+    kinetic: "awaiting",
+    lighting: "awaiting",
     sigilCode: "awaiting"
   };
   
@@ -162,6 +187,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       
       cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
       cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
+      cognitiveHistory[thisCycle].kinetic = result.kinetic;
+      cognitiveHistory[thisCycle].lighting = result.lighting;
       
       console.log(`${'═'.repeat(50)}`);
       console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
@@ -172,12 +199,14 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
         console.log(`Sigil Phrase:`);
         console.log(`   "${result.sigilPhrase}"`);
       }
+      console.log(`Kinetic: ${result.kinetic.pattern}`);
+      console.log(`Lighting: ${result.lighting.color} ${result.lighting.pattern} (speed: ${result.lighting.speed})`);
       console.log(`Context Depth: ${priorMoments.length}`);
       console.log(`Duration: ${mindMomentDuration}ms`);
       console.log('');
       
       // Emit mind moment event (early notification)
-      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
+      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.kinetic, result.lighting);
       
       // STEP 2: Generate sigil if we have a phrase
       if (result.sigilPhrase) {
@@ -220,6 +249,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
         cycle: thisCycle,
         mindMoment: result.mindMoment,
         sigilPhrase: result.sigilPhrase,
+        kinetic: result.kinetic,
+        lighting: result.lighting,
         sigilCode: cognitiveHistory[thisCycle].sigilCode,
         duration: totalDuration,
         timestamp: new Date().toISOString()
@@ -236,6 +267,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       console.error(`\n❌ ERROR in Cycle ${thisCycle}:`, err.message);
       cognitiveHistory[thisCycle].mindMoment = `[error: ${err.message}]`;
       cognitiveHistory[thisCycle].sigilPhrase = null;
+      cognitiveHistory[thisCycle].kinetic = { pattern: 'IDLE' };
+      cognitiveHistory[thisCycle].lighting = { color: '0xff0000', pattern: 'HECTIC_NOISE', speed: 1 };
       cognitiveHistory[thisCycle].sigilCode = null;
       
       // Emit cycle failed event

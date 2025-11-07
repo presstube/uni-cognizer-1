@@ -49,6 +49,20 @@ export async function generateSigil(concept) {
     throw new Error('No code returned from sigil generation');
   }
   
-  return code;
+  // Clean up the code
+  let cleanCode = code.trim();
+  
+  // Remove markdown code blocks if present
+  if (cleanCode.startsWith('```')) {
+    cleanCode = cleanCode.replace(/```(?:javascript|js)?\n?/g, '').replace(/```\s*$/g, '').trim();
+  }
+  
+  // Validate the code contains canvas operations
+  if (!cleanCode.includes('ctx.')) {
+    console.warn('[Sigil] Generated code does not contain canvas operations:', cleanCode.substring(0, 100));
+    throw new Error('Generated code does not contain valid canvas operations');
+  }
+  
+  return cleanCode;
 }
 

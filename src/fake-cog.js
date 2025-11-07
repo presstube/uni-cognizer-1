@@ -11,7 +11,21 @@ function mockLLMCall(visualPercepts, audioPercepts, priorMoments) {
       const aCount = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly")).length;
       const mindMoment = `Mind sensing ${vCount}v/${aCount}a with context depth ${priorMoments.length}`;
       const sigilPhrase = `${vCount}v + ${aCount}a → depth ${priorMoments.length}`;
-      resolve({ mindMoment, sigilPhrase });
+      
+      // Random kinetic patterns
+      const kineticPatterns = ['IDLE', 'HAPPY_BOUNCE', 'SLOW_SWAY', 'JIGGLE'];
+      const kinetic = { pattern: kineticPatterns[Math.floor(Math.random() * kineticPatterns.length)] };
+      
+      // Random lighting
+      const lightingPatterns = ['IDLE', 'SMOOTH_WAVES', 'CIRCULAR_PULSE', 'HECTIC_NOISE'];
+      const colors = ['0xff0000', '0x00ff00', '0x0000ff', '0xff00ff', '0x00ffff', '0xffff00', '0xffffff'];
+      const lighting = {
+        color: colors[Math.floor(Math.random() * colors.length)],
+        pattern: lightingPatterns[Math.floor(Math.random() * lightingPatterns.length)],
+        speed: Math.random() * 2 - 1 // Random between -1 and 1
+      };
+      
+      resolve({ mindMoment, sigilPhrase, kinetic, lighting });
     }, latency);
   });
 }
@@ -48,9 +62,9 @@ function getPriorMindMoments(depth) {
     .slice(0, depth);
 }
 
-function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) {
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) {
   mindMomentListeners.forEach(listener => {
-    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase);
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting);
   });
 }
 
@@ -84,6 +98,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     audioPercepts,
     mindMoment: "awaiting",
     sigilPhrase: "awaiting",
+    kinetic: "awaiting",
+    lighting: "awaiting",
     sigilCode: "awaiting"
   };
   
@@ -121,6 +137,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(async result => {
     cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
     cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
+    cognitiveHistory[thisCycle].kinetic = result.kinetic;
+    cognitiveHistory[thisCycle].lighting = result.lighting;
     
     console.log(`${'═'.repeat(50)}`);
     console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
@@ -129,11 +147,13 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     console.log(`   ${result.mindMoment}`);
     console.log(`Sigil Phrase:`);
     console.log(`   "${result.sigilPhrase}"`);
+    console.log(`Kinetic: ${result.kinetic.pattern}`);
+    console.log(`Lighting: ${result.lighting.color} ${result.lighting.pattern} (speed: ${result.lighting.speed.toFixed(2)})`);
     console.log(`Context Depth: ${priorMoments.length}`);
     console.log('');
     
     // Emit mind moment event (early notification)
-    dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
+    dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.kinetic, result.lighting);
     
     // Generate mock sigil
     if (result.sigilPhrase) {

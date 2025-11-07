@@ -49,12 +49,14 @@ io.on('connection', (socket) => {
     if (activeSessions.size === 1) {
       startCognitiveLoop(
         // Mind moment callback
-        (cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
+        (cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
           // Broadcast mind moment once to all connected clients
           io.emit('mindMoment', {
             cycle,
             mindMoment,
             sigilPhrase,
+            kinetic,
+            lighting,
             visualPercepts,
             audioPercepts,
             priorMoments,

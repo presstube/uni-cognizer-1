@@ -4,7 +4,7 @@ import { cognize, onMindMoment, onSigil, getHistory } from './fake-cog.js';
 
 const DEPTH = 3;
 
-onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
+onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
   console.log(`${'─'.repeat(50)}`);
   console.log(`📊 HISTORY STATUS`);
   console.log(`${'─'.repeat(50)}`);
@@ -22,6 +22,7 @@ onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, si
     completedCycles.slice(-3).forEach(c => {
       const entry = history[c];
       console.log(`   #${c}: "${entry.mindMoment}"${entry.sigilPhrase ? ` → [${entry.sigilPhrase}]` : ''}`);
+      console.log(`        Kinetic: ${entry.kinetic.pattern} | Lighting: ${entry.lighting.pattern}`);
     });
   }
   console.log('');

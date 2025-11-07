@@ -149,6 +149,47 @@
       letter-spacing: 1px;
     }
 
+    #kineticReadout, #lightingReadout {
+      width: 300px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    #kineticReadout {
+      border-left: 3px solid #a78bfa;
+    }
+
+    #lightingReadout {
+      border-left: 3px solid #f59e0b;
+    }
+
+    .readout-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .readout-value {
+      font-size: 16px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .color-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -188,9 +229,19 @@
     <div id="sigilLabel">Sigil</div>
   </div>
 
+  <div id="kineticReadout">
+    <div class="readout-label">Kinetic</div>
+    <div class="readout-value" id="kineticValue">-</div>
+  </div>
+
+  <div id="lightingReadout">
+    <div class="readout-label">Lighting</div>
+    <div class="readout-value" id="lightingValue">-</div>
+  </div>
+
   <script>
-    // const SOCKET_URL = 'http://localhost:3001';
-    const SOCKET_URL = 'http://uni-cognizer-1-production.up.railway.app';
+    const SOCKET_URL = 'http://localhost:3001';
+    // const SOCKET_URL = 'http://uni-cognizer-1-production.up.railway.app';
     const SESSION_ID = 'minimal-session-' + Date.now();
     
     let socket = null;
@@ -207,6 +258,8 @@
     const sigilCanvas = document.getElementById('sigilCanvas');
     const visualReadout = document.getElementById('visualReadout');
     const audioReadout = document.getElementById('audioReadout');
+    const kineticValue = document.getElementById('kineticValue');
+    const lightingValue = document.getElementById('lightingValue');
     
     let typewriterTimeout = null;
     let typewriterAborted = false;
@@ -312,21 +365,41 @@
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       
+      // Validate code before executing
+      if (!code || typeof code !== 'string' || code.trim().length === 0) {
+        console.error('❌ Invalid sigil code: empty or not a string');
+        drawErrorIndicator(ctx);
+        return;
+      }
+      
+      // Check for dangerous patterns
+      if (code.includes('eval(') || code.includes('Function(') || code.includes('import') || code.includes('require')) {
+        console.error('❌ Sigil code contains dangerous patterns');
+        drawErrorIndicator(ctx);
+        return;
+      }
+      
       // Execute the sigil code
       try {
         eval(code);
         console.log('✅ Sigil rendered successfully');
       } catch (error) {
         console.error('❌ Failed to render sigil:', error);
-        // Draw error indicator
-        ctx.strokeStyle = '#f87171';
-        ctx.beginPath();
-        ctx.moveTo(20, 20);
-        ctx.lineTo(80, 80);
-        ctx.moveTo(80, 20);
-        ctx.lineTo(20, 80);
-        ctx.stroke();
+        console.error('   Code:', code.substring(0, 100) + '...');
+        drawErrorIndicator(ctx);
       }
+    }
+    
+    function drawErrorIndicator(ctx) {
+      // Draw error indicator (red X)
+      ctx.strokeStyle = '#f87171';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(20, 20);
+      ctx.lineTo(80, 80);
+      ctx.moveTo(80, 20);
+      ctx.lineTo(20, 80);
+      ctx.stroke();
     }
     
     function start() {
@@ -356,6 +429,8 @@
       socket.on('mindMoment', (data) => {
         console.log('💭 Mind moment:', data.mindMoment);
         console.log('✨ Sigil phrase:', data.sigilPhrase);
+        console.log('🏃 Kinetic:', data.kinetic);
+        console.log('💡 Lighting:', data.lighting);
         
         // Abort any in-progress typewriter and display new mind moment
         abortTypewriter();
@@ -367,6 +442,18 @@
           sigilPhraseDiv.classList.add('fade-in');
         } else {
           sigilPhraseDiv.textContent = '';
+        }
+        
+        // Display kinetic data
+        if (data.kinetic) {
+          kineticValue.textContent = data.kinetic.pattern;
+        }
+        
+        // Display lighting data
+        if (data.lighting) {
+          const color = data.lighting.color.replace('0x', '#');
+          const swatch = `<span class="color-swatch" style="background-color: ${color};"></span>`;
+          lightingValue.innerHTML = `${data.lighting.pattern} (${data.lighting.speed.toFixed(1)}) ${swatch}`;
         }
       });
       
@@ -402,6 +489,10 @@
       sigilContainer.classList.remove('visible');
       const ctx = sigilCanvas.getContext('2d');
       ctx.clearRect(0, 0, 100, 100);
+      
+      // Clear kinetic and lighting readouts
+      kineticValue.textContent = '-';
+      lightingValue.textContent = '-';
       
       // Clear readouts
       visualReadout.textContent = '-';

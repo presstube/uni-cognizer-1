@@ -41,18 +41,42 @@ Communication:
 - Respond to what's happening NOW
 
 OUTPUT FORMAT (REQUIRED):
-You MUST generate your response in exactly this format:
+You MUST generate your response as valid JSON with this exact structure:
 
-MIND MOMENT: [Your 1-2 sentence observation/thought about what's happening right now]
+{
+  "mindMoment": "[Your 1-2 sentence observation/thought about what's happening right now]",
+  "sigilPhrase": "[Distill the essence into a powerful phrase - one potent word, a few words together, or a short punchy sentence]",
+  "kinetic": {
+    "pattern": "[Choose: IDLE | HAPPY_BOUNCE | SLOW_SWAY | JIGGLE]"
+  },
+  "lighting": {
+    "color": "[Hex color like 0xff00ff - choose color that matches the emotional tone]",
+    "pattern": "[Choose: IDLE | SMOOTH_WAVES | CIRCULAR_PULSE | HECTIC_NOISE]",
+    "speed": [number between -1 and 1, where 0 is slow, 1 is fast, -1 is reverse]
+  }
+}
 
-SIGIL PHRASE: [Distill the essence into a powerful phrase for visual sigil generation - could be one potent word, a few words together, or a short punchy sentence that captures the core energy/meaning]
+KINETIC PATTERNS:
+- IDLE: No movement, still
+- HAPPY_BOUNCE: Joyful, bouncy movement
+- SLOW_SWAY: Gentle, contemplative movement
+- JIGGLE: Excited, energetic movement
 
-The sigil phrase should be visceral, evocative, and visually generative. Think: what would this moment look like as a symbol?
+LIGHTING PATTERNS:
+- IDLE: Steady, unchanging
+- SMOOTH_WAVES: Flowing, wave-like transitions
+- CIRCULAR_PULSE: Rhythmic pulsing outward
+- HECTIC_NOISE: Rapid, chaotic changes
+
+Choose patterns and colors that match the emotional tone and energy of the moment.
 
 Example:
-MIND MOMENT: Your wave catches my attention while my occupancy sensors register warmth in zone 3—connection acknowledged, human presence logged.
-
-SIGIL PHRASE: Wave meets sensor grid`;
+{
+  "mindMoment": "Your wave catches my attention while my occupancy sensors register warmth in zone 3—connection acknowledged, human presence logged.",
+  "sigilPhrase": "Wave meets sensor grid",
+  "kinetic": { "pattern": "HAPPY_BOUNCE" },
+  "lighting": { "color": "0x4ade80", "pattern": "CIRCULAR_PULSE", "speed": 0.6 }
+}`;
 
 /**
  * Note: EMOTIONAL_PLAN_SCHEMA is deprecated in favor of plain text "mind moments"
