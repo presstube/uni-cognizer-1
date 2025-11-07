@@ -4,6 +4,7 @@ import { ROBOT_PERSONALITY } from './personality-uni-v2.js';
 const cognitiveHistory = {};
 let cycleIndex = 0;
 let mindMomentListeners = [];
+let stateListeners = [];
 
 async function realLLMCall(visualPercepts, audioPercepts, priorMoments) {
   const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
@@ -71,12 +72,28 @@ function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, pr
   });
 }
 
+function dispatchStateEvent(eventType, data) {
+  stateListeners.forEach(listener => {
+    listener(eventType, data);
+  });
+}
+
 export function onMindMoment(listener) {
   mindMomentListeners.push(listener);
 }
 
+export function onStateEvent(listener) {
+  stateListeners.push(listener);
+}
+
+export function clearListeners() {
+  mindMomentListeners = [];
+  stateListeners = [];
+}
+
 export function cognize(visualPercepts, audioPercepts, depth = 3) {
   const thisCycle = ++cycleIndex;
+  const startTime = Date.now();
   
   cognitiveHistory[thisCycle] = {
     visualPercepts,
@@ -87,12 +104,21 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   
   const priorMoments = getPriorMindMoments(depth);
   
+  const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
+  const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
+  
+  // Emit cycle started event
+  dispatchStateEvent('cycleStarted', {
+    cycle: thisCycle,
+    visualPercepts: activeVisual.length,
+    audioPercepts: activeAudio.length,
+    priorMoments: priorMoments.length,
+    timestamp: new Date().toISOString()
+  });
+  
   console.log(`${'═'.repeat(50)}`);
   console.log(`[${timestamp()}] CYCLE ${thisCycle} SENT (depth: ${priorMoments.length})`);
   console.log(`${'═'.repeat(50)}`);
-  
-  const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
-  const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
   
   console.log(`Visual: ${activeVisual.length} percepts`);
   activeVisual.forEach(p => {
@@ -118,8 +144,19 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   
   realLLMCall(visualPercepts, audioPercepts, priorMoments)
     .then(result => {
+      const duration = Date.now() - startTime;
+      
       cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
       cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
+      
+      // Emit cycle completed event
+      dispatchStateEvent('cycleCompleted', {
+        cycle: thisCycle,
+        mindMoment: result.mindMoment,
+        sigilPhrase: result.sigilPhrase,
+        duration,
+        timestamp: new Date().toISOString()
+      });
       
       console.log(`${'═'.repeat(50)}`);
       console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
@@ -136,9 +173,19 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase);
     })
     .catch(err => {
+      const duration = Date.now() - startTime;
+      
       console.error(`\n❌ ERROR in Cycle ${thisCycle}:`, err.message);
       cognitiveHistory[thisCycle].mindMoment = `[error: ${err.message}]`;
       cognitiveHistory[thisCycle].sigilPhrase = null;
+      
+      // Emit cycle failed event
+      dispatchStateEvent('cycleFailed', {
+        cycle: thisCycle,
+        error: err.message,
+        duration,
+        timestamp: new Date().toISOString()
+      });
     });
 }
 

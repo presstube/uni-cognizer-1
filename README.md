@@ -172,6 +172,44 @@ socket.on('mindMoment', (data) => {
 socket.on('sessionTimeout', (data) => {
   // Session ended due to inactivity
 });
+
+// === NEW: Cognitive State Events ===
+
+// HIGH-LEVEL: Simple state tracking (COGNIZING vs READY)
+socket.on('cognitiveState', (data) => {
+  // data = { state: 'COGNIZING' | 'READY' }
+  // Use for simple status indicators
+});
+
+// DETAILED: Cycle-specific events with metadata
+socket.on('cycleStarted', (data) => {
+  // data = {
+  //   cycle: 42,
+  //   visualPercepts: 3,
+  //   audioPercepts: 1,
+  //   priorMoments: 2,
+  //   timestamp: "2025-11-06T10:30:05.000Z"
+  // }
+});
+
+socket.on('cycleCompleted', (data) => {
+  // data = {
+  //   cycle: 42,
+  //   mindMoment: "...",
+  //   sigilPhrase: "...",
+  //   duration: 1200,  // milliseconds
+  //   timestamp: "2025-11-06T10:30:06.200Z"
+  // }
+});
+
+socket.on('cycleFailed', (data) => {
+  // data = {
+  //   cycle: 42,
+  //   error: "LLM error message",
+  //   duration: 800,
+  //   timestamp: "2025-11-06T10:30:05.800Z"
+  // }
+});
 ```
 
 **Integration Flow:**
@@ -181,7 +219,42 @@ Aggregator-1 (Vercel)                Cognizer-1 (Railway)
 │ CamTick Module      │              │ WebSocket Server     │
 │ MicAudioToText      │──percepts──▶ │ Session Manager      │
 │ Socket.io Client    │◀──moments──  │ Cognitive Loop       │
-└─────────────────────┘              └──────────────────────┘
+│                     │◀──states───  │ State: COGNIZING/    │
+└─────────────────────┘              │       READY          │
+                                     └──────────────────────┘
+```
+
+**Cognitive State Machine:**
+
+The system has ONE shared cognitive loop for all connected clients:
+
+```
+IDLE          → No clients connected, loop stopped
+READY         → ≥1 client connected, waiting for next 5s cycle
+COGNIZING     → LLM call in flight, processing percepts
+```
+
+**Use Cases:**
+
+**Simple status indicator (use `cognitiveState`):**
+```javascript
+socket.on('cognitiveState', ({ state }) => {
+  statusIndicator.textContent = state; // 'COGNIZING' or 'READY'
+  statusIndicator.className = state.toLowerCase();
+});
+```
+
+**Detailed analytics (use cycle events):**
+```javascript
+socket.on('cycleStarted', ({ cycle, visualPercepts, audioPercepts }) => {
+  console.log(`Cycle ${cycle}: ${visualPercepts}V + ${audioPercepts}A`);
+  startSpinner('UNI is thinking...');
+});
+
+socket.on('cycleCompleted', ({ cycle, duration }) => {
+  stopSpinner();
+  console.log(`Cycle ${cycle} completed in ${duration}ms`);
+});
 ```
 
 See the [full integration guide](docs/AGGREGATOR_INTEGRATION.md) for:

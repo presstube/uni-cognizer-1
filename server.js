@@ -46,18 +46,41 @@ io.on('connection', (socket) => {
     
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
-      startCognitiveLoop((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
-        // Broadcast mind moment once to all connected clients
-        io.emit('mindMoment', {
-          cycle,
-          mindMoment,
-          sigilPhrase,
-          visualPercepts,
-          audioPercepts,
-          priorMoments,
-          timestamp: new Date().toISOString()
-        });
-      });
+      startCognitiveLoop(
+        // Mind moment callback
+        (cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase) => {
+          // Broadcast mind moment once to all connected clients
+          io.emit('mindMoment', {
+            cycle,
+            mindMoment,
+            sigilPhrase,
+            visualPercepts,
+            audioPercepts,
+            priorMoments,
+            timestamp: new Date().toISOString()
+          });
+        },
+        // State event callback
+        (eventType, data) => {
+          // Broadcast state events to all connected clients
+          if (eventType === 'cycleStarted') {
+            // High-level state change
+            io.emit('cognitiveState', { state: 'COGNIZING' });
+            // Detailed cycle event
+            io.emit('cycleStarted', data);
+          } else if (eventType === 'cycleCompleted') {
+            // High-level state change
+            io.emit('cognitiveState', { state: 'READY' });
+            // Detailed cycle event
+            io.emit('cycleCompleted', data);
+          } else if (eventType === 'cycleFailed') {
+            // High-level state change
+            io.emit('cognitiveState', { state: 'READY' });
+            // Detailed cycle event
+            io.emit('cycleFailed', data);
+          }
+        }
+      );
     }
     
     socket.emit('sessionStarted', { sessionId, startTime: session.startTime });

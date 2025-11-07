@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cognizer-1 Minimal Test</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    button {
+      padding: 20px 40px;
+      font-size: 18px;
+      font-weight: 600;
+      border: 2px solid #fff;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+      min-width: 150px;
+    }
+
+    button:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    #controls {
+      display: none;
+      gap: 20px;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    #buttons {
+      display: flex;
+      gap: 20px;
+    }
+    
+    #readouts {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+    
+    .percept-readout {
+      width: 300px;
+      height: 120px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.7);
+      overflow: hidden;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #state {
+      font-size: 24px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #state.visible {
+      opacity: 1;
+    }
+
+    #state.cognizing {
+      color: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    #state.ready {
+      color: #22c55e;
+    }
+
+    #mindMoment {
+      width: 400px;
+      height: 100px;
+      font-size: 16px;
+      line-height: 1.6;
+      text-align: left;
+      color: #fff;
+      opacity: 0.9;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <button id="toggle">START</button>
+  
+  <div id="controls">
+    <div id="buttons">
+      <button id="visual">VISUAL</button>
+      <button id="audio">AUDIO</button>
+    </div>
+    <div id="readouts">
+      <div id="visualReadout" class="percept-readout">-</div>
+      <div id="audioReadout" class="percept-readout">-</div>
+    </div>
+  </div>
+  
+  <div id="state">READY</div>
+  
+  <div id="mindMoment"></div>
+
+  <script>
+    const SOCKET_URL = 'http://localhost:3001';
+    const SESSION_ID = 'minimal-session-' + Date.now();
+    
+    let socket = null;
+    let isRunning = false;
+    
+    const toggleBtn = document.getElementById('toggle');
+    const controlsDiv = document.getElementById('controls');
+    const visualBtn = document.getElementById('visual');
+    const audioBtn = document.getElementById('audio');
+    const stateDiv = document.getElementById('state');
+    const mindMomentDiv = document.getElementById('mindMoment');
+    const visualReadout = document.getElementById('visualReadout');
+    const audioReadout = document.getElementById('audioReadout');
+    
+    let typewriterTimeout = null;
+    let typewriterAborted = false;
+    
+    // Mock percepts - will be loaded from JSON files
+    let mockVisual = [];
+    let mockAudio = [];
+    
+    async function loadMockPercepts() {
+      try {
+        const visualResponse = await fetch('../data/mock-visual-percepts-visitor.json');
+        const audioResponse = await fetch('../data/mock-audio-percepts-detailed.json');
+        
+        mockVisual = await visualResponse.json();
+        mockAudio = await audioResponse.json();
+        
+        console.log(`✅ Loaded ${mockVisual.length} visual percepts`);
+        console.log(`✅ Loaded ${mockAudio.length} audio percepts`);
+      } catch (error) {
+        console.error('❌ Failed to load mock percepts:', error);
+        // Fallback to basic percepts if loading fails
+        mockVisual = [
+          { action: "Looking up", emoji: "⬆️", weight: 1 },
+          { action: "Waving", emoji: "👋", weight: 1 },
+          { action: "Pointing at screen", emoji: "👉", weight: 1 }
+        ];
+        mockAudio = [
+          { transcript: "Hello, UNI", emoji: "👋", weight: 1 },
+          { transcript: "What can you do?", emoji: "❓", weight: 1 },
+          { transcript: "This is amazing", emoji: "🤩", weight: 1 }
+        ];
+      }
+    }
+    
+    function randomPick(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+    
+    function weightedRandom(items) {
+      if (!items || items.length === 0) return null;
+      
+      // If items don't have weights, pick randomly
+      if (!items[0].weight) {
+        return randomPick(items);
+      }
+      
+      const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+      let random = Math.random() * totalWeight;
+      
+      for (const item of items) {
+        random -= item.weight;
+        if (random <= 0) return item;
+      }
+      
+      return items[0]; // Fallback
+    }
+    
+    function typewriterEffect(text, element, delay = 5) {
+      // Abort any existing typewriter
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+        typewriterTimeout = null;
+      }
+      
+      // Clear element and reset
+      element.textContent = '';
+      typewriterAborted = false;
+      
+      let index = 0;
+      
+      function typeNextChar() {
+        if (typewriterAborted) return;
+        
+        if (index < text.length) {
+          element.textContent += text.charAt(index);
+          index++;
+          typewriterTimeout = setTimeout(typeNextChar, delay);
+        } else {
+          typewriterTimeout = null;
+        }
+      }
+      
+      typeNextChar();
+    }
+    
+    function abortTypewriter() {
+      typewriterAborted = true;
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+        typewriterTimeout = null;
+      }
+    }
+    
+    function start() {
+      isRunning = true;
+      toggleBtn.textContent = 'STOP';
+      controlsDiv.style.display = 'flex';
+      stateDiv.classList.add('visible');
+      
+      // Connect to Cognizer-1
+      socket = io(SOCKET_URL);
+      
+      socket.on('connect', () => {
+        console.log('✅ Connected to Cognizer-1');
+        socket.emit('startSession', { sessionId: SESSION_ID });
+      });
+      
+      socket.on('sessionStarted', ({ sessionId }) => {
+        console.log('📝 Session started:', sessionId);
+      });
+      
+      socket.on('cognitiveState', ({ state }) => {
+        console.log('🧠 State:', state);
+        stateDiv.textContent = state;
+        stateDiv.className = state.toLowerCase() + ' visible';
+      });
+      
+      socket.on('mindMoment', (data) => {
+        console.log('💭 Mind moment:', data.mindMoment);
+        console.log('✨ Sigil:', data.sigilPhrase);
+        
+        // Abort any in-progress typewriter and display new mind moment
+        abortTypewriter();
+        typewriterEffect(data.mindMoment, mindMomentDiv);
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('🔌 Disconnected');
+      });
+    }
+    
+    function stop() {
+      isRunning = false;
+      toggleBtn.textContent = 'START';
+      controlsDiv.style.display = 'none';
+      stateDiv.classList.remove('visible');
+      
+      // Clear mind moment display
+      abortTypewriter();
+      mindMomentDiv.textContent = '';
+      
+      // Clear readouts
+      visualReadout.textContent = '-';
+      audioReadout.textContent = '-';
+      
+      if (socket) {
+        socket.emit('endSession', { sessionId: SESSION_ID });
+        socket.disconnect();
+        socket = null;
+      }
+    }
+    
+    function sendVisual() {
+      if (!socket || !isRunning) return;
+      
+      const percept = weightedRandom(mockVisual);
+      if (!percept) return;
+      
+      socket.emit('percept', {
+        sessionId: SESSION_ID,
+        type: 'visual',
+        data: percept
+      });
+      
+      visualReadout.textContent = `${percept.emoji} ${percept.action}`;
+      console.log('👁️ Sent visual:', percept);
+    }
+    
+    function sendAudio() {
+      if (!socket || !isRunning) return;
+      
+      const percept = weightedRandom(mockAudio);
+      if (!percept) return;
+      
+      socket.emit('percept', {
+        sessionId: SESSION_ID,
+        type: 'audio',
+        data: percept
+      });
+      
+      const display = percept.transcript 
+        ? `${percept.emoji} "${percept.transcript}"` 
+        : `${percept.emoji} ${percept.analysis}`;
+      audioReadout.textContent = display;
+      console.log('🎤 Sent audio:', percept);
+    }
+    
+    // Event listeners
+    toggleBtn.addEventListener('click', () => {
+      if (isRunning) {
+        stop();
+      } else {
+        start();
+      }
+    });
+    
+    visualBtn.addEventListener('click', sendVisual);
+    audioBtn.addEventListener('click', sendAudio);
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (socket && isRunning) {
+        socket.emit('endSession', { sessionId: SESSION_ID });
+        socket.disconnect();
+      }
+    });
+    
+    // Initialize - load mock percepts
+    loadMockPercepts();
+  </script>
+</body>
+</html>
+
