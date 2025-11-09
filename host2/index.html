@@ -16,25 +16,22 @@
       background: #000;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 30px;
     }
 
     button {
-      padding: 20px 40px;
-      font-size: 18px;
+      padding: 8px 16px;
+      font-size: 14px;
       font-weight: 600;
       border: 2px solid #fff;
       background: transparent;
       color: #fff;
       cursor: pointer;
-      border-radius: 8px;
+      border-radius: 4px;
       transition: all 0.2s;
-      min-width: 150px;
     }
 
     button:hover {
@@ -46,44 +43,48 @@
       transform: scale(0.98);
     }
 
+    #topLeft {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+
     #controls {
       display: none;
-      gap: 20px;
+      margin-top: 60px;
+      gap: 15px;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
     }
     
     #buttons {
       display: flex;
-      gap: 20px;
+      gap: 10px;
     }
     
     #readouts {
       display: flex;
-      gap: 20px;
-      font-size: 14px;
+      gap: 15px;
     }
     
     .percept-readout {
-      width: 300px;
-      height: 120px;
-      padding: 10px;
+      width: 200px;
+      padding: 8px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 4px;
       color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
       overflow: hidden;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      text-align: left;
     }
 
     #state {
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 300;
       letter-spacing: 2px;
       opacity: 0;
       transition: opacity 0.3s;
+      margin: 20px 0;
     }
 
     #state.visible {
@@ -104,23 +105,50 @@
       color: #22c55e;
     }
 
+    #mainContent {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 20px;
+      flex: 1;
+    }
+
+    #leftPanel {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
     #mindMoment {
-      width: 600px;
-      font-size: 16px;
+      font-size: 18px;
       line-height: 1.6;
-      text-align: center;
+      text-align: left;
       color: #fff;
       opacity: 0.9;
-      margin-bottom: 10px;
+      max-width: 500px;
+    }
+
+    #rightPanel {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 20px;
+    }
+
+    #sigilSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
 
     #sigilPhrase {
       font-size: 14px;
       color: #f59e0b;
       opacity: 0.8;
-      margin-bottom: 20px;
       font-style: italic;
-      min-height: 20px;
+      text-align: center;
+      max-width: 300px;
     }
 
     #sigilContainer {
@@ -143,19 +171,18 @@
     }
 
     #sigilLabel {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.6);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
     #kineticReadout, #lightingReadout {
-      width: 300px;
-      padding: 15px;
+      width: 250px;
+      padding: 12px;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      font-size: 14px;
-      margin-top: 10px;
+      border-radius: 6px;
+      font-size: 13px;
     }
 
     #kineticReadout {
@@ -175,7 +202,7 @@
     }
 
     .readout-value {
-      font-size: 16px;
+      font-size: 14px;
       color: #fff;
       font-weight: 600;
     }
@@ -206,7 +233,9 @@
   </style>
 </head>
 <body>
-  <button id="toggle">START</button>
+  <div id="topLeft">
+    <button id="toggle">START</button>
+  </div>
   
   <div id="controls">
     <div id="buttons">
@@ -221,27 +250,35 @@
   
   <div id="state">READY</div>
   
-  <div id="mindMoment"></div>
-  <div id="sigilPhrase"></div>
+  <div id="mainContent">
+    <div id="leftPanel">
+      <div id="mindMoment"></div>
+    </div>
+    
+    <div id="rightPanel">
+      <div id="sigilSection">
+        <div id="sigilContainer">
+          <canvas id="sigilCanvas" width="100" height="100"></canvas>
+          <div id="sigilLabel">Sigil</div>
+        </div>
+        <div id="sigilPhrase"></div>
+      </div>
+      
+      <div id="kineticReadout">
+        <div class="readout-label">Kinetic</div>
+        <div class="readout-value" id="kineticValue">-</div>
+      </div>
 
-  <div id="sigilContainer">
-    <canvas id="sigilCanvas" width="100" height="100"></canvas>
-    <div id="sigilLabel">Sigil</div>
-  </div>
-
-  <div id="kineticReadout">
-    <div class="readout-label">Kinetic</div>
-    <div class="readout-value" id="kineticValue">-</div>
-  </div>
-
-  <div id="lightingReadout">
-    <div class="readout-label">Lighting</div>
-    <div class="readout-value" id="lightingValue">-</div>
+      <div id="lightingReadout">
+        <div class="readout-label">Lighting</div>
+        <div class="readout-value" id="lightingValue">-</div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const SOCKET_URL = 'http://localhost:3001';
-    // const SOCKET_URL = 'http://uni-cognizer-1-production.up.railway.app';
+    // const SOCKET_URL = 'http://localhost:3001';
+    const SOCKET_URL = 'http://uni-cognizer-1-production.up.railway.app';
     const SESSION_ID = 'minimal-session-' + Date.now();
     
     let socket = null;
