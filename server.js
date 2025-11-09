@@ -154,6 +154,18 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('getHistory', ({ sessionId }) => {
+    if (!sessionId || !sessionManager.getSession(sessionId)) {
+      socket.emit('error', { message: 'Invalid or expired session' });
+      return;
+    }
+    
+    socket.emit('history', { 
+      history: getHistory(),
+      timestamp: new Date().toISOString()
+    });
+  });
+
   socket.on('disconnect', () => {
     const sessionId = socketToSession.get(socket.id);
     if (sessionId) {
