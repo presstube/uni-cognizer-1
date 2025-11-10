@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory } from './src/main.js';
 import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
+import { CognitiveState } from './src/cognitive-states.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -64,7 +65,7 @@ io.on('connection', (socket) => {
           });
           
           // Transition to VISUALIZING state after mind moment
-          io.emit('cognitiveState', { state: 'VISUALIZING' });
+          io.emit('cognitiveState', { state: CognitiveState.VISUALIZING });
         },
         // Sigil callback
         (cycle, sigilCode, sigilPhrase) => {
@@ -81,17 +82,17 @@ io.on('connection', (socket) => {
           // Broadcast state events to all connected clients
           if (eventType === 'cycleStarted') {
             // High-level state change
-            io.emit('cognitiveState', { state: 'COGNIZING' });
+            io.emit('cognitiveState', { state: CognitiveState.COGNIZING });
             // Detailed cycle event
             io.emit('cycleStarted', data);
           } else if (eventType === 'cycleCompleted') {
             // High-level state change
-            io.emit('cognitiveState', { state: 'READY' });
+            io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
             // Detailed cycle event
             io.emit('cycleCompleted', data);
           } else if (eventType === 'cycleFailed') {
             // High-level state change
-            io.emit('cognitiveState', { state: 'READY' });
+            io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
             // Detailed cycle event
             io.emit('cycleFailed', data);
           } else if (eventType === 'sigilFailed') {
