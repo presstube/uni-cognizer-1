@@ -102,7 +102,11 @@ io.on('connection', (socket) => {
       );
     }
     
-    socket.emit('sessionStarted', { sessionId, startTime: session.startTime });
+    socket.emit('sessionStarted', { 
+      sessionId, 
+      startTime: session.startTime,
+      cognitiveCycleMs: process.env.COGNITIVE_CYCLE_MS || 5000
+    });
   });
 
   socket.on('percept', (percept) => {
