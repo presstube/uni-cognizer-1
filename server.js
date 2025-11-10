@@ -159,12 +159,8 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('getHistory', ({ sessionId }) => {
-    if (!sessionId || !sessionManager.getSession(sessionId)) {
-      socket.emit('error', { message: 'Invalid or expired session' });
-      return;
-    }
-    
+  socket.on('getHistory', () => {
+    // No session required - read-only operation
     socket.emit('history', { 
       history: getHistory(),
       timestamp: new Date().toISOString()
