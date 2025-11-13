@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Render Test - Cognizer-1</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 40px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    
+    .url {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 30px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .status {
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    .status.connecting {
+      background: #1a3a52;
+      color: #4a9eff;
+      border: 1px solid #2a5a82;
+    }
+    
+    .status.connected {
+      background: #1a3a1a;
+      color: #4ade80;
+      border: 1px solid #2a5a2a;
+    }
+    
+    .status.error {
+      background: #3a1a1a;
+      color: #ff6b6b;
+      border: 1px solid #5a2a2a;
+    }
+    
+    .info {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      margin-bottom: 15px;
+    }
+    
+    .info h3 {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .info p {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #4a9eff;
+    }
+    
+    .log {
+      background: #0a0a0a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    
+    .log-entry {
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .timestamp {
+      color: #666;
+      margin-right: 10px;
+    }
+    
+    .log-success {
+      color: #4ade80;
+    }
+    
+    .log-error {
+      color: #ff6b6b;
+    }
+    
+    .log-info {
+      color: #4a9eff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 Render Deployment Test</h1>
+    <div class="url">https://uni-cognizer-1.onrender.com</div>
+    
+    <div id="status" class="status connecting">
+      🔄 Connecting to WebSocket...
+    </div>
+    
+    <div id="details" style="display: none;">
+      <div class="info">
+        <h3>Socket ID</h3>
+        <p id="socketId">—</p>
+      </div>
+      
+      <div class="info">
+        <h3>Session ID</h3>
+        <p id="sessionId">—</p>
+      </div>
+      
+      <div class="info">
+        <h3>Connection Time</h3>
+        <p id="connectionTime">—</p>
+      </div>
+    </div>
+    
+    <h3 style="margin: 20px 0 10px; color: #888; font-size: 14px; text-transform: uppercase;">Event Log</h3>
+    <div id="log" class="log">
+      <div class="log-entry">
+        <span class="timestamp">[Initializing]</span>
+        <span class="log-info">Loading Socket.io...</span>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    const RENDER_URL = 'https://uni-cognizer-1.onrender.com';
+    const statusEl = document.getElementById('status');
+    const detailsEl = document.getElementById('details');
+    const logEl = document.getElementById('log');
+    const socketIdEl = document.getElementById('socketId');
+    const sessionIdEl = document.getElementById('sessionId');
+    const connectionTimeEl = document.getElementById('connectionTime');
+    
+    let startTime = Date.now();
+    
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      });
+      
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `
+        <span class="timestamp">[${timestamp}]</span>
+        <span class="log-${type}">${message}</span>
+      `;
+      
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    log('Connecting to Render deployment...');
+    
+    const socket = io(RENDER_URL, {
+      transports: ['polling', 'websocket']
+    });
+    
+    socket.on('connect', () => {
+      const duration = Date.now() - startTime;
+      
+      statusEl.className = 'status connected';
+      statusEl.textContent = '✅ Connected to Render!';
+      detailsEl.style.display = 'block';
+      
+      socketIdEl.textContent = socket.id;
+      connectionTimeEl.textContent = `${duration}ms`;
+      
+      log(`Connected! Socket ID: ${socket.id}`, 'success');
+      log(`Connection took ${duration}ms`, 'info');
+      
+      // Start a test session
+      const testSessionId = `render-test-${Date.now()}`;
+      sessionIdEl.textContent = testSessionId;
+      
+      log(`Starting test session: ${testSessionId}`, 'info');
+      socket.emit('startSession', { sessionId: testSessionId });
+    });
+    
+    socket.on('connect_error', (error) => {
+      statusEl.className = 'status error';
+      statusEl.textContent = '❌ Connection Failed';
+      
+      log(`Connection error: ${error.message}`, 'error');
+      log('Check that Render deployment is running', 'error');
+    });
+    
+    socket.on('disconnect', (reason) => {
+      statusEl.className = 'status error';
+      statusEl.textContent = '⚠️ Disconnected';
+      
+      log(`Disconnected: ${reason}`, 'error');
+    });
+    
+    socket.on('sessionStarted', (data) => {
+      log(`✓ Session started: ${data.sessionId}`, 'success');
+      log(`Cognitive cycle: ${data.cognitiveCycleMs}ms`, 'info');
+      log(`Test complete! WebSocket is working.`, 'success');
+    });
+    
+    socket.on('mindMoment', (data) => {
+      log(`Mind moment received (cycle ${data.cycle})`, 'success');
+    });
+    
+    socket.on('cognitiveState', (data) => {
+      log(`Cognitive state: ${data.state}`, 'info');
+    });
+  </script>
+</body>
+</html>
+
