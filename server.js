@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import express from 'express';
 import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory } from './src/main.js';
 import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
@@ -9,7 +10,32 @@ import { CognitiveState } from './src/cognitive-states.js';
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
 
-const httpServer = createServer();
+// Create Express app for HTTP endpoints
+const app = express();
+app.use(express.json());
+
+// Health check endpoint (required for Render)
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    service: 'Cognizer-1 WebSocket Server',
+    version: '0.1.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Create HTTP server with Express app
+const httpServer = createServer(app);
+
+// Attach Socket.io to the HTTP server
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CORS_ORIGIN || '*',
