@@ -6,8 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "NODE_ENV=development node server.js",
-    "test-fake": "node src/main-fake.js",
+    "test-fake": "node src/fake/main.js",
     "host": "./scripts/host.sh",
     "dev:full": "./scripts/dev.sh"
   },
