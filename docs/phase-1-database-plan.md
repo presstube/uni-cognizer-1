@@ -8,6 +8,20 @@
 
 ---
 
+## Platform Notes
+
+This implementation is **platform-agnostic**. The code works identically on:
+- Railway (current deployment)
+- Render (planned future migration)
+- Heroku, Fly.io, or any Node.js + PostgreSQL host
+
+All code uses **standard PostgreSQL** and **environment variables** - no platform-specific features.
+
+**Current Deployment**: Railway  
+**Future Migration**: Easy move to Render (30-minute process, covered at end of this document)
+
+---
+
 ## Overview
 
 Add PostgreSQL database to persist mind moments, enabling:
@@ -23,7 +37,7 @@ Add PostgreSQL database to persist mind moments, enabling:
 
 ## Acceptance Criteria
 
-- [ ] PostgreSQL running locally (Docker or Railway)
+- [ ] PostgreSQL running locally (Docker or hosted)
 - [ ] Schema created via migration script
 - [ ] Mind moments save to database after generation
 - [ ] Prior moments query from database
@@ -32,14 +46,14 @@ Add PostgreSQL database to persist mind moments, enabling:
 - [ ] `npm start` + WebSocket session saves to DB
 - [ ] In-memory fallback works if DB unavailable
 - [ ] All existing tests still pass
-- [ ] Railway deployment updated with DB
+- [ ] Production deployment updated with DB (Railway or Render)
 
 ---
 
 ## Phase 1 Scope
 
 ### In Scope ✅
-- PostgreSQL setup (local + Railway)
+- PostgreSQL setup (local + Railway/Render)
 - Schema design & migrations
 - Repository layer (`src/db/`)
 - Version tracking
@@ -68,7 +82,7 @@ npm install pg dotenv
 
 ## Environment Variables
 
-Add to `.env`:
+Add to `.env` (local) or platform dashboard (Railway/Render):
 
 ```bash
 # Existing variables
@@ -78,11 +92,15 @@ ANTHROPIC_API_KEY=...
 # ... etc
 
 # NEW: Database
-DATABASE_URL=postgresql://localhost:5432/cognizer_dev
+DATABASE_URL=postgresql://localhost:5432/cognizer_dev  # Local dev
 DATABASE_ENABLED=true
 ```
 
+**Production Note**: Both Railway and Render auto-inject `DATABASE_URL` when you link a PostgreSQL database to your web service. You only need to manually set `DATABASE_ENABLED=true`.
+
 **For Railway**: Railway will auto-inject `DATABASE_URL` when you add PostgreSQL service.
+
+**For Render**: Render will auto-inject `DATABASE_URL` when you link the database to your web service.
 
 ---
 
@@ -652,13 +670,25 @@ DATABASE_ENABLED=true
 npm run migrate
 ```
 
-### Option B: Railway (Production)
+### Option B: Railway or Render (Production)
 
+**Railway:**
 1. Go to Railway project: https://railway.app
 2. Click "New" → "Database" → "Add PostgreSQL"
 3. Railway auto-injects `DATABASE_URL` env var
 4. Set `DATABASE_ENABLED=true` in Railway env vars
-5. Deploy - migrations run automatically via `npm run migrate`
+5. Deploy - migrations run automatically
+
+**Render:**
+1. Go to Render dashboard: https://render.com
+2. Click "New" → "PostgreSQL"
+3. Note the database name
+4. In your web service, link to the database
+5. Render auto-injects `DATABASE_URL` env var
+6. Set `DATABASE_ENABLED=true` in Render env vars
+7. Deploy - migrations run automatically
+
+**Both platforms**: The code and setup process are identical. Only difference is the dashboard UI.
 
 ---
 
@@ -851,6 +881,196 @@ Before moving to Phase 2:
 
 ---
 
+## Future: Migrating Railway → Render
+
+When ready to move from Railway to Render (can be done anytime after Phase 1 is stable):
+
+### Pre-Migration Checklist
+
+- [ ] Phase 1 stable and tested on Railway
+- [ ] Database has <1GB data (fits Render free tier)
+- [ ] Environment variables documented
+- [ ] Downtime window scheduled (5-10 minutes needed)
+
+### Migration Steps (30-45 minutes total)
+
+#### 1. Create Render PostgreSQL Database (5 min)
+
+```bash
+# In Render dashboard:
+# - Click "New" → "PostgreSQL"
+# - Name: cognizer-postgres
+# - Plan: Free (or Starter if needed)
+# - Note the connection string
+```
+
+#### 2. Export Railway Data (2 min)
+
+```bash
+# Get Railway database URL from dashboard
+export RAILWAY_DB="postgresql://..."
+
+# Export all data
+pg_dump $RAILWAY_DB > cognizer_backup.sql
+
+# Verify backup
+ls -lh cognizer_backup.sql
+# Should see file size (e.g., 500KB for 1000 moments)
+```
+
+#### 3. Import to Render (3 min)
+
+```bash
+# Get Render database URL from dashboard
+export RENDER_DB="postgresql://..."
+
+# Import data
+psql $RENDER_DB < cognizer_backup.sql
+
+# Verify import
+psql $RENDER_DB -c "SELECT count(*) FROM mind_moments;"
+# Should match Railway count
+```
+
+#### 4. Deploy Web Service to Render (10 min)
+
+```bash
+# In Render dashboard:
+# 1. Click "New" → "Web Service"
+# 2. Connect your GitHub repo
+# 3. Settings:
+#    - Name: cognizer-1
+#    - Build Command: npm install && npm run migrate
+#    - Start Command: npm start
+# 4. Environment Variables:
+#    Copy from Railway:
+#    - LLM_PROVIDER
+#    - OPENAI_API_KEY (or whichever provider)
+#    - ANTHROPIC_API_KEY
+#    - GEMINI_API_KEY
+#    - DATABASE_ENABLED=true
+#    - DATABASE_URL: Link to Render PostgreSQL
+# 5. Click "Create Web Service"
+```
+
+#### 5. Verify Render Deployment (5 min)
+
+```bash
+# Check database connection
+psql $RENDER_DB -c "SELECT count(*) FROM mind_moments;"
+
+# Test WebSocket endpoint
+# Use your test client or:
+curl https://cognizer-1.onrender.com/
+
+# Check logs in Render dashboard
+# Look for: "✓ Database connection pool initialized"
+```
+
+#### 6. Test Full Flow (10 min)
+
+```bash
+# Option A: Use test-fake
+# SSH into Render container or run locally with Render DB:
+DATABASE_URL=$RENDER_DB npm run test-fake
+
+# Option B: Test with aggregator
+# Update aggregator WebSocket URL temporarily:
+const COGNIZER_URL = 'https://cognizer-1.onrender.com';
+
+# Send test percepts, verify mind moments generated
+```
+
+#### 7. Cutover (5 min)
+
+```bash
+# Update aggregator permanently:
+# Change WebSocket URL from Railway to Render
+
+# In aggregator .env or code:
+COGNIZER_WS_URL=wss://cognizer-1.onrender.com
+
+# Deploy aggregator update
+# Monitor for issues
+
+# If problems: Revert to Railway URL (instant rollback)
+```
+
+#### 8. Monitor & Cleanup (24 hours)
+
+```bash
+# Day 1: Monitor Render logs, verify stability
+# Check for errors, performance issues
+
+# If all good after 24 hours:
+# - Delete Railway PostgreSQL database
+# - Delete Railway web service
+# - Update documentation with Render URLs
+```
+
+### Migration Troubleshooting
+
+**Issue**: pg_dump fails with connection error
+
+```bash
+# Solution: Check Railway database is still running
+# Get fresh connection string from Railway dashboard
+```
+
+**Issue**: Import fails with "relation already exists"
+
+```bash
+# Solution: Render database may not be empty
+# Drop and recreate:
+psql $RENDER_DB -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+# Then re-run import
+```
+
+**Issue**: Render build fails
+
+```bash
+# Solution: Check package.json scripts exist
+# Verify: npm run migrate exists
+# Check Render build logs for specific error
+```
+
+**Issue**: WebSocket connection fails
+
+```bash
+# Solution: Render free tier may sleep after inactivity
+# Check Render dashboard - service may be spinning up (30-60s)
+# Consider Starter plan if uptime is critical
+```
+
+### Migration Benefits
+
+- ✅ **Zero code changes** - same code runs on both platforms
+- ✅ **Full data preservation** - all mind moments transferred
+- ✅ **Quick rollback** - just point aggregator back to Railway
+- ✅ **Low risk** - Railway remains available during migration
+- ✅ **Learn the process** - easy to migrate between platforms in future
+
+### Post-Migration Validation
+
+```sql
+-- Compare record counts
+-- Railway:
+SELECT 'railway' as platform, count(*) FROM mind_moments;
+
+-- Render:
+SELECT 'render' as platform, count(*) FROM mind_moments;
+
+-- Should be identical
+
+-- Verify latest records transferred
+SELECT * FROM mind_moments ORDER BY created_at DESC LIMIT 5;
+
+-- Check version tracking intact
+SELECT cognizer_version, count(*) FROM mind_moments GROUP BY 1;
+```
+
+---
+
 ## Next Steps After Phase 1
 
 Once Phase 1 is stable and tested:
@@ -866,9 +1086,10 @@ Once Phase 1 is stable and tested:
 
 ---
 
-**Status**: Ready to implement  
+**Status**: Ready to implement (Platform-agnostic: Railway + Render migration guide included)  
 **Estimated Time**: 4-6 hours coding + 2-3 days testing  
-**Risk Level**: Low (fallback mode, incremental)
+**Risk Level**: Low (fallback mode, incremental)  
+**Platform Migration**: 30-45 minutes when ready (covered in detail above)
 
 **Ready when you are!** 🚀
 
