@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { dumpPercepts } from './percepts.js';
-import { cognize, onMindMoment, onSigil, getHistory } from './cog.js';
+import { cognize, onMindMoment, onSigil, getHistory, initializeCycleIndex } from './cog.js';
 import { initDatabase } from '../db/index.js';
 import { createSession } from '../db/sessions.js';
 
@@ -10,8 +10,9 @@ const DEPTH = 3;
 if (process.env.DATABASE_ENABLED === 'true') {
   try {
     initDatabase();
-    await createSession('fake-test', { type: 'test', mode: 'fake' });
-    console.log('💾 Database enabled for fake test');
+    await createSession('uni', { type: 'consciousness', mode: 'fake-test' });
+    await initializeCycleIndex();
+    console.log('💾 Database enabled for fake test - UNI consciousness active');
   } catch (error) {
     console.error('Database initialization failed:', error.message);
   }

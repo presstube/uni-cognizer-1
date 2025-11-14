@@ -6,6 +6,24 @@ let cycleIndex = 0;
 let mindMomentListeners = [];
 let sigilListeners = [];
 
+// Initialize cycleIndex from database to maintain UNI's continuous consciousness
+export async function initializeCycleIndex() {
+  if (process.env.DATABASE_ENABLED === 'true') {
+    try {
+      const { getPool } = await import('../db/index.js');
+      const pool = getPool();
+      const result = await pool.query(
+        "SELECT MAX(cycle) as max_cycle FROM mind_moments WHERE session_id = 'uni'"
+      );
+      cycleIndex = result.rows[0].max_cycle || 0;
+      console.log(`🧠 UNI's consciousness resuming from cycle ${cycleIndex}`);
+    } catch (error) {
+      console.error('Failed to initialize cycle index from database:', error.message);
+      console.log('🧠 Starting UNI from cycle 0');
+    }
+  }
+}
+
 function mockLLMCall(visualPercepts, audioPercepts, priorMoments) {
   const latency = 6000 + Math.random() * 2000;
   return new Promise((resolve) => {
@@ -152,7 +170,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
         
         const saved = await dbSaveMindMoment({
           cycle: thisCycle,
-          sessionId: 'fake-test',
+          sessionId: 'uni', // UNI's singular continuous mind
           mindMoment: result.mindMoment,
           sigilPhrase: result.sigilPhrase,
           sigilCode: null, // Not yet generated

@@ -9,6 +9,7 @@ import { CognitiveState } from './src/cognitive-states.js';
 import { initDatabase, closeDatabase } from './src/db/index.js';
 import { runMigrations } from './src/db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
+import { initializeCycleIndex } from './src/real-cog.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -18,8 +19,10 @@ try {
   initDatabase();
   if (process.env.DATABASE_ENABLED === 'true') {
     await runMigrations();
-    // Create default session for standalone cognitive loops
-    await dbCreateSession('default', { type: 'standalone', note: 'Default session for non-WebSocket cognitive loops' });
+    // Create UNI's session (singular continuous mind)
+    await dbCreateSession('uni', { type: 'consciousness', note: "UNI's singular continuous mind" });
+    // Initialize cycle counter from database to resume UNI's consciousness
+    await initializeCycleIndex();
   }
 } catch (error) {
   console.error('Database initialization failed:', error.message);

@@ -10,6 +10,24 @@ let mindMomentListeners = [];
 let sigilListeners = [];
 let stateListeners = [];
 
+// Initialize cycleIndex from database to maintain UNI's continuous consciousness
+export async function initializeCycleIndex() {
+  if (process.env.DATABASE_ENABLED === 'true') {
+    try {
+      const { getPool } = await import('./db/index.js');
+      const pool = getPool();
+      const result = await pool.query(
+        "SELECT MAX(cycle) as max_cycle FROM mind_moments WHERE session_id = 'uni'"
+      );
+      cycleIndex = result.rows[0].max_cycle || 0;
+      console.log(`🧠 UNI's consciousness resuming from cycle ${cycleIndex}`);
+    } catch (error) {
+      console.error('Failed to initialize cycle index from database:', error.message);
+      console.log('🧠 Starting UNI from cycle 0');
+    }
+  }
+}
+
 async function realLLMCall(visualPercepts, audioPercepts, priorMoments) {
   const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
   const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
@@ -197,21 +215,21 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
         try {
           const priorIds = priorMoments.map(m => m.id).filter(Boolean);
           
-          const saved = await dbSaveMindMoment({
-            cycle: thisCycle,
-            sessionId: 'default', // TODO: Get from session context
-            mindMoment: result.mindMoment,
-            sigilPhrase: result.sigilPhrase,
-            sigilCode: null, // Not yet generated
-            kinetic: result.kinetic,
-            lighting: result.lighting,
-            visualPercepts,
-            audioPercepts,
-            priorMomentIds: priorIds,
-            cognizerVersion: COGNIZER_VERSION,
-            llmProvider: providerName,
-            processingDuration: mindMomentDuration
-          });
+        const saved = await dbSaveMindMoment({
+          cycle: thisCycle,
+          sessionId: 'uni', // UNI's singular continuous mind
+          mindMoment: result.mindMoment,
+          sigilPhrase: result.sigilPhrase,
+          sigilCode: null, // Not yet generated
+          kinetic: result.kinetic,
+          lighting: result.lighting,
+          visualPercepts,
+          audioPercepts,
+          priorMomentIds: priorIds,
+          cognizerVersion: COGNIZER_VERSION,
+          llmProvider: providerName,
+          processingDuration: mindMomentDuration
+        });
           
           // Store DB ID in history
           cognitiveHistory[thisCycle].id = saved.id;
