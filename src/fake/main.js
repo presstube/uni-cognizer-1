@@ -1,8 +1,21 @@
 import 'dotenv/config';
 import { dumpPercepts } from './percepts.js';
 import { cognize, onMindMoment, onSigil, getHistory } from './cog.js';
+import { initDatabase } from '../db/index.js';
+import { createSession } from '../db/sessions.js';
 
 const DEPTH = 3;
+
+// Initialize database if enabled
+if (process.env.DATABASE_ENABLED === 'true') {
+  try {
+    initDatabase();
+    await createSession('fake-test', { type: 'test', mode: 'fake' });
+    console.log('💾 Database enabled for fake test');
+  } catch (error) {
+    console.error('Database initialization failed:', error.message);
+  }
+}
 
 onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
   console.log(`${'─'.repeat(50)}`);

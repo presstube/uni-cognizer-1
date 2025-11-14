@@ -51,18 +51,42 @@
 
 ---
 
-### Step 5: Run Migrations Locally ⏸️ PENDING
-- [ ] Get External Database URL from Render
-- [ ] Add to local `.env`
-- [ ] Run `npm run migrate`
-- [ ] Verify schema created
+### Step 5: Run Migrations Locally ✅ COMPLETE
+- [x] Get External Database URL from Render
+- [x] Add to local `.env`
+- [x] Fixed SSL requirement for Render connections
+- [x] Fixed dotenv import in migrate.js
+- [x] Run `npm run migrate`
+- [x] Verify schema created (4 tables: cognizer_versions, sessions, mind_moments, schema_migrations)
+- [x] Verified version 0.1.0 seeded
+
+**Completed**: 2025-11-14
+
+**Tables Created:**
+- `cognizer_versions` - Version tracking
+- `sessions` - Session lifecycle
+- `mind_moments` - Core data (with UUIDs, prior context, percepts, outputs)
+- `schema_migrations` - Migration tracking
 
 ---
 
-### Step 6: Test with Fake System ⏸️ PENDING
-- [ ] Run `DATABASE_ENABLED=true npm run test-fake`
-- [ ] Verify mind moments saved to DB
-- [ ] Query database to confirm records
+### Step 6: Test with Fake System ✅ COMPLETE
+- [x] Run `DATABASE_ENABLED=true npm run test-fake`
+- [x] Verify mind moments saved to DB (5 moments saved)
+- [x] Query database to confirm records
+- [x] Verified version tracking (v0.1.0 on all records)
+- [x] Verified provider tracking (mock)
+- [x] Verified sigil code updates (4/5 updated)
+
+**Completed**: 2025-11-14
+
+**Test Results:**
+- ✅ 5 mind moments saved to database
+- ✅ All tagged with cognizer_version: 0.1.0
+- ✅ All tagged with llm_provider: mock
+- ✅ Session 'fake-test' created
+- ✅ Sigil codes updated (4/5 - last one interrupted)
+- ✅ Database save adds minimal latency
 
 ---
 
