@@ -18,6 +18,8 @@ try {
   initDatabase();
   if (process.env.DATABASE_ENABLED === 'true') {
     await runMigrations();
+    // Create default session for standalone cognitive loops
+    await dbCreateSession('default', { type: 'standalone', note: 'Default session for non-WebSocket cognitive loops' });
   }
 } catch (error) {
   console.error('Database initialization failed:', error.message);
