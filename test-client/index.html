@@ -17,7 +17,9 @@
         }
         .panel { padding: 20px; overflow-y: auto; }
         .left { width: 300px; border-right: 1px solid #333; }
-        .center { flex: 1; border-right: 1px solid #333; }
+        .center { flex: 1; border-right: 1px solid #333; display: flex; flex-direction: column; padding: 0; }
+        .center-top { flex: 1; border-bottom: 1px solid #333; overflow-y: auto; padding: 20px; }
+        .center-bottom { flex: 1; overflow-y: auto; padding: 20px; }
         .right { width: 250px; }
         h2 { color: #fff; font-size: 14px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
         
@@ -57,18 +59,39 @@
         }
         button.send:hover { background: #0066cc; }
         
-        /* Mind Stream */
+        /* Percepts */
+        .percept { 
+            display: inline-block; 
+            background: #1a1a1a; 
+            padding: 6px 10px; 
+            margin: 3px; 
+            border-radius: 3px; 
+            font-size: 12px;
+        }
+        .percept-visual { border-left: 2px solid #0080ff; }
+        .percept-audio { border-left: 2px solid #00ff88; }
+        .percept-emoji { margin-right: 5px; }
+        .empty { color: #555; text-align: center; padding: 40px 20px; }
+        
+        /* Mind Moments */
         .moment { 
-            margin-bottom: 20px; 
-            padding: 15px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
             background: #111; 
             border-left: 3px solid #333;
+            font-size: 12px;
         }
         .moment.latest { border-left-color: #0080ff; }
-        .cycle { color: #0080ff; font-weight: bold; font-size: 12px; margin-bottom: 5px; }
-        .mind { color: #fff; font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
-        .sigil { color: #888; font-size: 12px; font-style: italic; }
-        .empty { color: #555; text-align: center; padding: 40px 20px; }
+        .moment-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .cycle { color: #0080ff; font-weight: bold; }
+        .moment-meta { color: #666; font-size: 10px; }
+        .mind { color: #fff; font-size: 13px; line-height: 1.4; margin-bottom: 6px; }
+        .moment-footer { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+        .moment-tag { color: #888; font-size: 10px; }
+        .moment-tag strong { color: #aaa; }
+        .sigil { color: #00ff88; font-style: italic; }
+        .kinetic { color: #ffaa00; }
+        .lighting { color: #aa00ff; }
         
         /* Status Panel */
         .status-item { margin-bottom: 15px; }
@@ -104,11 +127,19 @@
         </div>
     </div>
     
-    <!-- Center: Mind Stream -->
+    <!-- Center: Split View -->
     <div class="panel center">
-        <h2>UNI's Mind</h2>
-        <div id="mindStream">
-            <div class="empty">Waiting for mind moments...</div>
+        <div class="center-top">
+            <h2>Percepts</h2>
+            <div id="perceptStream">
+                <div class="empty">No percepts yet...</div>
+            </div>
+        </div>
+        <div class="center-bottom">
+            <h2>Mind Moments</h2>
+            <div id="mindStream">
+                <div class="empty">Waiting for mind moments...</div>
+            </div>
         </div>
     </div>
     
@@ -142,6 +173,7 @@
         const socket = io(RENDER_URL);
         let currentSessionId = null;
         let moments = [];
+        let percepts = [];
 
         // Connection handling
         socket.on('connect', () => {
@@ -172,6 +204,20 @@
             renderMindStream();
         });
 
+        function renderPercepts() {
+            const stream = document.getElementById('perceptStream');
+            if (percepts.length === 0) {
+                stream.innerHTML = '<div class="empty">No percepts yet...</div>';
+                return;
+            }
+            
+            stream.innerHTML = percepts.map(p => {
+                const cls = p.type === 'visual' ? 'percept-visual' : 'percept-audio';
+                const text = p.type === 'visual' ? p.data.action : p.data.transcript || p.data.analysis;
+                return `<span class="percept ${cls}"><span class="percept-emoji">${p.data.emoji}</span>${text}</span>`;
+            }).join('');
+        }
+
         function renderMindStream() {
             const stream = document.getElementById('mindStream');
             if (moments.length === 0) {
@@ -179,13 +225,26 @@
                 return;
             }
             
-            stream.innerHTML = moments.map((m, i) => `
-                <div class="moment ${i === moments.length - 1 ? 'latest' : ''}">
-                    <div class="cycle">CYCLE ${m.cycle}</div>
-                    <div class="mind">${m.mindMoment}</div>
-                    ${m.sigilPhrase ? `<div class="sigil">"${m.sigilPhrase}"</div>` : ''}
-                </div>
-            `).reverse().join('');
+            stream.innerHTML = moments.map((m, i) => {
+                const vCount = m.visualPercepts?.length || 0;
+                const aCount = m.audioPercepts?.length || 0;
+                const priorCount = m.priorMoments?.length || 0;
+                
+                return `
+                    <div class="moment ${i === moments.length - 1 ? 'latest' : ''}">
+                        <div class="moment-header">
+                            <span class="cycle">#${m.cycle}</span>
+                            <span class="moment-meta">${vCount}V ${aCount}A ${priorCount} prior</span>
+                        </div>
+                        <div class="mind">${m.mindMoment}</div>
+                        <div class="moment-footer">
+                            ${m.sigilPhrase ? `<span class="moment-tag sigil">"${m.sigilPhrase}"</span>` : ''}
+                            ${m.kinetic?.pattern ? `<span class="moment-tag kinetic"><strong>Kinetic:</strong> ${m.kinetic.pattern}</span>` : ''}
+                            ${m.lighting?.pattern ? `<span class="moment-tag lighting"><strong>Light:</strong> ${m.lighting.pattern}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).reverse().join('');
         }
 
         // Send percepts
@@ -196,12 +255,18 @@
                 const emoji = btn.textContent.trim();
                 const action = btn.getAttribute('data-action');
                 
-                socket.emit('percept', {
+                const percept = {
                     sessionId: currentSessionId,
                     type: 'visual',
                     data: { emoji, action },
                     timestamp: new Date().toISOString()
-                });
+                };
+                
+                percepts.push(percept);
+                if (percepts.length > 50) percepts.shift();
+                renderPercepts();
+                
+                socket.emit('percept', percept);
                 
                 btn.style.background = '#0080ff';
                 setTimeout(() => btn.style.background = '', 100);
@@ -214,12 +279,18 @@
             
             if (!text || !currentSessionId) return;
             
-            socket.emit('percept', {
+            const percept = {
                 sessionId: currentSessionId,
                 type: 'audio',
                 data: { transcript: text, emoji: '🎤', analysis: text },
                 timestamp: new Date().toISOString()
-            });
+            };
+            
+            percepts.push(percept);
+            if (percepts.length > 50) percepts.shift();
+            renderPercepts();
+            
+            socket.emit('percept', percept);
             
             input.value = '';
         }
