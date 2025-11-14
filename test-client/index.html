@@ -90,8 +90,13 @@
         .moment-tag { color: #888; font-size: 10px; }
         .moment-tag strong { color: #aaa; }
         .sigil { color: #00ff88; font-style: italic; }
+        .sigil-code { color: #00ff88; font-size: 10px; margin-top: 4px; opacity: 0.7; }
+        .sigil-canvas { margin-top: 8px; border: 1px solid #333; background: #0a0a0a; }
         .kinetic { color: #ffaa00; }
         .lighting { color: #aa00ff; }
+        .moment-body { display: flex; gap: 15px; }
+        .moment-text { flex: 1; }
+        .moment-sigil { width: 200px; border-left: 1px solid #333; padding-left: 12px; }
         
         /* Status Panel */
         .status-item { margin-bottom: 15px; }
@@ -99,6 +104,10 @@
         .status-value { color: #fff; font-size: 14px; }
         .status-value.connected { color: #00ff88; }
         .status-value.disconnected { color: #ff4444; }
+        .status-value.visualizing { color: #00ff88; }
+        .status-value.cognizing { color: #0080ff; }
+        .status-value.aggregating { color: #888; }
+        .countdown { color: #0080ff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -163,17 +172,34 @@
         </div>
         
         <div class="status-item">
+            <div class="status-label">Cognitive State</div>
+            <div class="status-value aggregating" id="cognitiveState">AGGREGATING</div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-label">Next Cycle</div>
+            <div class="status-value countdown" id="nextCycle">—</div>
+        </div>
+        
+        <div class="status-item">
             <div class="status-label">Last Update</div>
             <div class="status-value" id="lastUpdate">—</div>
         </div>
     </div>
 
     <script>
-        const RENDER_URL = 'https://uni-cognizer-1.onrender.com';
-        const socket = io(RENDER_URL);
+        // Get server URL from URL parameter, default to Render
+        const urlParams = new URLSearchParams(window.location.search);
+        const serverParam = urlParams.get('server');
+        const SERVER_URL = serverParam || 'https://uni-cognizer-1.onrender.com';
+        const socket = io(SERVER_URL);
+        let CYCLE_MS = 5000; // Default cycle time in milliseconds (5 seconds)
         let currentSessionId = null;
         let moments = [];
         let percepts = [];
+        let cognitiveState = 'AGGREGATING';
+        let nextCycleTime = null; // Timestamp in milliseconds
+        let countdownInterval = null;
 
         // Connection handling
         socket.on('connect', () => {
@@ -187,10 +213,69 @@
         socket.on('disconnect', () => {
             document.getElementById('connectionStatus').textContent = 'Disconnected';
             document.getElementById('connectionStatus').className = 'status-value disconnected';
+            if (countdownInterval) clearInterval(countdownInterval);
         });
 
         socket.on('sessionStarted', (data) => {
             document.getElementById('sessionId').textContent = data.sessionId.substring(0, 16) + '...';
+            if (data.cognitiveCycleMs) {
+                CYCLE_MS = parseInt(data.cognitiveCycleMs, 10); // Ensure it's a number
+                // Validate CYCLE_MS is reasonable (between 1 second and 1 hour)
+                if (isNaN(CYCLE_MS) || CYCLE_MS < 1000 || CYCLE_MS > 3600000) {
+                    console.warn('Invalid CYCLE_MS from server:', data.cognitiveCycleMs, 'using default 5000');
+                    CYCLE_MS = 5000;
+                }
+            }
+            // Initialize countdown - next cycle starts in CYCLE_MS milliseconds from now
+            const now = Date.now();
+            nextCycleTime = now + CYCLE_MS;
+            console.log('Countdown initialized:', { CYCLE_MS, now, nextCycleTime, remaining: CYCLE_MS / 1000 + 's' });
+            startCountdown();
+        });
+
+        // Cognitive state
+        socket.on('cognitiveState', (data) => {
+            cognitiveState = data.state;
+            const el = document.getElementById('cognitiveState');
+            el.textContent = data.state;
+            el.className = 'status-value ' + data.state.toLowerCase();
+        });
+
+        // Percept events (broadcast from server)
+        socket.on('perceptReceived', (data) => {
+            percepts.push(data);
+            if (percepts.length > 50) percepts.shift();
+            renderPercepts();
+        });
+
+        // Cycle events
+        socket.on('cycleStarted', (data) => {
+            // Clear percepts on new cycle (server signals aggregation reset)
+            percepts = [];
+            renderPercepts();
+            
+            // Reset countdown for next cycle
+            const now = Date.now();
+            nextCycleTime = now + CYCLE_MS;
+            startCountdown();
+        });
+
+        socket.on('cycleCompleted', (data) => {
+            // Next cycle will start in CYCLE_MS milliseconds
+            const now = Date.now();
+            nextCycleTime = now + CYCLE_MS;
+        });
+
+        // Sigil events
+        socket.on('sigil', (data) => {
+            const moment = moments.find(m => m.cycle === data.cycle);
+            if (moment) {
+                moment.sigilCode = data.sigilCode;
+                moment.sigilPhrase = data.sigilPhrase;
+                renderMindStream();
+                // Draw sigil after render
+                setTimeout(() => drawSigil(`sigil-${data.cycle}`, data.sigilCode), 50);
+            }
         });
 
         // Mind moments
@@ -203,6 +288,61 @@
             
             renderMindStream();
         });
+
+        function startCountdown() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                if (!nextCycleTime) {
+                    document.getElementById('nextCycle').textContent = '—';
+                    return;
+                }
+                // Calculate remaining time in seconds
+                const now = Date.now();
+                const remainingMs = nextCycleTime - now;
+                
+                // Safety check: if nextCycleTime seems wrong (too large or negative), reset it
+                if (remainingMs > CYCLE_MS * 2 || remainingMs < -CYCLE_MS) {
+                    console.warn('Countdown reset: nextCycleTime seems incorrect', { nextCycleTime, now, remainingMs, CYCLE_MS });
+                    nextCycleTime = now + CYCLE_MS;
+                }
+                
+                const remaining = Math.max(0, remainingMs / 1000);
+                
+                if (remaining <= 0) {
+                    document.getElementById('nextCycle').textContent = 'Starting...';
+                } else if (remaining > 3600) {
+                    // If more than an hour, something is wrong
+                    document.getElementById('nextCycle').textContent = '—';
+                } else {
+                    // Show whole seconds (19s, 18s, 17s...)
+                    document.getElementById('nextCycle').textContent = Math.ceil(remaining) + 's';
+                }
+            }, 100);
+        }
+
+        function drawSigil(canvasId, sigilCode) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = 180;
+            canvas.height = 180;
+            
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            
+            try {
+                // Execute sigil code in safe context
+                const draw = new Function('ctx', sigilCode);
+                draw(ctx);
+            } catch (e) {
+                ctx.fillStyle = '#ff4444';
+                ctx.font = '10px monospace';
+                ctx.fillText('Error', 10, 20);
+            }
+        }
 
         function renderPercepts() {
             const stream = document.getElementById('perceptStream');
@@ -229,6 +369,8 @@
                 const vCount = m.visualPercepts?.length || 0;
                 const aCount = m.audioPercepts?.length || 0;
                 const priorCount = m.priorMoments?.length || 0;
+                const hasSigil = m.sigilCode && m.sigilPhrase;
+                const canvasId = `sigil-${m.cycle}`;
                 
                 return `
                     <div class="moment ${i === moments.length - 1 ? 'latest' : ''}">
@@ -236,18 +378,34 @@
                             <span class="cycle">#${m.cycle}</span>
                             <span class="moment-meta">${vCount}V ${aCount}A ${priorCount} prior</span>
                         </div>
-                        <div class="mind">${m.mindMoment}</div>
-                        <div class="moment-footer">
-                            ${m.sigilPhrase ? `<span class="moment-tag sigil">"${m.sigilPhrase}"</span>` : ''}
-                            ${m.kinetic?.pattern ? `<span class="moment-tag kinetic"><strong>Kinetic:</strong> ${m.kinetic.pattern}</span>` : ''}
-                            ${m.lighting?.pattern ? `<span class="moment-tag lighting"><strong>Light:</strong> ${m.lighting.pattern}</span>` : ''}
+                        <div class="moment-body">
+                            <div class="moment-text">
+                                <div class="mind">${m.mindMoment}</div>
+                                <div class="moment-footer">
+                                    ${m.kinetic?.pattern ? `<span class="moment-tag kinetic"><strong>Kinetic:</strong> ${m.kinetic.pattern}</span>` : ''}
+                                    ${m.lighting?.pattern ? `<span class="moment-tag lighting"><strong>Light:</strong> ${m.lighting.pattern}</span>` : ''}
+                                </div>
+                            </div>
+                            ${hasSigil ? `
+                                <div class="moment-sigil">
+                                    <div class="sigil">"${m.sigilPhrase}"</div>
+                                    <canvas id="${canvasId}" class="sigil-canvas" width="180" height="180"></canvas>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
             }).reverse().join('');
+            
+            // Draw sigils after DOM update
+            moments.forEach(m => {
+                if (m.sigilCode) {
+                    setTimeout(() => drawSigil(`sigil-${m.cycle}`, m.sigilCode), 10);
+                }
+            });
         }
 
-        // Send percepts
+        // Send percepts (server will broadcast back via perceptReceived)
         document.querySelectorAll('.emoji-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (!currentSessionId) return;
@@ -255,18 +413,12 @@
                 const emoji = btn.textContent.trim();
                 const action = btn.getAttribute('data-action');
                 
-                const percept = {
+                socket.emit('percept', {
                     sessionId: currentSessionId,
                     type: 'visual',
                     data: { emoji, action },
                     timestamp: new Date().toISOString()
-                };
-                
-                percepts.push(percept);
-                if (percepts.length > 50) percepts.shift();
-                renderPercepts();
-                
-                socket.emit('percept', percept);
+                });
                 
                 btn.style.background = '#0080ff';
                 setTimeout(() => btn.style.background = '', 100);
@@ -279,18 +431,12 @@
             
             if (!text || !currentSessionId) return;
             
-            const percept = {
+            socket.emit('percept', {
                 sessionId: currentSessionId,
                 type: 'audio',
                 data: { transcript: text, emoji: '🎤', analysis: text },
                 timestamp: new Date().toISOString()
-            };
-            
-            percepts.push(percept);
-            if (percepts.length > 50) percepts.shift();
-            renderPercepts();
-            
-            socket.emit('percept', percept);
+            });
             
             input.value = '';
         }

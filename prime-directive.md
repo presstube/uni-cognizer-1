@@ -32,3 +32,12 @@ Core coding principles for this project.
 - Only add libraries when they provide clear value
 - Prefer ES6 modules and native browser APIs
 
+## 6. Dumb Client Architecture
+
+- Clients are 100% event-driven and stateless
+- All state and logic lives on the server
+- Clients only emit actions and render server events
+- No local state tracking beyond UI display needs
+- All percepts, cycles, and state changes broadcast to all clients
+- Read-only clients see everything; write clients see everything plus can emit
+

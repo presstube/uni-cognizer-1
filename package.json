@@ -8,6 +8,10 @@
     "start": "node server.js",
     "test-fake": "node src/fake/main.js",
     "test-client": "./scripts/test-client.sh",
+    "client:render": "./scripts/client-render.sh",
+    "client:local": "./scripts/client-local.sh",
+    "client:fake": "./scripts/client-fake.sh",
+    "db:query": "node scripts/query-mind-moments.js",
     "migrate": "node src/db/migrate.js",
     "db:setup": "npm run migrate"
   },

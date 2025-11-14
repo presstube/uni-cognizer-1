@@ -5,6 +5,7 @@ const cognitiveHistory = {};
 let cycleIndex = 0;
 let mindMomentListeners = [];
 let sigilListeners = [];
+let stateListeners = [];
 
 // Initialize cycleIndex from database to maintain UNI's continuous consciousness
 export async function initializeCycleIndex() {
@@ -106,10 +107,18 @@ export function onSigil(listener) {
 export function clearListeners() {
   mindMomentListeners = [];
   sigilListeners = [];
+  stateListeners = [];
 }
 
-// Stub for fake-cog (not needed but exported for compatibility)
-export function onStateEvent() {}
+function dispatchStateEvent(eventType, data) {
+  stateListeners.forEach(listener => {
+    listener(eventType, data);
+  });
+}
+
+export function onStateEvent(listener) {
+  stateListeners.push(listener);
+}
 
 export function cognize(visualPercepts, audioPercepts, depth = 3) {
   const thisCycle = ++cycleIndex;
@@ -126,12 +135,21 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   
   const priorMoments = getPriorMindMoments(depth);
   
+  const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
+  const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
+  
+  // Emit cycle started event
+  dispatchStateEvent('cycleStarted', {
+    cycle: thisCycle,
+    visualPercepts: activeVisual.length,
+    audioPercepts: activeAudio.length,
+    priorMoments: priorMoments.length,
+    timestamp: new Date().toISOString()
+  });
+  
   console.log(`${'═'.repeat(50)}`);
   console.log(`[${timestamp()}] CYCLE ${thisCycle} SENT (depth: ${priorMoments.length})`);
   console.log(`${'═'.repeat(50)}`);
-  
-  const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
-  const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
   
   console.log(`Visual: ${activeVisual.length} percepts`);
   activeVisual.forEach(p => {
@@ -155,8 +173,9 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   }
   console.log('');
   
+  const cycleStartTime = Date.now();
   mockLLMCall(visualPercepts, audioPercepts, priorMoments).then(async result => {
-    const mindMomentStartTime = Date.now();
+    const mindMomentDuration = Date.now() - cycleStartTime;
     
     cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
     cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
@@ -181,7 +200,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
           priorMomentIds: priorIds,
           cognizerVersion: COGNIZER_VERSION,
           llmProvider: 'mock',
-          processingDuration: Date.now() - mindMomentStartTime
+          processingDuration: mindMomentDuration
         });
         
         // Store DB ID in history
@@ -239,6 +258,29 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     } else {
       cognitiveHistory[thisCycle].sigilCode = null;
     }
+    
+    const totalDuration = Date.now() - cycleStartTime;
+    
+    // Emit cycle completed event
+    dispatchStateEvent('cycleCompleted', {
+      cycle: thisCycle,
+      mindMoment: result.mindMoment,
+      sigilPhrase: result.sigilPhrase,
+      kinetic: result.kinetic,
+      lighting: result.lighting,
+      sigilCode: cognitiveHistory[thisCycle].sigilCode,
+      duration: totalDuration,
+      timestamp: new Date().toISOString()
+    });
+  })
+  .catch(err => {
+    const duration = Date.now() - cycleStartTime;
+    dispatchStateEvent('cycleFailed', {
+      cycle: thisCycle,
+      error: err.message,
+      duration,
+      timestamp: new Date().toISOString()
+    });
   });
 }
 
