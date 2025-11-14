@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNI Test Client</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+            background: #0a0a0a; 
+            color: #ccc; 
+            display: flex; 
+            height: 100vh;
+            overflow: hidden;
+        }
+        .panel { padding: 20px; overflow-y: auto; }
+        .left { width: 300px; border-right: 1px solid #333; }
+        .center { flex: 1; border-right: 1px solid #333; }
+        .right { width: 250px; }
+        h2 { color: #fff; font-size: 14px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Input Panel */
+        .percept-group { margin-bottom: 20px; }
+        .percept-group label { display: block; color: #888; font-size: 11px; margin-bottom: 8px; }
+        .emoji-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+        .emoji-btn { 
+            background: #1a1a1a; 
+            border: 1px solid #333; 
+            color: #fff; 
+            padding: 10px; 
+            cursor: pointer; 
+            font-size: 20px;
+            transition: all 0.1s;
+        }
+        .emoji-btn:hover { background: #252525; border-color: #555; }
+        .emoji-btn:active { background: #0080ff; }
+        input[type="text"] { 
+            width: 100%; 
+            background: #1a1a1a; 
+            border: 1px solid #333; 
+            color: #fff; 
+            padding: 10px; 
+            font-size: 13px;
+        }
+        button.send { 
+            width: 100%; 
+            background: #0080ff; 
+            border: none; 
+            color: #fff; 
+            padding: 12px; 
+            margin-top: 10px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 13px;
+        }
+        button.send:hover { background: #0066cc; }
+        
+        /* Mind Stream */
+        .moment { 
+            margin-bottom: 20px; 
+            padding: 15px; 
+            background: #111; 
+            border-left: 3px solid #333;
+        }
+        .moment.latest { border-left-color: #0080ff; }
+        .cycle { color: #0080ff; font-weight: bold; font-size: 12px; margin-bottom: 5px; }
+        .mind { color: #fff; font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
+        .sigil { color: #888; font-size: 12px; font-style: italic; }
+        .empty { color: #555; text-align: center; padding: 40px 20px; }
+        
+        /* Status Panel */
+        .status-item { margin-bottom: 15px; }
+        .status-label { color: #666; font-size: 10px; text-transform: uppercase; margin-bottom: 3px; }
+        .status-value { color: #fff; font-size: 14px; }
+        .status-value.connected { color: #00ff88; }
+        .status-value.disconnected { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <!-- Left: Input -->
+    <div class="panel left">
+        <h2>Input</h2>
+        
+        <div class="percept-group">
+            <label>Visual Percepts</label>
+            <div class="emoji-grid">
+                <button class="emoji-btn" data-action="Waving" title="Waving">👋</button>
+                <button class="emoji-btn" data-action="Pointing" title="Pointing">👉</button>
+                <button class="emoji-btn" data-action="Observing" title="Observing">👁️</button>
+                <button class="emoji-btn" data-action="Thinking" title="Thinking">🤔</button>
+                <button class="emoji-btn" data-action="Walking" title="Walking">🚶</button>
+                <button class="emoji-btn" data-action="Sitting" title="Sitting">🪑</button>
+                <button class="emoji-btn" data-action="Dancing" title="Dancing">💃</button>
+                <button class="emoji-btn" data-action="Laughing" title="Laughing">😄</button>
+            </div>
+        </div>
+        
+        <div class="percept-group">
+            <label>Audio Percept</label>
+            <input type="text" id="audioInput" placeholder="Type something UNI hears..." />
+            <button class="send" onclick="sendAudio()">Send Audio</button>
+        </div>
+    </div>
+    
+    <!-- Center: Mind Stream -->
+    <div class="panel center">
+        <h2>UNI's Mind</h2>
+        <div id="mindStream">
+            <div class="empty">Waiting for mind moments...</div>
+        </div>
+    </div>
+    
+    <!-- Right: Status -->
+    <div class="panel right">
+        <h2>Status</h2>
+        
+        <div class="status-item">
+            <div class="status-label">Connection</div>
+            <div class="status-value disconnected" id="connectionStatus">Connecting...</div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-label">Current Cycle</div>
+            <div class="status-value" id="currentCycle">—</div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-label">Session</div>
+            <div class="status-value" id="sessionId">—</div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-label">Last Update</div>
+            <div class="status-value" id="lastUpdate">—</div>
+        </div>
+    </div>
+
+    <script>
+        const RENDER_URL = 'https://uni-cognizer-1.onrender.com';
+        const socket = io(RENDER_URL);
+        let currentSessionId = null;
+        let moments = [];
+
+        // Connection handling
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').textContent = 'Connected';
+            document.getElementById('connectionStatus').className = 'status-value connected';
+            
+            currentSessionId = `test-${Date.now()}`;
+            socket.emit('startSession', { sessionId: currentSessionId });
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('connectionStatus').textContent = 'Disconnected';
+            document.getElementById('connectionStatus').className = 'status-value disconnected';
+        });
+
+        socket.on('sessionStarted', (data) => {
+            document.getElementById('sessionId').textContent = data.sessionId.substring(0, 16) + '...';
+        });
+
+        // Mind moments
+        socket.on('mindMoment', (data) => {
+            moments.push(data);
+            if (moments.length > 20) moments.shift();
+            
+            document.getElementById('currentCycle').textContent = `#${data.cycle}`;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            
+            renderMindStream();
+        });
+
+        function renderMindStream() {
+            const stream = document.getElementById('mindStream');
+            if (moments.length === 0) {
+                stream.innerHTML = '<div class="empty">Waiting for mind moments...</div>';
+                return;
+            }
+            
+            stream.innerHTML = moments.map((m, i) => `
+                <div class="moment ${i === moments.length - 1 ? 'latest' : ''}">
+                    <div class="cycle">CYCLE ${m.cycle}</div>
+                    <div class="mind">${m.mindMoment}</div>
+                    ${m.sigilPhrase ? `<div class="sigil">"${m.sigilPhrase}"</div>` : ''}
+                </div>
+            `).reverse().join('');
+        }
+
+        // Send percepts
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!currentSessionId) return;
+                
+                const emoji = btn.textContent.trim();
+                const action = btn.getAttribute('data-action');
+                
+                socket.emit('percept', {
+                    sessionId: currentSessionId,
+                    type: 'visual',
+                    data: { emoji, action },
+                    timestamp: new Date().toISOString()
+                });
+                
+                btn.style.background = '#0080ff';
+                setTimeout(() => btn.style.background = '', 100);
+            });
+        });
+
+        function sendAudio() {
+            const input = document.getElementById('audioInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentSessionId) return;
+            
+            socket.emit('percept', {
+                sessionId: currentSessionId,
+                type: 'audio',
+                data: { transcript: text, emoji: '🎤', analysis: text },
+                timestamp: new Date().toISOString()
+            });
+            
+            input.value = '';
+        }
+
+        document.getElementById('audioInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendAudio();
+        });
+    </script>
+</body>
+</html>
+

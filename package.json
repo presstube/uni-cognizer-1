@@ -7,9 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test-fake": "node src/fake/main.js",
-    "test-render": "./scripts/test-render.sh",
-    "host": "./scripts/host.sh",
-    "dev:full": "./scripts/dev.sh",
+    "test-client": "./scripts/test-client.sh",
     "migrate": "node src/db/migrate.js",
     "db:setup": "npm run migrate"
   },

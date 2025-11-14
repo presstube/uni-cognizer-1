@@ -8,7 +8,7 @@ NC='\033[0m' # No Color
 
 PORT=8081
 
-echo -e "${YELLOW}🧪 Starting Render Test Client${NC}"
+echo -e "${YELLOW}🧪 Starting UNI Test Client${NC}"
 echo ""
 
 # Function to cleanup on exit
@@ -41,7 +41,7 @@ echo ""
 
 # Start the server in background
 echo -e "${YELLOW}🚀 Starting http-server on port $PORT...${NC}"
-npx http-server render-test-client -p $PORT -c-1 --silent > /dev/null 2>&1 &
+npx http-server test-client -p $PORT -c-1 --silent > /dev/null 2>&1 &
 SERVER_PID=$!
 
 # Wait for server to be ready
@@ -70,7 +70,7 @@ echo -e "${GREEN}✓ Browser opened${NC}"
 echo ""
 
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}  Test Client Running${NC}"
+echo -e "${GREEN}  UNI Test Client Running${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "  ${YELLOW}URL:${NC}     http://localhost:$PORT"
