@@ -1,6 +1,8 @@
-import { callLLM } from './providers/index.js';
+import { callLLM, providerName } from './providers/index.js';
 import { ROBOT_PERSONALITY } from './personality-uni-v2.js';
 import { generateSigil } from './sigil/generator.js';
+import { saveMindMoment as dbSaveMindMoment } from './db/mind-moments.js';
+import { COGNIZER_VERSION } from './version.js';
 
 const cognitiveHistory = {};
 let cycleIndex = 0;
@@ -190,6 +192,37 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       cognitiveHistory[thisCycle].kinetic = result.kinetic;
       cognitiveHistory[thisCycle].lighting = result.lighting;
       
+      // Save to database
+      if (process.env.DATABASE_ENABLED === 'true') {
+        try {
+          const priorIds = priorMoments.map(m => m.id).filter(Boolean);
+          
+          const saved = await dbSaveMindMoment({
+            cycle: thisCycle,
+            sessionId: 'default', // TODO: Get from session context
+            mindMoment: result.mindMoment,
+            sigilPhrase: result.sigilPhrase,
+            sigilCode: null, // Not yet generated
+            kinetic: result.kinetic,
+            lighting: result.lighting,
+            visualPercepts,
+            audioPercepts,
+            priorMomentIds: priorIds,
+            cognizerVersion: COGNIZER_VERSION,
+            llmProvider: providerName,
+            processingDuration: mindMomentDuration
+          });
+          
+          // Store DB ID in history
+          cognitiveHistory[thisCycle].id = saved.id;
+          
+          console.log(`💾 Saved to database (ID: ${saved.id.substring(0, 8)}...)`);
+        } catch (error) {
+          console.error('Failed to save to database:', error.message);
+          // Continue without DB save
+        }
+      }
+      
       console.log(`${'═'.repeat(50)}`);
       console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
       console.log(`${'═'.repeat(50)}`);
@@ -219,6 +252,20 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
           
           // Update history with sigil code
           cognitiveHistory[thisCycle].sigilCode = sigilCode;
+          
+          // Update sigil code in database
+          if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
+            try {
+              const { getPool } = await import('./db/index.js');
+              const pool = getPool();
+              await pool.query(
+                'UPDATE mind_moments SET sigil_code = $1 WHERE id = $2',
+                [sigilCode, cognitiveHistory[thisCycle].id]
+              );
+            } catch (dbError) {
+              console.error('Failed to update sigil in database:', dbError.message);
+            }
+          }
           
           console.log(`✓ Sigil generated (${sigilDuration}ms)`);
           console.log(`  Code length: ${sigilCode.length} chars`);

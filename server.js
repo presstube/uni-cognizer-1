@@ -6,9 +6,23 @@ import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory } from '.
 import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
 import { CognitiveState } from './src/cognitive-states.js';
+import { initDatabase, closeDatabase } from './src/db/index.js';
+import { runMigrations } from './src/db/migrate.js';
+import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
+
+// Initialize database at startup
+try {
+  initDatabase();
+  if (process.env.DATABASE_ENABLED === 'true') {
+    await runMigrations();
+  }
+} catch (error) {
+  console.error('Database initialization failed:', error.message);
+  console.warn('⚠️  Continuing without database (in-memory only)');
+}
 
 // Create Express app for HTTP endpoints
 const app = express();
@@ -65,12 +79,21 @@ let socketToSession = new Map(); // Track socket.id -> sessionId mapping
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
 
-  socket.on('startSession', ({ sessionId }) => {
+  socket.on('startSession', async ({ sessionId }) => {
     console.log(`▶️  Starting session: ${sessionId} (socket: ${socket.id})`);
     
     const session = sessionManager.startSession(sessionId);
     activeSessions.add(sessionId);
     socketToSession.set(socket.id, sessionId);
+    
+    // Create session in database
+    if (process.env.DATABASE_ENABLED === 'true') {
+      try {
+        await dbCreateSession(sessionId);
+      } catch (error) {
+        console.error('Failed to create session in database:', error.message);
+      }
+    }
     
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
@@ -158,12 +181,21 @@ io.on('connection', (socket) => {
     session.perceptCount++;
   });
 
-  socket.on('endSession', ({ sessionId }) => {
+  socket.on('endSession', async ({ sessionId }) => {
     console.log(`⏸️  Ending session: ${sessionId}`);
     
     const session = sessionManager.endSession(sessionId);
     activeSessions.delete(sessionId);
     socketToSession.delete(socket.id);
+    
+    // End session in database
+    if (process.env.DATABASE_ENABLED === 'true') {
+      try {
+        await dbEndSession(sessionId);
+      } catch (error) {
+        console.error('Failed to end session in database:', error.message);
+      }
+    }
     
     // Stop cognitive loop if no active sessions
     if (activeSessions.size === 0) {
@@ -231,9 +263,13 @@ httpServer.listen(PORT, () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
   stopCognitiveLoop();
+  
+  // Close database connection
+  await closeDatabase();
+  
   httpServer.close(() => {
     console.log('Server closed');
     process.exit(0);
