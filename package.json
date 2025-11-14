@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test-fake": "node src/fake/main.js",
-    "test-render": "npx http-server render-test-client -p 8081 -c-1 -o",
+    "test-render": "./scripts/test-render.sh",
     "host": "./scripts/host.sh",
     "dev:full": "./scripts/dev.sh",
     "migrate": "node src/db/migrate.js",
