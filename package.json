@@ -7,7 +7,6 @@
   "scripts": {
     "start": "node server.js",
     "test-fake": "node src/fake/main.js",
-    "test-client": "./scripts/test-client.sh",
     "client:render": "./scripts/client-render.sh",
     "client:local": "./scripts/client-local.sh",
     "client:fake": "./scripts/client-fake.sh",
