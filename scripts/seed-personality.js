@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import 'dotenv/config';
-import { getPool } from '../src/db/index.js';
+import { initDatabase, getPool } from '../src/db/index.js';
 import { ROBOT_PERSONALITY } from '../src/personality-uni-v2.js';
 
 /**
@@ -12,7 +12,8 @@ import { ROBOT_PERSONALITY } from '../src/personality-uni-v2.js';
  */
 
 async function seedPersonality() {
-  const pool = getPool();
+  // Initialize database connection
+  const pool = initDatabase();
   
   if (!pool) {
     console.error('❌ Database not enabled. Set DATABASE_ENABLED=true');
