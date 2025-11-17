@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎭 Personality Forge</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎭 Personality Forge</h1>
+      <p>Create, test, and manage UNI's personalities</p>
+    </header>
+
+    <!-- Personality Selector -->
+    <section class="section">
+      <label for="personality-select">Load Personality:</label>
+      <div class="select-row">
+        <select id="personality-select">
+          <option value="new">+ New Personality</option>
+        </select>
+        <button id="delete-btn" class="btn-danger" disabled>Delete</button>
+      </div>
+    </section>
+
+    <!-- Editor -->
+    <section class="section">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input type="text" id="name" placeholder="UNI Tripartite v2.1" maxlength="200">
+        </div>
+        
+        <div class="form-group">
+          <label for="slug">Slug:</label>
+          <input type="text" id="slug" placeholder="uni-tripartite-v2-1" maxlength="100">
+        </div>
+      </div>
+
+      <label for="prompt">
+        Personality Prompt: 
+        <span id="char-count" class="char-count">0 characters</span>
+      </label>
+      <textarea id="prompt" rows="20" placeholder="You are UNI - the soul of the Unisphere..."></textarea>
+    </section>
+
+    <!-- Mock Percepts -->
+    <section class="section">
+      <label for="preset-select">Mock Percepts:</label>
+      <select id="preset-select">
+        <option value="greeting">👋 Greeting</option>
+        <option value="silence">🏢 Silence</option>
+        <option value="conversation">👥 Conversation</option>
+        <option value="technical">🔧 Technical</option>
+        <option value="custom">✏️ Custom (edit JSON below)</option>
+      </select>
+      
+      <textarea id="percepts" rows="6" placeholder='{"visualPercepts": [], "audioPercepts": []}'></textarea>
+    </section>
+
+    <!-- Actions -->
+    <section class="actions">
+      <button id="test-btn" class="btn-primary">🧪 Test</button>
+      <button id="save-btn" class="btn-secondary">💾 Save</button>
+      <button id="activate-btn" class="btn-success" disabled>✓ Set Active</button>
+    </section>
+
+    <!-- Status Messages -->
+    <div id="status" class="status hidden"></div>
+
+    <!-- Results -->
+    <section id="results" class="section hidden">
+      <h3>Test Result:</h3>
+      <div class="result-box">
+        <div class="result-item">
+          <strong>Mind Moment:</strong>
+          <p id="result-moment"></p>
+        </div>
+        
+        <div class="result-item">
+          <strong>Sigil Phrase:</strong>
+          <p id="result-sigil"></p>
+        </div>
+        
+        <div class="result-row">
+          <div class="result-item">
+            <strong>Kinetic:</strong>
+            <p id="result-kinetic"></p>
+          </div>
+          
+          <div class="result-item">
+            <strong>Lighting:</strong>
+            <p id="result-lighting"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="forge.js"></script>
+</body>
+</html>
+

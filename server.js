@@ -11,6 +11,7 @@ import { runMigrations } from './src/db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
 import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
 import personalitiesAPI from './src/api/personalities.js';
+import { forgeAuth } from './src/api/forge-auth.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -36,11 +37,11 @@ try {
 const app = express();
 app.use(express.json());
 
-// Serve Personality Forge UI
-app.use('/forge', express.static('forge'));
+// Serve Personality Forge UI (with optional auth)
+app.use('/forge', forgeAuth, express.static('forge'));
 
-// Mount Personalities API
-app.use('/api', personalitiesAPI);
+// Mount Personalities API (with optional auth)
+app.use('/api', forgeAuth, personalitiesAPI);
 
 // Health check endpoint (required for Render)
 app.get('/', (req, res) => {
