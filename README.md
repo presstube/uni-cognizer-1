@@ -124,8 +124,6 @@ socket.on('cycleCompleted', ({ cycle, duration, ... }));
 - **COGNIZING**: LLM processing in flight
 - **VISUALIZING**: Generating sigil visualization
 
-See `docs/COGNITIVE_STATE_EVENTS.md` for details.
-
 ---
 
 ## Outputs
@@ -184,11 +182,9 @@ npm run client:render  # Connects to Render
 
 ## Documentation
 
-- `docs/AGGREGATOR_INTEGRATION.md` - Integration guide
-- `docs/COGNITIVE_STATE_EVENTS.md` - State machine details
-- `docs/KINETIC_LIGHTING_INTEGRATION.md` - Physical outputs
-- `docs/phase-1-database-implementation.md` - Database setup
-- `docs/VERSION_QUICKSTART.md` - Version management guide
+- `docs/extending-cognizer.md` - **Current architecture work** (Phases 1-5)
+- `docs/README.md` - Documentation guide
+- `graveyard/` - Historical docs (planning, reviews, old integration guides)
 - `prime-directive.md` - Coding principles
 
 ---
