@@ -9,7 +9,8 @@ import { CognitiveState } from './src/cognitive-states.js';
 import { initDatabase, closeDatabase } from './src/db/index.js';
 import { runMigrations } from './src/db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
-import { initializeCycleIndex } from './src/real-cog.js';
+import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
+import personalitiesAPI from './src/api/personalities.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -23,6 +24,8 @@ try {
     await dbCreateSession('uni', { type: 'consciousness', note: "UNI's singular continuous mind" });
     // Initialize cycle counter from database to resume UNI's consciousness
     await initializeCycleIndex();
+    // Initialize personality from database
+    await initializePersonality();
   }
 } catch (error) {
   console.error('Database initialization failed:', error.message);
@@ -32,6 +35,12 @@ try {
 // Create Express app for HTTP endpoints
 const app = express();
 app.use(express.json());
+
+// Serve Personality Forge UI
+app.use('/forge', express.static('forge'));
+
+// Mount Personalities API
+app.use('/api', personalitiesAPI);
 
 // Health check endpoint (required for Render)
 app.get('/', (req, res) => {

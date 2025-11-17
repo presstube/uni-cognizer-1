@@ -17,35 +17,46 @@ export async function runMigrations() {
   
   console.log('🔄 Running database migrations...');
   
+  // List of migrations in order
+  const migrations = [
+    '001_initial_schema.sql',
+    '002_personalities.sql'
+  ];
+  
   try {
-    // Check if migration already applied
+    // Check if schema_migrations table exists
     const checkResult = await pool.query(
       "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'schema_migrations')"
     );
     
     const tableExists = checkResult.rows[0].exists;
     
+    // Get applied migrations
+    let appliedVersions = [];
     if (tableExists) {
-      const versionResult = await pool.query(
-        'SELECT version FROM schema_migrations WHERE version = 1'
-      );
-      
-      if (versionResult.rows.length > 0) {
-        console.log('✓ Migration 001 already applied, skipping');
-        console.log('✓ Database schema ready');
-        return;
-      }
+      const result = await pool.query('SELECT version FROM schema_migrations ORDER BY version');
+      appliedVersions = result.rows.map(r => r.version);
     }
     
-    // Read migration file
-    const migrationPath = join(__dirname, 'migrations', '001_initial_schema.sql');
-    const sql = readFileSync(migrationPath, 'utf-8');
+    // Run each migration if not already applied
+    for (let i = 0; i < migrations.length; i++) {
+      const version = i + 1;
+      const migrationFile = migrations[i];
+      
+      if (appliedVersions.includes(version)) {
+        console.log(`✓ Migration ${version} (${migrationFile}) already applied`);
+        continue;
+      }
+      
+      // Read and execute migration
+      const migrationPath = join(__dirname, 'migrations', migrationFile);
+      const sql = readFileSync(migrationPath, 'utf-8');
+      
+      await pool.query(sql);
+      console.log(`✓ Migration ${version} (${migrationFile}) applied`);
+    }
     
-    // Execute migration
-    await pool.query(sql);
-    
-    console.log('✓ Migration 001_initial_schema.sql applied');
-    console.log('✓ Database schema ready');
+    console.log('✓ Database schema up to date');
     
   } catch (error) {
     console.error('❌ Migration failed:', error.message);

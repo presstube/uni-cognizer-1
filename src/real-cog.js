@@ -2,6 +2,7 @@ import { callLLM, providerName } from './providers/index.js';
 import { ROBOT_PERSONALITY } from './personality-uni-v2.js';
 import { generateSigil } from './sigil/generator.js';
 import { saveMindMoment as dbSaveMindMoment } from './db/mind-moments.js';
+import { getActivePersonality } from './db/personalities.js';
 import { COGNIZER_VERSION } from './version.js';
 
 const cognitiveHistory = {};
@@ -9,6 +10,11 @@ let cycleIndex = 0;
 let mindMomentListeners = [];
 let sigilListeners = [];
 let stateListeners = [];
+
+// Personality management
+let currentPersonality = ROBOT_PERSONALITY; // Fallback default
+let currentPersonalityId = null;
+let currentPersonalityName = null;
 
 // Initialize cycleIndex from database to maintain UNI's continuous consciousness
 export async function initializeCycleIndex() {
@@ -28,6 +34,28 @@ export async function initializeCycleIndex() {
   }
 }
 
+// Initialize personality from database
+export async function initializePersonality() {
+  if (process.env.DATABASE_ENABLED === 'true') {
+    try {
+      const active = await getActivePersonality();
+      if (active) {
+        currentPersonality = active.prompt;
+        currentPersonalityId = active.id;
+        currentPersonalityName = active.name;
+        console.log(`🎭 Loaded personality: ${active.name} (${active.slug})`);
+      } else {
+        console.log('🎭 No active personality in database, using default');
+      }
+    } catch (error) {
+      console.error('Failed to load personality from database:', error.message);
+      console.log('🎭 Using default hardcoded personality');
+    }
+  } else {
+    console.log('🎭 Using default hardcoded personality');
+  }
+}
+
 async function realLLMCall(visualPercepts, audioPercepts, priorMoments) {
   const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
   const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));
@@ -42,7 +70,7 @@ async function realLLMCall(visualPercepts, audioPercepts, priorMoments) {
     ? `\nRECENT CONTEXT:\n${priorMoments.map((m, i) => `${i+1} cycles ago: "${m.mindMoment}"`).join('\n')}`
     : '';
   
-  const prompt = `${ROBOT_PERSONALITY}
+  const prompt = `${currentPersonality}
 
 CURRENT PERCEPTS:
 Visual: ${visualStr}
@@ -227,6 +255,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
           audioPercepts,
           priorMomentIds: priorIds,
           cognizerVersion: COGNIZER_VERSION,
+          personalityId: currentPersonalityId,
           llmProvider: providerName,
           processingDuration: mindMomentDuration
         });

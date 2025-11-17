@@ -13,6 +13,7 @@
     "db:query": "node scripts/query-mind-moments.js",
     "migrate": "node src/db/migrate.js",
     "db:setup": "npm run migrate",
+    "db:seed-personality": "node scripts/seed-personality.js",
     "version:register": "node scripts/register-version.js",
     "version:check": "node -e \"console.log('Current version:', require('./package.json').version)\""
   },
