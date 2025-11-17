@@ -29,6 +29,8 @@ Opens test client at `http://localhost:8081` connecting to local server.
 | `npm run db:query` | Query mind moments from database |
 | `npm run migrate` | Run database migrations |
 | `npm run db:setup` | Alias for migrate |
+| `npm run version:register` | Register current version in database |
+| `npm run version:check` | Check current version |
 
 ---
 
@@ -186,6 +188,7 @@ npm run client:render  # Connects to Render
 - `docs/COGNITIVE_STATE_EVENTS.md` - State machine details
 - `docs/KINETIC_LIGHTING_INTEGRATION.md` - Physical outputs
 - `docs/phase-1-database-implementation.md` - Database setup
+- `docs/VERSION_QUICKSTART.md` - Version management guide
 - `prime-directive.md` - Coding principles
 
 ---

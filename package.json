@@ -12,7 +12,9 @@
     "client:fake": "./scripts/client-fake.sh",
     "db:query": "node scripts/query-mind-moments.js",
     "migrate": "node src/db/migrate.js",
-    "db:setup": "npm run migrate"
+    "db:setup": "npm run migrate",
+    "version:register": "node scripts/register-version.js",
+    "version:check": "node -e \"console.log('Current version:', require('./package.json').version)\""
   },
   "keywords": [
     "ai",
