@@ -4,19 +4,33 @@
 
 ---
 
-## 🎯 Current Work
+## 🎯 Living Documentation
+
+### `DEVELOPER_GUIDE.md`
+**Practical reference for working with Cognizer-1**
+
+Everything you need to know to work with the codebase:
+- Architecture overview
+- Database schema & queries
+- Development workflow
+- Version management
+- Deployment process
+- API reference
+- Troubleshooting
+
+**Read this first if you're developing.**
 
 ### `extending-cognizer.md`
-**Active design document for Cognizer-1 architecture extensions**
+**Active design document for architecture extensions**
 
-This is the **current living doc** for planning and implementing:
+Planning and implementing future phases:
 - Phase 1: ✅ Database Foundation (COMPLETE)
 - Phase 2: ✅ Version Tracking (COMPLETE)
 - Phase 3: ⏳ Personality Management (IN PROGRESS)
 - Phase 4: ⏳ Ephemeral Token Endpoint
 - Phase 5: ⏳ Advanced Features
 
-**This is the doc you want.** Everything else is historical.
+**Read this if you're planning features.**
 
 ---
 
@@ -35,10 +49,8 @@ See `/graveyard/README.md` for organized historical documentation.
 | Need | Look Here |
 |------|-----------|
 | **Quick start** | `/README.md` |
-| **Current architecture work** | `extending-cognizer.md` (this dir) |
-| **API reference** | Code comments in `server.js`, WebSocket events |
-| **Database schema** | `src/db/migrations/*.sql` |
-| **Version management** | `scripts/register-version.js` comments |
+| **How to develop** | `DEVELOPER_GUIDE.md` (this dir) |
+| **Architecture planning** | `extending-cognizer.md` (this dir) |
 | **Historical context** | `/graveyard/` (organized by topic) |
 | **Code principles** | `/prime-directive.md` |
 

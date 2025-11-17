@@ -182,9 +182,9 @@ npm run client:render  # Connects to Render
 
 ## Documentation
 
-- `docs/extending-cognizer.md` - **Current architecture work** (Phases 1-5)
-- `docs/README.md` - Documentation guide
-- `graveyard/` - Historical docs (planning, reviews, old integration guides)
+- `docs/DEVELOPER_GUIDE.md` - **Practical dev reference** (API, database, deployment)
+- `docs/extending-cognizer.md` - Architecture planning (Phases 1-5)
+- `graveyard/` - Historical docs (organized by topic)
 - `prime-directive.md` - Coding principles
 
 ---
