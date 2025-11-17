@@ -50,6 +50,8 @@ export function startCognitiveLoop(callback, sigilCallback, stateCallback) {
   }
   
   console.log(`🧠 Cognitive loop started (${COGNITIVE_CYCLE_MS}ms cycle)`);
+  process.stdout.write(`🧠 Cognitive loop ACTIVE - cycle every ${COGNITIVE_CYCLE_MS}ms\n`);
+}
 }
 
 export function stopCognitiveLoop() {

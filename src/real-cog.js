@@ -206,6 +206,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
   console.log(`${'═'.repeat(50)}`);
   console.log(`[${timestamp()}] CYCLE ${thisCycle} SENT (depth: ${priorMoments.length})`);
   console.log(`${'═'.repeat(50)}`);
+  process.stdout.write(`\n🔄 CYCLE ${thisCycle} STARTED (${activeVisual.length} visual, ${activeAudio.length} audio)\n`);
   
   console.log(`Visual: ${activeVisual.length} percepts`);
   activeVisual.forEach(p => {
@@ -273,6 +274,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       console.log(`${'═'.repeat(50)}`);
       console.log(`[${timestamp()}] CYCLE ${thisCycle} RECEIVED`);
       console.log(`${'═'.repeat(50)}`);
+      process.stdout.write(`\n✅ CYCLE ${thisCycle} COMPLETE - Mind: "${result.mindMoment.slice(0, 60)}..."\n`);
       console.log(`Mind Moment:`);
       console.log(`   ${result.mindMoment}`);
       if (result.sigilPhrase) {

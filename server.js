@@ -96,6 +96,7 @@ io.on('connection', (socket) => {
 
   socket.on('startSession', async ({ sessionId }) => {
     console.log(`▶️  Starting session: ${sessionId} (socket: ${socket.id})`);
+    process.stdout.write(`▶️  CLIENT SESSION STARTED: ${sessionId}\n`);
     
     const session = sessionManager.startSession(sessionId);
     activeSessions.add(sessionId);
@@ -112,6 +113,8 @@ io.on('connection', (socket) => {
     
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
+      console.log('🚀 FIRST SESSION - STARTING COGNITIVE LOOP');
+      process.stdout.write('🚀 COGNITIVE LOOP STARTING NOW\n');
       startCognitiveLoop(
         // Mind moment callback
         (cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {

@@ -192,7 +192,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const serverParam = urlParams.get('server');
         const SERVER_URL = serverParam || 'https://uni-cognizer-1.onrender.com';
-        const socket = io(SERVER_URL);
+        
+        console.log('🔌 Attempting to connect to:', SERVER_URL);
+        
+        const socket = io(SERVER_URL, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: Infinity
+        });
+        
         let CYCLE_MS = 5000; // Default cycle time in milliseconds (5 seconds)
         let currentSessionId = null;
         let moments = [];
@@ -201,19 +211,35 @@
         let nextCycleTime = null; // Timestamp in milliseconds
         let countdownInterval = null;
 
-        // Connection handling
+        // Connection handling with detailed logging
         socket.on('connect', () => {
+            console.log('✅ Connected to server:', SERVER_URL);
+            console.log('   Transport:', socket.io.engine.transport.name);
             document.getElementById('connectionStatus').textContent = 'Connected';
             document.getElementById('connectionStatus').className = 'status-value connected';
             
             currentSessionId = `test-${Date.now()}`;
+            console.log('📤 Starting session:', currentSessionId);
             socket.emit('startSession', { sessionId: currentSessionId });
         });
 
-        socket.on('disconnect', () => {
+        socket.on('connect_error', (error) => {
+            console.error('❌ Connection error:', error.message);
+            console.error('   Server:', SERVER_URL);
+            document.getElementById('connectionStatus').textContent = 'Connection Error';
+            document.getElementById('connectionStatus').className = 'status-value disconnected';
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.warn('🔌 Disconnected:', reason);
             document.getElementById('connectionStatus').textContent = 'Disconnected';
             document.getElementById('connectionStatus').className = 'status-value disconnected';
             if (countdownInterval) clearInterval(countdownInterval);
+        });
+
+        socket.on('reconnect_attempt', (attemptNumber) => {
+            console.log('🔄 Reconnect attempt', attemptNumber);
+            document.getElementById('connectionStatus').textContent = `Reconnecting... (${attemptNumber})`;
         });
 
         socket.on('sessionStarted', (data) => {
