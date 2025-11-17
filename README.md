@@ -182,14 +182,13 @@ npm run client:render  # Connects to Render
 
 ## Documentation
 
-- `docs/DEVELOPER_GUIDE.md` - **Practical dev reference** (API, database, deployment)
-- `docs/extending-cognizer.md` - Architecture planning (Phases 1-5)
-- `docs/personality-forge-plan.md` - Personality management system plan
-- `docs/personality-forge-implementation.md` - Implementation log (Phase 3 complete)
-- `docs/forge-deployment.md` - Deploy Forge with password protection
-- `docs/production-integration.md` - How personalities integrate with UNI
-- `graveyard/` - Historical docs (organized by topic)
-- `prime-directive.md` - Coding principles
+**Living Docs:**
+- `docs/DEVELOPER_GUIDE.md` - **Practical dev reference** (API, database, deployment, Personality Forge)
+- `docs/extending-cognizer.md` - **Architecture planning** (Phases 1-5 roadmap)
+- `prime-directive.md` - **Coding principles**
+
+**Historical Context:**
+- `graveyard/` - Historical documentation organized by topic (phase-1, phase-2, phase-3, etc.)
 
 ---
 

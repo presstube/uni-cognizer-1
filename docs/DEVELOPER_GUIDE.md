@@ -75,6 +75,20 @@ released_at TIMESTAMP             -- When deployed
 notes TEXT                        -- Release notes
 ```
 
+#### `personalities`
+Stores personality prompts for UNI.
+
+```sql
+id UUID PRIMARY KEY               -- Unique ID
+name VARCHAR(100)                 -- Display name
+slug VARCHAR(50) UNIQUE           -- URL-safe identifier
+prompt TEXT                       -- Full personality prompt
+schema JSONB                      -- Output schema (optional)
+created_at TIMESTAMP              -- When created
+updated_at TIMESTAMP              -- When last modified
+active BOOLEAN DEFAULT false      -- Only one can be active
+```
+
 #### `sessions`
 Tracks cognitive sessions.
 
@@ -111,6 +125,7 @@ prior_moment_ids UUID[]           -- Array of 3 prior moment IDs
 
 -- Metadata
 cognizer_version VARCHAR(20)      -- Version that generated this (FK)
+personality_id UUID               -- Personality used (FK to personalities)
 llm_provider VARCHAR(20)          -- "openai", "anthropic", "gemini"
 processing_duration_ms INTEGER    -- How long it took
 
@@ -125,6 +140,7 @@ UNIQUE(session_id, cycle)         -- One moment per cycle per session
 
 ```sql
 idx_mind_moments_session     -- Fast session queries
+idx_mind_moments_personality -- Query by personality
 idx_mind_moments_created     -- Recent moments
 idx_mind_moments_version     -- Query by version
 ```
@@ -201,6 +217,11 @@ SESSION_TIMEOUT_MS=60000
 # Database (optional)
 DATABASE_URL=postgresql://user:pass@host:5432/cognizer
 DATABASE_ENABLED=true            # Set to false to disable DB
+
+# Personality Forge (optional)
+FORGE_AUTH_ENABLED=true          # Enable password protection
+FORGE_USERNAME=writer            # Defaults to "admin"
+FORGE_PASSWORD=your-secure-password
 ```
 
 ### Running Locally
@@ -445,6 +466,133 @@ socket.on('cycleCompleted', ({
   speed: 0-1             // Animation speed
 }
 ```
+
+---
+
+## Personality Forge
+
+**Web UI for managing UNI's personality without code.**
+
+### Access
+
+**Local**: `http://localhost:3001/forge/`  
+**Production**: `https://your-app.railway.app/forge/`
+
+### Authentication
+
+Set in environment variables:
+```bash
+FORGE_AUTH_ENABLED=true          # Enable password protection
+FORGE_USERNAME=writer            # Optional, defaults to "admin"  
+FORGE_PASSWORD=your-secure-password
+```
+
+Browser shows login prompt when accessing `/forge/` or `/api/personalities/*`.
+
+### Workflow
+
+1. **Load** existing personality from dropdown
+2. **Edit** personality prompt in textarea
+3. **Test** with mock percepts (4 presets + custom JSON)
+4. **See** real LLM response in ~3 seconds
+5. **Iterate** until satisfied
+6. **Save** with new name/slug
+7. **Activate** to make it production-ready
+8. **Restart server** to load new personality
+
+### REST API Endpoints
+
+All endpoints require auth if `FORGE_AUTH_ENABLED=true`.
+
+```bash
+# List personalities
+GET /api/personalities
+# Returns: { personalities: [{ id, name, slug, active, created_at }] }
+
+# Get active personality
+GET /api/personalities/active
+# Returns: { personality: { id, name, slug, prompt, active } }
+
+# Get specific personality (includes full prompt)
+GET /api/personalities/:id
+# Returns: { personality: { id, name, slug, prompt, ... } }
+
+# Create/update personality
+POST /api/personalities
+# Body: { name, slug, prompt }
+# Returns: { personality: { id, ... } }
+
+# Activate personality
+POST /api/personalities/:id/activate
+# Returns: { personality, message: "Restart server..." }
+
+# Test personality with mock percepts
+POST /api/personalities/:id/test
+# Body: { visualPercepts: [...], audioPercepts: [...] }
+# Returns: { mindMoment, sigilPhrase, kinetic, lighting }
+
+# Delete personality (only if not active)
+DELETE /api/personalities/:id
+# Returns: { success: true }
+```
+
+### Database Schema
+
+```sql
+CREATE TABLE personalities (
+  id UUID PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(50) UNIQUE NOT NULL,
+  prompt TEXT NOT NULL,
+  schema JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  active BOOLEAN DEFAULT false
+);
+
+-- Only one personality can be active at a time
+CREATE UNIQUE INDEX unique_active_personality
+  ON personalities (active) WHERE active = true;
+```
+
+### Production Integration
+
+**Server startup:**
+```javascript
+// server.js initializes personality from database
+await initializePersonality();
+// Logs: 🎭 Loaded personality: UNI Tripartite v2.1
+```
+
+**Every mind moment:**
+- Uses `currentPersonality` prompt from database
+- Tags mind moment with `personality_id`
+- Enables analytics: compare personalities, track performance
+
+**To switch personalities:**
+1. Writer activates new personality in Forge
+2. Developer restarts server (or pushes any commit)
+3. Server loads new active personality
+4. All future mind moments use new personality
+
+### Security Notes
+
+- **Basic HTTP Auth**: Simple, works everywhere, good for small teams
+- **Use HTTPS**: Password sent in base64 encoding
+- **Rate limit test endpoint**: Each test calls real LLM (costs money!)
+- **Can't delete active personality**: Safety constraint prevents accidents
+
+### Deployment Checklist
+
+Before sharing with writers:
+
+- [ ] Set `FORGE_AUTH_ENABLED=true` in production
+- [ ] Set strong `FORGE_PASSWORD`
+- [ ] Run migrations: `npm run migrate`
+- [ ] Seed initial personality: `npm run db:seed-personality`
+- [ ] Test Forge access with password
+- [ ] Share credentials securely (1Password, etc.)
+- [ ] Show writer how to use (share writer-guide.md)
 
 ---
 
