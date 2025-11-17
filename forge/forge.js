@@ -64,7 +64,6 @@ const statusDiv = document.getElementById('status');
 const resultsSection = document.getElementById('results');
 const resultMoment = document.getElementById('result-moment');
 const resultSigil = document.getElementById('result-sigil');
-const resultKinetic = document.getElementById('result-kinetic');
 const resultLighting = document.getElementById('result-lighting');
 
 // Initialize
@@ -85,6 +84,39 @@ async function init() {
   activateBtn.addEventListener('click', handleActivate);
   
   updateCharCount();
+  
+  // Auto-load personality: check localStorage first, then active personality
+  await autoLoadPersonality();
+}
+
+// Auto-load personality on startup
+async function autoLoadPersonality() {
+  // Check localStorage for last selected personality
+  const lastSelectedId = localStorage.getItem('forge_last_personality');
+  
+  if (lastSelectedId && lastSelectedId !== 'new') {
+    // Try to load the last selected personality
+    const exists = personalities.find(p => p.id === lastSelectedId);
+    if (exists) {
+      personalitySelect.value = lastSelectedId;
+      await handlePersonalityChange();
+      return;
+    }
+  }
+  
+  // Fallback: load active personality
+  try {
+    const res = await fetch(`${API_BASE}/personalities/active`);
+    if (res.ok) {
+      const data = await res.json();
+      const activeId = data.personality.id;
+      
+      personalitySelect.value = activeId;
+      await handlePersonalityChange();
+    }
+  } catch (error) {
+    console.log('No active personality found, starting with new');
+  }
 }
 
 // API Functions
@@ -173,6 +205,9 @@ async function loadPersonalities() {
 async function handlePersonalityChange() {
   const value = personalitySelect.value;
   
+  // Save to localStorage
+  localStorage.setItem('forge_last_personality', value);
+  
   if (value === 'new') {
     clearForm();
     currentId = null;
@@ -209,8 +244,9 @@ function clearForm() {
 }
 
 function updateSlug() {
-  // Auto-generate slug from name if slug is empty
-  if (!slugInput.value) {
+  // Auto-generate slug from name only for new personalities
+  // (when currentId is null and slug is empty or matches auto-generated pattern)
+  if (!currentId || !slugInput.value) {
     const slug = nameInput.value
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -258,12 +294,9 @@ async function handleTest() {
     // Display results
     resultMoment.textContent = result.mindMoment;
     resultSigil.textContent = result.sigilPhrase || '(none)';
-    resultKinetic.textContent = result.kinetic?.pattern || '(none)';
     resultLighting.textContent = `${result.lighting?.color} - ${result.lighting?.pattern} (speed: ${result.lighting?.speed})`;
     
     resultsSection.classList.remove('hidden');
-    
-    showStatus('success', '✅ Test complete! Results shown below.');
     
   } catch (error) {
     showStatus('error', `Test failed: ${error.message}`);

@@ -294,9 +294,8 @@
         });
 
         socket.on('cycleCompleted', (data) => {
-            // Next cycle will start in CYCLE_MS milliseconds
-            const now = Date.now();
-            nextCycleTime = now + CYCLE_MS;
+            // Cycle completed - countdown already set by cycleStarted
+            // Don't reset countdown here or it will jump around
         });
 
         // Sigil events
