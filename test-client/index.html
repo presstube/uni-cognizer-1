@@ -200,7 +200,8 @@
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
-            reconnectionAttempts: Infinity
+            reconnectionAttempts: Infinity,
+            timeout: 60000  // 60 second timeout for Render free tier wake-up
         });
         
         let CYCLE_MS = 5000; // Default cycle time in milliseconds (5 seconds)
@@ -210,6 +211,12 @@
         let cognitiveState = 'AGGREGATING';
         let nextCycleTime = null; // Timestamp in milliseconds
         let countdownInterval = null;
+        
+        // Show "waking up" message for Render free tier
+        if (SERVER_URL.includes('render.com')) {
+            document.getElementById('connectionStatus').textContent = 'Waking up server...';
+            document.getElementById('connectionStatus').className = 'status-value disconnected';
+        }
 
         // Connection handling with detailed logging
         socket.on('connect', () => {
