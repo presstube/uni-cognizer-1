@@ -48,6 +48,9 @@ PORT=3001
 COGNITIVE_CYCLE_MS=20000  # Cycle interval (default: 5000ms)
 SESSION_TIMEOUT_MS=60000
 
+# Token Endpoint (optional)
+TOKEN_PASSWORD=your_secure_password_here  # Protects /api/gemini/token
+
 # Database (optional)
 DATABASE_URL=postgresql://...
 DATABASE_ENABLED=true
@@ -115,6 +118,39 @@ socket.on('cognitiveState', ({ state: 'AGGREGATING'|'COGNIZING'|'VISUALIZING' })
 socket.on('cycleStarted', ({ cycle, visualPercepts, audioPercepts }));
 socket.on('cycleCompleted', ({ cycle, duration, ... }));
 ```
+
+---
+
+## REST API
+
+### Gemini Token Generation
+
+Generate ephemeral tokens for client-side Gemini API access (used by aggregator-1).
+
+**Endpoint**: `GET /api/gemini/token`
+
+**Headers**:
+- `x-password`: Optional password (if `TOKEN_PASSWORD` env var is set)
+
+**Response**:
+```json
+{
+  "token": "projects/.../tokens/...",
+  "expiresAt": "2025-11-18T20:30:00.000Z"
+}
+```
+
+**Example**:
+```bash
+# Without password
+curl http://localhost:3001/api/gemini/token
+
+# With password
+curl http://localhost:3001/api/gemini/token \
+  -H "x-password: your_password"
+```
+
+**Use Case**: Allows aggregator-1 to use Gemini Live API without exposing API key in client code. Tokens expire in 30 minutes.
 
 ---
 

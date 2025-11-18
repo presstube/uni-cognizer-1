@@ -13,6 +13,7 @@ import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
 import personalitiesAPI from './src/api/personalities.js';
 import { forgeAuth } from './src/api/forge-auth.js';
 import * as sigilPrompts from './src/api/sigil-prompts.js';
+import geminiTokenAPI from './src/api/gemini-token.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -49,6 +50,9 @@ app.use('/assets', express.static('assets'));
 
 // Mount Personalities API (with optional auth)
 app.use('/api', forgeAuth, personalitiesAPI);
+
+// Mount Gemini Token API
+app.use('/api', geminiTokenAPI);
 
 // Mount Sigil Prompts API (with optional auth)
 app.get('/api/sigil-prompts', forgeAuth, sigilPrompts.listSigilPrompts);
