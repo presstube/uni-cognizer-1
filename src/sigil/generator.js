@@ -66,3 +66,73 @@ export async function generateSigil(concept) {
   return cleanCode;
 }
 
+/**
+ * Generate sigil with custom prompt template
+ * Used by Sigil Prompt Editor for testing different prompts
+ * @param {string} concept - The concept phrase
+ * @param {string} promptTemplate - Custom prompt with ${concept} placeholder
+ * @param {boolean} includeImage - Whether to include reference image (default: true)
+ * @returns {Promise<string>} Generated canvas drawing code
+ */
+export async function generateSigilWithCustomPrompt(concept, promptTemplate, includeImage = true) {
+  if (!concept || !concept.trim()) {
+    throw new Error('Concept is required for sigil generation');
+  }
+  
+  if (!promptTemplate || !promptTemplate.trim()) {
+    throw new Error('Prompt template is required');
+  }
+  
+  // Replace ${concept} placeholder
+  const finalPrompt = promptTemplate.replace(/\$\{concept\}/g, concept);
+  
+  const userContent = [];
+  
+  // Conditionally include reference image
+  if (includeImage) {
+    const imageContent = getImageContent();
+    if (imageContent) {
+      userContent.push(imageContent);
+      userContent.push({
+        type: 'text',
+        text: 'Here is a reference image showing 100 examples of the sigil style I want you to match. Study this carefully.'
+      });
+    }
+  }
+  
+  userContent.push({
+    type: 'text',
+    text: finalPrompt
+  });
+  
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    system: 'You are a code generator specializing in minimalist geometric sigils.',
+    messages: [{
+      role: 'user',
+      content: userContent
+    }]
+  });
+  
+  const code = message.content[0]?.text;
+  
+  if (!code) {
+    throw new Error('No code returned from sigil generation');
+  }
+  
+  // Clean up the code (same as generateSigil)
+  let cleanCode = code.trim();
+  
+  if (cleanCode.startsWith('```')) {
+    cleanCode = cleanCode.replace(/```(?:javascript|js)?\n?/g, '').replace(/```\s*$/g, '').trim();
+  }
+  
+  if (!cleanCode.includes('ctx.')) {
+    console.warn('[Sigil] Generated code does not contain canvas operations');
+    throw new Error('Generated code does not contain valid canvas operations');
+  }
+  
+  return cleanCode;
+}
+

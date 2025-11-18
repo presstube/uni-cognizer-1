@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⬡ Sigil Prompt Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Left Pane: Editor -->
+  <div class="left-pane">
+    <select id="prompt-select">
+      <option value="new">+ New Prompt</option>
+    </select>
+    
+    <div class="inline-fields">
+      <input type="text" id="name" placeholder="Sigil Prompt v1.0" maxlength="200">
+      <input type="text" id="slug" placeholder="sigil-prompt-v1-0" maxlength="100">
+    </div>
+    
+    <div class="actions">
+      <button id="save-btn" class="btn-secondary">💾 Save</button>
+      <button id="activate-btn" class="btn-success">✓ Set Active</button>
+    </div>
+    
+    <label>Prompt Template <span class="hint">Use ${concept} for phrase</span></label>
+    <textarea id="prompt" placeholder="Generate JavaScript canvas drawing commands for a sigil representing &quot;${concept}&quot;..."></textarea>
+    
+    <div class="ref-status">
+      <label>
+        <input type="checkbox" id="include-image" checked>
+        <span>Include reference image in LLM request</span>
+      </label>
+    </div>
+    
+    <div class="ref-image-container">
+      <img src="/assets/sigil-grid-original.png" alt="Sigil Reference Grid" class="ref-image">
+      <div class="ref-caption">100 example sigils for style matching</div>
+    </div>
+  </div>
+
+  <!-- Right Pane: Viewer -->
+  <div class="right-pane">
+    <div class="canvas-wrapper">
+      <canvas id="sigil-canvas"></canvas>
+    </div>
+    
+    <div class="phrase-input">
+      <input type="text" 
+             id="phrase" 
+             placeholder="sigil phrase"
+             autocomplete="off">
+    </div>
+  </div>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
+

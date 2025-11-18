@@ -20,7 +20,8 @@ export async function runMigrations() {
   // List of migrations in order
   const migrations = [
     '001_initial_schema.sql',
-    '002_personalities.sql'
+    '002_personalities.sql',
+    '003_sigil_prompts.sql'
   ];
   
   try {

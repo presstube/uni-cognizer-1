@@ -12,6 +12,7 @@ import { createSession as dbCreateSession, endSession as dbEndSession } from './
 import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
 import personalitiesAPI from './src/api/personalities.js';
 import { forgeAuth } from './src/api/forge-auth.js';
+import * as sigilPrompts from './src/api/sigil-prompts.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -40,8 +41,24 @@ app.use(express.json());
 // Serve Personality Forge UI (with optional auth)
 app.use('/forge', forgeAuth, express.static('forge'));
 
+// Serve Sigil Prompt Editor
+app.use('/sigil-prompt-editor', forgeAuth, express.static('sigil-prompt-editor'));
+
+// Serve assets (for reference image)
+app.use('/assets', express.static('assets'));
+
 // Mount Personalities API (with optional auth)
 app.use('/api', forgeAuth, personalitiesAPI);
+
+// Mount Sigil Prompts API (with optional auth)
+app.get('/api/sigil-prompts', forgeAuth, sigilPrompts.listSigilPrompts);
+app.get('/api/sigil-prompts/active', forgeAuth, sigilPrompts.getActiveSigilPromptAPI);
+app.get('/api/sigil-prompts/:id', forgeAuth, sigilPrompts.getSigilPromptAPI);
+app.post('/api/sigil-prompts', forgeAuth, sigilPrompts.saveSigilPrompt);
+app.post('/api/sigil-prompts/test-current', forgeAuth, sigilPrompts.testCurrentPrompt);
+app.post('/api/sigil-prompts/:id/activate', forgeAuth, sigilPrompts.activateSigilPromptAPI);
+app.post('/api/sigil-prompts/:id/test', forgeAuth, sigilPrompts.testSigilPrompt);
+app.delete('/api/sigil-prompts/:id', forgeAuth, sigilPrompts.deleteSigilPromptAPI);
 
 // Health check endpoint (required for Render)
 app.get('/', (req, res) => {

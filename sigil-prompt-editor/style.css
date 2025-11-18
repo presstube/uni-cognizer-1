@@ -1,0 +1,338 @@
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ddd;
+  background: #0a0a0a;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Layout: Left/Right Split */
+.left-pane,
+.right-pane {
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.left-pane {
+  flex: 0 0 50%;
+  border-right: 1px solid #1a1a1a;
+}
+
+.right-pane {
+  flex: 0 0 50%;
+  background: #050505;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+
+/* Form Elements */
+select,
+input[type="text"],
+textarea {
+  width: 100%;
+  background: #111;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  padding: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background 0.2s;
+  margin-bottom: 16px;
+}
+
+select:focus,
+input[type="text"]:focus,
+textarea:focus {
+  outline: none;
+  background: #1a1a1a;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 400px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.hint {
+  float: right;
+  color: #666;
+  font-size: 10px;
+  text-transform: none;
+}
+
+.inline-fields {
+  display: flex;
+  gap: 12px;
+}
+
+.inline-fields input {
+  flex: 1;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background: #1a1a1a;
+  color: #ddd;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #252525;
+}
+
+.btn-success {
+  background: #00aa44;
+  color: #fff;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #008833;
+}
+
+/* Loading State */
+button.loading {
+  position: relative;
+  color: transparent;
+}
+
+button.loading::after {
+  content: '...';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+/* Reference Status */
+.ref-status {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.ref-status label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #ddd;
+  margin: 0;
+}
+
+.ref-status input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.ref-status span {
+  user-select: none;
+}
+
+/* Reference Image */
+.ref-image-container {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.ref-image {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.ref-caption {
+  font-size: 11px;
+  color: #666;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Canvas */
+.canvas-wrapper {
+  position: relative;
+}
+
+#sigil-canvas {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border: none;
+  background: #000;
+}
+
+/* Phrase Input */
+.phrase-input {
+  width: 100%;
+  max-width: 400px;
+}
+
+.phrase-input input {
+  width: 100%;
+  text-align: center;
+  font-size: 16px;
+  padding: 14px;
+  background: transparent;
+  border: none;
+  margin: 0;
+  color: #fff;
+  caret-color: #fff;
+}
+
+.phrase-input input:focus {
+  outline: none;
+  background: transparent;
+}
+
+.phrase-input input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  animation: pulse-thinking 2s ease-in-out infinite;
+}
+
+/* Flashing caret animation */
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: #fff; }
+}
+
+/* Pulsating text while thinking */
+@keyframes pulse-thinking {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+.phrase-input input::placeholder {
+  color: #444;
+  font-style: italic;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+  
+  .left-pane,
+  .right-pane {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .left-pane {
+    border-right: none;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  
+  .right-pane {
+    border-top: 2px solid #1a1a1a;
+    min-height: 50vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .left-pane,
+  .right-pane {
+    padding: 16px;
+  }
+  
+  .actions {
+    flex-wrap: wrap;
+  }
+  
+  button {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 120px;
+  }
+  
+  .inline-fields {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
