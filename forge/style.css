@@ -33,6 +33,16 @@ body {
   background: #050505;
 }
 
+/* Pane Title */
+.pane-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 24px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 /* Row Layout for Name/Slug */
 .row {
   display: flex;
@@ -283,4 +293,57 @@ button.loading::after {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* =====================================================
+   Responsive Breakpoints
+   ===================================================== */
+
+/* Tablet and below: Stack panes vertically */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  
+  .left-pane,
+  .right-pane {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .right-pane {
+    border-top: 2px solid #1a1a1a;
+    min-height: 50vh;
+  }
+}
+
+/* Mobile: Adjust spacing and font sizes */
+@media (max-width: 480px) {
+  .left-pane,
+  .right-pane {
+    padding: 16px;
+  }
+  
+  .actions {
+    flex-wrap: wrap;
+  }
+  
+  button {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 120px;
+  }
+  
+  /* Stack name/slug fields on mobile */
+  .row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .row + .row {
+    margin-top: 16px;
+  }
 }
