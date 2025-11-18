@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sigil Demo - Phase 1</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: monospace;
+      color: #fff;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      z-index: 1;
+      border: 2px solid #666;
+      box-sizing: border-box;
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 30px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 90vw;
+    }
+    
+    button {
+      padding: 14px 28px;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    button:hover {
+      background: #ccc;
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      font-size: 12px;
+      opacity: 0.7;
+      line-height: 1.6;
+    }
+    
+    .info-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 14px;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="info">
+    <div class="info-title">Sigil Phase 1 Demo</div>
+    <div>Click buttons to test mode switching</div>
+    <div>Rapid clicking shows immediate interruption</div>
+  </div>
+  
+  <div class="controls">
+    <button id="think">Think</button>
+    <button id="draw1">Suppressed Joy</button>
+    <button id="draw2">Hidden Joy</button>
+    <button id="draw3">Ordered Face</button>
+  </div>
+  
+  <script type="module">
+    import { Sigil } from './sigil.standalone.js';
+    
+    const canvas = document.getElementById('canvas');
+    
+    // Initialize Sigil with configuration
+    const sigil = new Sigil({
+      canvas,
+      canvasSize: 200,            // Fixed 300x300 size
+      drawDuration: 200,           // Fast animation
+      undrawDuration: 300,         // Fast undraw
+      thinkingShiftInterval: 100, // Rapid shifting
+      thinkingShiftDelay: 1500,   // Wait 1.5s before shifting
+      scale: 1.0,                // Quarter size (matches viewer)
+      lineColor: '#fff',          // White lines
+      lineWeight: 1.2             // Base line weight (SigilAlpha uses 2x)
+    });
+    
+    // Sample glyphgen sigils from actual data
+    const samples = {
+      sample1: {
+        calls: `\`\`\`javascript
+ctx.beginPath();
+ctx.moveTo(50, 20);
+ctx.lineTo(50, 35);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(35, 35);
+ctx.lineTo(65, 35);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(42, 42);
+ctx.lineTo(58, 42);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(50, 55, 8, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(50, 47);
+ctx.quadraticCurveTo(45, 52, 50, 57);
+ctx.quadraticCurveTo(55, 52, 50, 47);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(35, 70);
+ctx.quadraticCurveTo(50, 60, 65, 70);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(40, 75);
+ctx.quadraticCurveTo(50, 68, 60, 75);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(45, 80);
+ctx.quadraticCurveTo(50, 73, 55, 80);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(30, 75, 3, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(70, 75, 3, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(25, 85, 2, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(75, 85, 2, 0, Math.PI * 2);
+ctx.stroke();
+\`\`\``
+      },
+      
+      sample2: {
+        calls: `\`\`\`javascript
+ctx.beginPath();
+ctx.moveTo(50, 25);
+ctx.lineTo(35, 40);
+ctx.lineTo(65, 40);
+ctx.closePath();
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(50, 45, 8, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(50, 53);
+ctx.quadraticCurveTo(42, 58, 38, 65);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(50, 53);
+ctx.quadraticCurveTo(58, 58, 62, 65);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(50, 53);
+ctx.lineTo(50, 72);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(45, 75);
+ctx.quadraticCurveTo(50, 78, 55, 75);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(42, 68, 2, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.arc(58, 68, 2, 0, Math.PI * 2);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(30, 45);
+ctx.quadraticCurveTo(25, 50, 30, 55);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(70, 45);
+ctx.quadraticCurveTo(75, 50, 70, 55);
+ctx.stroke();
+\`\`\``
+      },
+      
+      sample3: {
+        calls: `ctx.beginPath();
+ctx.moveTo(30, 30);
+ctx.lineTo(70, 30);
+ctx.lineTo(70, 45);
+ctx.lineTo(30, 45);
+ctx.closePath();
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(35, 35);
+ctx.lineTo(40, 35);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(60, 35);
+ctx.lineTo(65, 35);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(45, 40);
+ctx.lineTo(55, 40);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(50, 50);
+ctx.lineTo(30, 60);
+ctx.quadraticCurveTo(25, 65, 30, 70);
+ctx.quadraticCurveTo(40, 75, 50, 70);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(50, 50);
+ctx.lineTo(70, 60);
+ctx.quadraticCurveTo(75, 65, 70, 70);
+ctx.quadraticCurveTo(60, 75, 50, 70);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(45, 55);
+ctx.quadraticCurveTo(50, 65, 55, 55);
+ctx.stroke();`
+      }
+    };
+    
+    // Button event handlers
+    document.getElementById('think').addEventListener('click', () => {
+      console.log('Switching to thinking mode...');
+      sigil.thinking();
+    });
+    
+    document.getElementById('draw1').addEventListener('click', () => {
+      console.log('Drawing sample 1: Suppressed joy, blooming light');
+      sigil.drawSigil(samples.sample1);
+    });
+    
+    document.getElementById('draw2').addEventListener('click', () => {
+      console.log('Drawing sample 2: Hidden joy, geothermal promise');
+      sigil.drawSigil(samples.sample2);
+    });
+    
+    document.getElementById('draw3').addEventListener('click', () => {
+      console.log('Drawing sample 3: Ordered face, mirrored lung');
+      sigil.drawSigil(samples.sample3);
+    });
+    
+    // Start in thinking mode
+    console.log('Initializing in thinking mode...');
+    sigil.thinking();
+  </script>
+</body>
+</html>
+
