@@ -31,10 +31,26 @@
         <input type="checkbox" id="include-image" checked>
         <span>Include reference image in LLM request</span>
       </label>
+      
+      <div class="file-input-wrapper">
+        <label for="image-file" class="file-input-label">
+          📁 Choose custom image
+        </label>
+        <input type="file" 
+               id="image-file" 
+               accept="image/png,image/jpeg,image/jpg" 
+               style="display: none;">
+        <button id="reset-image" class="btn-reset">
+          ↺ Reset to default
+        </button>
+      </div>
     </div>
     
     <div class="ref-image-container">
-      <img src="/assets/sigil-grid-original.png" alt="Sigil Reference Grid" class="ref-image">
+      <img id="ref-image" 
+           src="/assets/sigil-grid-original.png" 
+           alt="Sigil Reference Grid" 
+           class="ref-image">
       <div class="ref-caption">100 example sigils for style matching</div>
     </div>
   </div>

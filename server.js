@@ -36,7 +36,7 @@ try {
 
 // Create Express app for HTTP endpoints
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased for base64 image uploads
 
 // Serve Personality Forge UI (with optional auth)
 app.use('/forge', forgeAuth, express.static('forge'));

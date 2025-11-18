@@ -72,9 +72,10 @@ export async function generateSigil(concept) {
  * @param {string} concept - The concept phrase
  * @param {string} promptTemplate - Custom prompt with ${concept} placeholder
  * @param {boolean} includeImage - Whether to include reference image (default: true)
+ * @param {string|null} customImageBase64 - Custom image as base64 data URL (optional)
  * @returns {Promise<string>} Generated canvas drawing code
  */
-export async function generateSigilWithCustomPrompt(concept, promptTemplate, includeImage = true) {
+export async function generateSigilWithCustomPrompt(concept, promptTemplate, includeImage = true, customImageBase64 = null) {
   if (!concept || !concept.trim()) {
     throw new Error('Concept is required for sigil generation');
   }
@@ -90,7 +91,37 @@ export async function generateSigilWithCustomPrompt(concept, promptTemplate, inc
   
   // Conditionally include reference image
   if (includeImage) {
-    const imageContent = getImageContent();
+    let imageContent = null;
+    
+    if (customImageBase64) {
+      // Use uploaded custom image
+      // Remove data URL prefix (e.g., "data:image/png;base64,")
+      const base64Data = customImageBase64.includes(',') 
+        ? customImageBase64.split(',')[1] 
+        : customImageBase64;
+      
+      // Detect media type from data URL
+      let mediaType = 'image/png';
+      if (customImageBase64.includes('image/jpeg') || customImageBase64.includes('image/jpg')) {
+        mediaType = 'image/jpeg';
+      }
+      
+      imageContent = {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: mediaType,
+          data: base64Data
+        }
+      };
+      
+      console.log('[Sigil] Using custom uploaded image');
+    } else {
+      // Use default from assets
+      imageContent = getImageContent();
+      console.log('[Sigil] Using default reference image');
+    }
+    
     if (imageContent) {
       userContent.push(imageContent);
       userContent.push({

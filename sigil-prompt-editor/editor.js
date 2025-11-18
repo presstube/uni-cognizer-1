@@ -7,6 +7,7 @@ let prompts = [];
 let currentPrompt = null;
 let currentId = null;
 let sigil = null;
+let customImageData = null;
 
 // DOM Elements
 const promptSelect = document.getElementById('prompt-select');
@@ -17,6 +18,9 @@ const saveBtn = document.getElementById('save-btn');
 const activateBtn = document.getElementById('activate-btn');
 const phraseInput = document.getElementById('phrase');
 const includeImageCheckbox = document.getElementById('include-image');
+const imageFileInput = document.getElementById('image-file');
+const refImage = document.getElementById('ref-image');
+const resetImageBtn = document.getElementById('reset-image');
 
 // Initialize
 async function init() {
@@ -30,6 +34,11 @@ async function init() {
   saveBtn.addEventListener('click', handleSave);
   activateBtn.addEventListener('click', handleActivate);
   phraseInput.addEventListener('keydown', handlePhraseSubmit);
+  imageFileInput.addEventListener('change', handleImageUpload);
+  resetImageBtn.addEventListener('click', handleResetImage);
+  
+  // Initialize reset button visibility
+  resetImageBtn.classList.add('hidden');
 }
 
 // Initialize Sigil viewer
@@ -144,6 +153,61 @@ function clearForm() {
   nameInput.value = '';
   slugInput.value = '';
   promptTextarea.value = '';
+}
+
+// Helper: Convert file to base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Handle image upload
+async function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  // Validate size (< 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Image too large (max 5MB)');
+    imageFileInput.value = '';
+    return;
+  }
+  
+  // Validate type
+  if (!file.type.match(/^image\/(png|jpeg|jpg)$/)) {
+    alert('Please upload a PNG or JPEG image');
+    imageFileInput.value = '';
+    return;
+  }
+  
+  try {
+    // Convert to base64
+    const base64 = await fileToBase64(file);
+    customImageData = base64;
+    
+    // Preview it
+    refImage.src = base64;
+    resetImageBtn.classList.remove('hidden');
+    
+    console.log('✅ Custom image loaded:', file.name, `(${(file.size / 1024).toFixed(1)}KB)`);
+  } catch (error) {
+    console.error('Failed to load image:', error);
+    alert('Failed to load image');
+    imageFileInput.value = '';
+  }
+}
+
+// Reset to default image
+function handleResetImage() {
+  customImageData = null;
+  refImage.src = '/assets/sigil-grid-original.png';
+  resetImageBtn.classList.add('hidden');
+  imageFileInput.value = '';
+  console.log('↺ Reset to default image');
 }
 
 // Update slug from name
@@ -266,6 +330,7 @@ async function handlePhraseSubmit(e) {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📝 Phrase:', phrase);
   console.log('🖼️  Include reference image:', includeImage);
+  console.log('🎨 Custom image:', customImageData ? 'Yes (uploaded)' : 'No (default)');
   console.log('\n🔮 Prompt sent to LLM:\n');
   console.log(finalPrompt);
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
@@ -281,7 +346,7 @@ async function handlePhraseSubmit(e) {
     const res = await fetch(`${API_BASE}/sigil-prompts/test-current`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phrase, prompt, includeImage })
+      body: JSON.stringify({ phrase, prompt, includeImage, customImage: customImageData })
     });
     
     if (!res.ok) {

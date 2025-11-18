@@ -129,7 +129,7 @@ export async function activateSigilPromptAPI(req, res) {
  */
 export async function testCurrentPrompt(req, res) {
   try {
-    const { phrase, prompt, includeImage } = req.body;
+    const { phrase, prompt, includeImage, customImage } = req.body;
     
     if (!phrase || !phrase.trim()) {
       return res.status(400).json({ error: 'Phrase is required' });
@@ -139,11 +139,18 @@ export async function testCurrentPrompt(req, res) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
     
-    const imageStatus = includeImage !== false ? 'with image' : 'without image';
+    const imageStatus = includeImage !== false 
+      ? (customImage ? 'with custom image' : 'with default image')
+      : 'without image';
     console.log(`[Sigil] Testing current prompt ${imageStatus} - phrase: "${phrase}"`);
     
     // Generate sigil with the prompt from request body
-    const calls = await generateSigilWithCustomPrompt(phrase, prompt, includeImage !== false);
+    const calls = await generateSigilWithCustomPrompt(
+      phrase, 
+      prompt, 
+      includeImage !== false,
+      customImage || null
+    );
     
     res.json({ calls });
   } catch (error) {
