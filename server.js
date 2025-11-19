@@ -45,6 +45,9 @@ app.use('/forge', forgeAuth, express.static('forge'));
 // Serve Sigil Prompt Editor
 app.use('/sigil-prompt-editor', forgeAuth, express.static('sigil-prompt-editor'));
 
+// Serve Visual Percept Prompt Editor
+app.use('/visual-percept-prompt-editor', express.static('visual-percept-prompt-editor'));
+
 // Serve assets (for reference image)
 app.use('/assets', express.static('assets'));
 
