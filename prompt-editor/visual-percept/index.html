@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎥 Visual Percept Prompt Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Left Pane: Prompts -->
+  <div class="left-pane">
+    <!-- Load Prompt -->
+    <div class="row">
+      <label>Load Prompt</label>
+      <select id="prompt-select">
+        <option value="new">+ New Prompt</option>
+      </select>
+    </div>
+
+    <!-- Name & Slug -->
+    <div class="row">
+      <div class="col">
+        <div class="inline-field">
+          <label>Name</label>
+          <input type="text" id="name" placeholder="Visual Analysis v1.0" maxlength="200">
+        </div>
+      </div>
+      <div class="col">
+        <div class="inline-field">
+          <label>Slug</label>
+          <input type="text" id="slug" placeholder="visual-analysis-v1-0" maxlength="100">
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="save-btn" class="btn-secondary">💾 Save</button>
+      <button id="activate-btn" class="btn-success">✓ Set Active</button>
+      <button id="delete-btn" class="btn-danger">Delete</button>
+    </div>
+
+    <!-- System Prompt -->
+    <label>System Prompt <span id="system-char-count">0 chars</span></label>
+    <textarea id="system-prompt" 
+              placeholder="You are analyzing visual percepts from a webcam..."></textarea>
+
+    <!-- User Prompt -->
+    <label>User Prompt <span id="user-char-count">0 chars</span></label>
+    <textarea id="user-prompt" 
+              placeholder="What do you see in this frame?"></textarea>
+  </div>
+
+  <!-- Right Pane: Preview + Output -->
+  <div class="right-pane">
+    <!-- Top Section: Video + Sigil Side by Side -->
+    <div class="preview-section">
+      <!-- Webcam (Left) -->
+      <div class="video-container">
+        <video id="webcam" autoplay playsinline muted></video>
+        <div id="video-flash" class="video-flash"></div>
+      </div>
+      
+      <!-- Sigil (Right) -->
+      <div class="sigil-container">
+        <canvas id="sigil-canvas"></canvas>
+        <div id="sigil-phrase" class="sigil-phrase"></div>
+      </div>
+    </div>
+    
+    <!-- Controls -->
+    <div class="controls">
+      <button id="capture-btn" class="btn-primary">📸 SEND FRAME</button>
+      <button id="continuous-btn" class="btn-toggle">🔄 CONTINUOUS</button>
+      <input type="number" 
+             id="interval-input" 
+             min="500" 
+             max="10000" 
+             step="100" 
+             value="1000"
+             placeholder="1000ms">
+      
+      <!-- Motion Controls -->
+      <div class="motion-controls">
+        <label class="motion-label">
+          Motion: <span id="motion-value" class="motion-value">0%</span>
+        </label>
+        <label class="motion-toggle">
+          <input type="checkbox" id="motion-enabled">
+          Auto-send
+        </label>
+        <input type="range" 
+               id="motion-threshold" 
+               min="0" 
+               max="100" 
+               value="30"
+               step="1"
+               title="Motion threshold">
+        <span id="motion-threshold-value" class="threshold-value">30%</span>
+        
+        <label class="motion-label" style="margin-left: 1rem;">
+          Sensitivity: <span id="sensitivity-value" class="threshold-value">50k</span>
+        </label>
+        <input type="range" 
+               id="motion-sensitivity" 
+               min="10000" 
+               max="150000" 
+               value="50000"
+               step="5000"
+               title="Motion sensitivity">
+      </div>
+      
+      <div id="status" class="status">⚫ Disconnected</div>
+      <button id="clear-response-btn" class="btn-small">Clear</button>
+    </div>
+    
+    <!-- Motion Visualizer -->
+    <div class="motion-visualizer">
+      <div class="motion-bar">
+        <div id="motion-bar-bg" class="motion-bar-bg"></div>
+        <div id="motion-indicator" class="motion-indicator"></div>
+        <div id="threshold-line" class="threshold-line"></div>
+      </div>
+      <div class="motion-legend">
+        <span class="legend-item">🟢 Below threshold</span>
+        <span class="legend-item">🔴 Above threshold</span>
+        <span class="legend-item">🔵 Current motion</span>
+      </div>
+    </div>
+    
+    <!-- Status Messages -->
+    <div id="error" class="error hidden"></div>
+    
+    <!-- Bottom Section: JSON Response -->
+    <div class="response-section">
+      <label>JSON Response</label>
+      <div id="response-text" class="response-text"></div>
+    </div>
+  </div>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
+

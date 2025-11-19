@@ -48,8 +48,13 @@ PORT=3001
 COGNITIVE_CYCLE_MS=20000  # Cycle interval (default: 5000ms)
 SESSION_TIMEOUT_MS=60000
 
-# Token Endpoint (optional)
-TOKEN_PASSWORD=your_secure_password_here  # Protects /api/gemini/token
+# Token Endpoint (optional - protects /api/gemini/token)
+TOKEN_PASSWORD=your_secure_password_here
+
+# Prompt Editors Auth (production only - HTTP Basic Auth)
+NODE_ENV=production                      # Required to enable auth
+EDITOR_USERNAME=admin                    # Optional (default: admin)
+EDITOR_PASSWORD=your_secure_password     # Required in production
 
 # Database (optional)
 DATABASE_URL=postgresql://...
@@ -219,7 +224,7 @@ npm run client:render  # Connects to Render
 ## Documentation
 
 **Living Docs:**
-- `docs/DEVELOPER_GUIDE.md` - **Practical dev reference** (API, database, deployment, Personality Forge)
+- `docs/DEVELOPER_GUIDE.md` - **Practical dev reference** (API, database, deployment, Personality Prompt Editor)
 - `docs/extending-cognizer.md` - **Architecture planning** (Phases 1-5 roadmap)
 - `prime-directive.md` - **Coding principles**
 

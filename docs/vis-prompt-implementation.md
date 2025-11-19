@@ -496,6 +496,356 @@ ws.send(JSON.stringify(message));
 
 ## Testing Status
 
-**Ready for**: User testing (retry after importmap fix)
+**Status**: ✅ Working! User confirmed successful frame analysis
+
+### JSON Response Mode ✅
+
+**Enhancement**: Configured to return structured JSON responses
+
+**Configuration**:
+```javascript
+generationConfig: {
+  responseModalities: ['TEXT'],
+  responseMimeType: 'application/json'  // Forces JSON output
+}
+```
+
+**Default System Prompt** (JSON Schema):
+```
+You are analyzing visual percepts from a webcam for UNI, an AI experiencing the world through sensors.
+Always respond with valid JSON in this exact format:
+{
+  "description": "concise, poetic description of what you observe (1-2 sentences)",
+  "objects": ["list", "of", "visible", "objects"],
+  "people": "description of people present or NONE",
+  "action": "action taking place or NONE", 
+  "mood": "emotional atmosphere of the scene",
+  "lighting": "description of lighting conditions"
+}
+
+Focus on: people, actions, emotions, objects, lighting, atmosphere.
+```
+
+**Benefits**:
+- ✅ Structured, parseable output
+- ✅ No markdown code blocks
+- ✅ Consistent format
+- ✅ Easy to integrate with other systems
+
+**Files Modified**: `visual-percept-prompt-editor/editor.js` (lines 124, 378-396)
+
+---
+
+## Sigil Integration ✅
+
+**Date**: November 18, 2025
+
+**Goal**: Integrate sigil generation and display into Visual Percept Prompt Editor
+
+**Changes**:
+
+### 1. Copied sigil.standalone.js ✅
+- Copied from `sigil-prompt-editor/sigil/sigil.standalone.js`
+- Placed in `visual-percept-prompt-editor/sigil.standalone.js`
+
+### 2. Updated HTML ✅
+- Added sigil canvas and phrase display between controls and response
+- HTML structure:
+  ```html
+  <div class="sigil-display">
+    <canvas id="sigil-canvas"></canvas>
+    <div id="sigil-phrase" class="sigil-phrase"></div>
+  </div>
+  ```
+
+### 3. Updated CSS ✅
+- Added `.sigil-display` styling (flex column, centered)
+- Canvas: 200x200px, black background
+- Phrase: green text, uppercase, letter-spaced
+- Empty state placeholder: "awaiting sigil..."
+
+### 4. Updated editor.js ✅
+**Import**:
+- Added `import { Sigil } from './sigil.standalone.js';`
+
+**State**:
+- Added `sigil: null` to state
+
+**Initialization**:
+- Initialize Sigil instance with 200px canvas
+- Start in thinking mode
+- Configure line color, weight, animation speeds
+
+**Default Prompts**:
+- Updated system prompt with sigil generation instructions
+- Includes rules for canvas drawing commands
+- JSON schema: `{ "sigilPhrase": "...", "drawCalls": "..." }`
+- User prompt: "Create a sigil for this moment."
+
+**Response Handling**:
+- Parse JSON response on `turnComplete`
+- Extract `sigilPhrase` and `drawCalls`
+- Call `renderSigil()` function
+
+**Sigil Rendering**:
+- New `renderSigil(phrase, drawCalls)` function
+- Updates phrase display
+- Stops thinking animation
+- Calls `sigil.draw(drawCalls)`
+
+**Clear Button**:
+- Clears phrase display
+- Restarts thinking animation
+
+**Files Modified**:
+- `visual-percept-prompt-editor/index.html` (added canvas + phrase)
+- `visual-percept-prompt-editor/style.css` (added sigil styles)
+- `visual-percept-prompt-editor/editor.js` (integrated Sigil class)
+- `visual-percept-prompt-editor/sigil.standalone.js` (copied)
+
+---
+
+## Typewriter Effect ✅
+
+**Date**: November 18, 2025
+
+**Goal**: Add typewriter effect for sigil phrase with clean, reusable component
+
+**Changes**:
+
+### 1. Created typewriter.js Module ✅
+- **File**: `visual-percept-prompt-editor/typewriter.js`
+- **Exports**: `typewrite(element, text, speed, onComplete)` and `clearTypewriter(element)`
+- **Pattern**: Pure function with no internal state
+- **Size**: ~35 lines
+- **API**: Simple, single-purpose, reusable
+
+### 2. Updated Sigil Phrase Styling ✅
+- **Color**: Changed from green (#4CAF50) to grey (#666)
+- **Font**: Monospace ('Monaco', 'Courier New')
+- **Style**: Italic, 14px, lighter weight
+- **Removed**: CSS-based "awaiting sigil..." placeholder
+
+### 3. Updated editor.js ✅
+**Import**:
+- Added `import { typewrite } from './typewriter.js';`
+
+**sendFrame()**:
+- Added typewriter for "awaiting sigil..." (80ms speed - slower/contemplative)
+- Triggers when frame is sent
+
+**renderSigil()**:
+- Changed to typewrite phrase (40ms speed - faster/dynamic)
+- Converts phrase to lowercase for poetic effect
+
+**clear button**:
+- Instant clear (no typewriter needed)
+- Restarts thinking animation
+
+**Speed choices**:
+- 80ms for "awaiting sigil..." - slower, meditative
+- 40ms for actual phrases - snappier, more alive
+
+**Files Modified**:
+- `visual-percept-prompt-editor/typewriter.js` (new)
+- `visual-percept-prompt-editor/style.css` (sigil phrase styling)
+- `visual-percept-prompt-editor/editor.js` (integration)
+
+---
+
+## Continuous Mode ✅
+
+**Date**: November 18, 2025
+
+**Goal**: Add continuous mode that auto-sends frames at configurable intervals
+
+**Changes**:
+
+### 1. Updated State ✅
+- Added `isContinuous: false` - tracks continuous mode state
+- Added `continuousTimer: null` - holds setTimeout reference
+- Added `continuousInterval: 1000` - interval in milliseconds
+
+### 2. Added UI Controls ✅
+- **Toggle button**: "🔄 CONTINUOUS" / "⏸ STOP"
+  - Grey by default, green when active
+  - Toggles continuous mode on/off
+- **Interval input**: Number input (500-10000ms)
+  - Default: 1000ms (1 second)
+  - Min: 500ms, Max: 10 seconds
+  - Step: 100ms
+
+### 3. Added Continuous Mode Functions ✅
+**startContinuousMode()**:
+- Sets `isContinuous` to true
+- Updates button to active state ("⏸ STOP" + green)
+- Starts the continuous loop
+
+**stopContinuousMode()**:
+- Sets `isContinuous` to false
+- Clears the timer
+- Resets button to inactive state ("🔄 CONTINUOUS" + grey)
+
+**toggleContinuousMode()**:
+- Switches between start/stop
+
+**continuousLoop()**:
+- Async loop that sends frames
+- Respects interval setting
+- Continues on errors (doesn't stop)
+- Schedules next iteration with setTimeout
+
+### 4. Event Handlers ✅
+- **Continuous button**: Calls `toggleContinuousMode()`
+- **Interval input**: Updates `continuousInterval` on change
+- **Validation**: Ensures interval is 500-10000ms
+
+### 5. Behavior ✅
+- **Single mode** (default): Manual frame sending via button
+- **Continuous mode**: Auto-sends frame every N milliseconds
+- **Interval**: User-configurable from 500ms to 10 seconds
+- **Error handling**: Continues even if individual frames fail
+- **Clean shutdown**: Stops timer when toggling off
+
+**Files Modified**:
+- `visual-percept-prompt-editor/index.html` (added toggle + interval input)
+- `visual-percept-prompt-editor/style.css` (button styling, input styling)
+- `visual-percept-prompt-editor/editor.js` (continuous mode logic)
+
+---
+
+## Motion Detection ✅
+
+**Date**: November 18, 2025
+
+**Goal**: Add motion-triggered frame capture with visual feedback and threshold control
+
+**Changes**:
+
+### 1. Created motion-detector.js Module ✅
+- **File**: `visual-percept-prompt-editor/motion-detector.js`
+- **Class**: `MotionDetector` - Frame differencing algorithm
+- **Methods**:
+  - `detect()` - Compares frames, returns raw motion score
+  - `getNormalized()` - Returns 0-100% motion level
+  - `getScore()` - Returns raw score
+- **Algorithm**: Pixel-by-pixel difference between consecutive frames
+- **Performance**: Samples every 4th pixel (adjustable)
+- **Size**: ~75 lines, pure module, no dependencies
+
+### 2. Added Motion UI Controls ✅
+- **Motion display**: Real-time percentage (0-100%)
+  - Green monospace text
+  - Updates every frame via requestAnimationFrame
+  
+- **Auto-send checkbox**: Enable/disable motion triggering
+  - When enabled, sends frame when threshold exceeded
+  
+- **Threshold slider**: 0-100% sensitivity control
+  - Default: 30%
+  - Visual feedback shows current setting
+
+### 3. Updated State ✅
+- `motionDetector: null` - MotionDetector instance
+- `currentMotion: 0` - Current motion percentage
+- `motionEnabled: false` - Auto-send toggle state
+- `motionThreshold: 30` - Threshold percentage
+- `lastMotionSend: 0` - Timestamp for cooldown
+- `motionCooldown: 2000` - 2 second debounce
+
+### 4. Motion Detection Loop ✅
+**startMotionDetection()**:
+- Runs in `requestAnimationFrame` loop
+- Calls `detect()` every frame
+- Updates UI with normalized percentage
+- Checks threshold and cooldown
+- Auto-triggers `sendFrame()` when conditions met
+
+**Triggering Logic**:
+- Must be enabled (checkbox checked)
+- Motion >= threshold
+- Not in continuous mode (avoids conflict)
+- Cooldown elapsed (2 seconds since last send)
+
+### 5. Integration ✅
+- Initialized after webcam in `init()`
+- Runs independently from other modes
+- Doesn't interfere with manual or continuous modes
+- Clean separation of concerns
+
+### 6. Behavior ✅
+- **Always displays motion** (even when disabled)
+- **Auto-send only when enabled**
+- **2-second cooldown** prevents spam
+- **Works alongside** manual and continuous modes
+- **Visual feedback** via real-time percentage
+
+**Files Modified**:
+- `visual-percept-prompt-editor/motion-detector.js` (new)
+- `visual-percept-prompt-editor/index.html` (motion controls)
+- `visual-percept-prompt-editor/style.css` (motion control styling)
+- `visual-percept-prompt-editor/editor.js` (integration + event handlers)
+
+---
+
+## Implementation Complete! 🎉🎉🎉
+
+### Final Status
+
+**Working Features**:
+- ✅ Webcam initialization
+- ✅ Frame capture (canvas → base64)
+- ✅ Raw WebSocket connection to Gemini Live API
+- ✅ Ephemeral token authentication
+- ✅ Manual frame sending (single mode)
+- ✅ Continuous frame sending (auto mode with configurable interval)
+- ✅ Motion-triggered frame sending (threshold + cooldown)
+- ✅ Real-time motion detection (0-100% display)
+- ✅ Streaming JSON responses
+- ✅ Session persistence
+- ✅ Error handling
+- ✅ Status indicators
+- ✅ Character counters
+- ✅ Sigil generation from visual percepts
+- ✅ Animated sigil display with phrase
+- ✅ Thinking animation (varied mode)
+- ✅ Typewriter effect for sigil phrases (4x speed)
+- ✅ Post-processing fix for orphaned arc lines
+- ✅ Clean, minimal layout (no card styling)
+- ✅ Full-height layout (100vh)
+
+**Issues Resolved**:
+1. ✅ Module resolution (added importmap, then removed for raw WebSocket)
+2. ✅ API version mismatch (v1alpha for ephemeral tokens)
+3. ✅ Image format (clientContent wrapper)
+4. ✅ SDK limitations (switched to raw WebSocket)
+5. ✅ JSON output mode (responseMimeType + schema prompt)
+6. ✅ Sigil integration (sigil.standalone.js + rendering)
+
+**Total Time**: ~3 hours (including debugging, rewrites, and sigil integration)
+
+**Key Learning**: SDK's Live API support for images is experimental - raw WebSocket is more reliable
+
+---
+
+## Next Steps (Future Enhancements)
+
+### Phase 2: Database Integration
+- [ ] Create `visual_prompts` table
+- [ ] Save/load prompts
+- [ ] Preset prompts dropdown
+
+### Phase 3: Advanced Features  
+- [ ] Token auto-refresh (30min expiry)
+- [ ] Response history
+- [ ] Continuous mode toggle
+- [ ] Frame rate control
+- [ ] Response pretty-printing (format JSON)
+
+---
+
+**Completed**: November 18, 2025  
+**Status**: Production Ready  
+**User Feedback**: Confirmed working with JSON responses
 
 

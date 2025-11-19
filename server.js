@@ -11,7 +11,7 @@ import { runMigrations } from './src/db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
 import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
 import personalitiesAPI from './src/api/personalities.js';
-import { forgeAuth } from './src/api/forge-auth.js';
+import { editorAuth } from './src/api/editor-auth.js';
 import * as sigilPrompts from './src/api/sigil-prompts.js';
 import geminiTokenAPI from './src/api/gemini-token.js';
 
@@ -39,33 +39,53 @@ try {
 const app = express();
 app.use(express.json({ limit: '10mb' })); // Increased for base64 image uploads
 
-// Serve Personality Forge UI (with optional auth)
-app.use('/forge', forgeAuth, express.static('forge'));
+// Unified auth for all prompt editors (production only)
+app.use('/prompt-editor', editorAuth);
+
+// Serve Personality Prompt Editor
+app.use('/prompt-editor/personality', express.static('prompt-editor/personality'));
 
 // Serve Sigil Prompt Editor
-app.use('/sigil-prompt-editor', forgeAuth, express.static('sigil-prompt-editor'));
+app.use('/prompt-editor/sigil', express.static('prompt-editor/sigil'));
 
 // Serve Visual Percept Prompt Editor
-app.use('/visual-percept-prompt-editor', express.static('visual-percept-prompt-editor'));
+app.use('/prompt-editor/visual-percept', express.static('prompt-editor/visual-percept'));
+
+// Legacy redirects (permanent 301)
+app.get('/forge', (req, res) => {
+  res.redirect(301, '/prompt-editor/personality');
+});
+
+app.get('/personality-prompt-editor', (req, res) => {
+  res.redirect(301, '/prompt-editor/personality');
+});
+
+app.get('/sigil-prompt-editor', (req, res) => {
+  res.redirect(301, '/prompt-editor/sigil');
+});
+
+app.get('/visual-percept-prompt-editor', (req, res) => {
+  res.redirect(301, '/prompt-editor/visual-percept');
+});
 
 // Serve assets (for reference image)
 app.use('/assets', express.static('assets'));
 
-// Mount Personalities API (with optional auth)
-app.use('/api', forgeAuth, personalitiesAPI);
+// Mount Personalities API (with editor auth in production)
+app.use('/api', editorAuth, personalitiesAPI);
 
 // Mount Gemini Token API
 app.use('/api', geminiTokenAPI);
 
-// Mount Sigil Prompts API (with optional auth)
-app.get('/api/sigil-prompts', forgeAuth, sigilPrompts.listSigilPrompts);
-app.get('/api/sigil-prompts/active', forgeAuth, sigilPrompts.getActiveSigilPromptAPI);
-app.get('/api/sigil-prompts/:id', forgeAuth, sigilPrompts.getSigilPromptAPI);
-app.post('/api/sigil-prompts', forgeAuth, sigilPrompts.saveSigilPrompt);
-app.post('/api/sigil-prompts/test-current', forgeAuth, sigilPrompts.testCurrentPrompt);
-app.post('/api/sigil-prompts/:id/activate', forgeAuth, sigilPrompts.activateSigilPromptAPI);
-app.post('/api/sigil-prompts/:id/test', forgeAuth, sigilPrompts.testSigilPrompt);
-app.delete('/api/sigil-prompts/:id', forgeAuth, sigilPrompts.deleteSigilPromptAPI);
+// Mount Sigil Prompts API (with editor auth in production)
+app.get('/api/sigil-prompts', editorAuth, sigilPrompts.listSigilPrompts);
+app.get('/api/sigil-prompts/active', editorAuth, sigilPrompts.getActiveSigilPromptAPI);
+app.get('/api/sigil-prompts/:id', editorAuth, sigilPrompts.getSigilPromptAPI);
+app.post('/api/sigil-prompts', editorAuth, sigilPrompts.saveSigilPrompt);
+app.post('/api/sigil-prompts/test-current', editorAuth, sigilPrompts.testCurrentPrompt);
+app.post('/api/sigil-prompts/:id/activate', editorAuth, sigilPrompts.activateSigilPromptAPI);
+app.post('/api/sigil-prompts/:id/test', editorAuth, sigilPrompts.testSigilPrompt);
+app.delete('/api/sigil-prompts/:id', editorAuth, sigilPrompts.deleteSigilPromptAPI);
 
 // Health check endpoint (required for Render)
 app.get('/', (req, res) => {

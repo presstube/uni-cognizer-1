@@ -475,19 +475,43 @@ socket.on('cycleCompleted', ({
 
 ### Access
 
-**Local**: `http://localhost:3001/forge/`  
-**Production**: `https://your-app.railway.app/forge/`
+**All Prompt Editors:**
+- **Personality:** `http://localhost:3001/prompt-editor/personality/`
+- **Sigil:** `http://localhost:3001/prompt-editor/sigil/`
+- **Visual Percept:** `http://localhost:3001/prompt-editor/visual-percept/`
+
+**Legacy URLs (redirect automatically):**
+- `/forge` → `/prompt-editor/personality`
+- `/personality-prompt-editor` → `/prompt-editor/personality`
+- `/sigil-prompt-editor` → `/prompt-editor/sigil`
+- `/visual-percept-prompt-editor` → `/prompt-editor/visual-percept`
 
 ### Authentication
 
-Set in environment variables:
+**Local Development:**
+- ✅ **No password required** - Open access for development
+
+**Production:**
+- 🔒 **HTTP Basic Auth** - Browser login prompt
+- Set `NODE_ENV=production` to enable
+
+**Production Configuration:**
 ```bash
-FORGE_AUTH_ENABLED=true          # Enable password protection
-FORGE_USERNAME=writer            # Optional, defaults to "admin"  
-FORGE_PASSWORD=your-secure-password
+NODE_ENV=production                    # Enable auth
+EDITOR_USERNAME=admin                  # Optional (default: admin)
+EDITOR_PASSWORD=your_secure_password   # Required
 ```
 
-Browser shows login prompt when accessing `/forge/` or `/api/personalities/*`.
+**Browser Experience (Production):**
+1. Visit `/prompt-editor/personality/`
+2. Browser shows login prompt
+3. Enter username + password
+4. Access all editors with same credentials
+
+**Protected Resources (Production Only):**
+- `/prompt-editor/*` → All editor UIs
+- `/api/personalities/*` → Personality API
+- `/api/sigil-prompts/*` → Sigil prompts API
 
 ### Workflow
 
