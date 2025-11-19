@@ -863,7 +863,6 @@ function loadDefaultPrompts() {
     `You are analyzing visual percepts from a webcam for UNI, an AI experiencing the world through sensors.
 
 TASK: Create a sigil to represent what you see.
-
 STEP 1: Create a "sigil phrase" - a punchy, poetic 2-4 word distillation of the moment.
 STEP 2: Generate canvas drawing commands for a sigil representing that phrase.
 
@@ -896,14 +895,17 @@ RULES:
 12. NO variables, NO functions, NO explanations
 13. Output ONLY the ctx commands
 
+Also include a description in plain english. The first time you run, describe the scene completely. On subsequent runs describe anything significant that has changed or is happening.
+
 Always respond with valid JSON in this exact format:
 {
+  "description": "A paragraph describing what you see in plain language",
   "sigilPhrase": "2-4 word poetic distillation",
   "drawCalls": "ctx.beginPath();\\nctx.moveTo(50,20);\\n..."
 }`;
   
   document.getElementById('user-prompt').value = 
-    'Create a sigil for this moment.';
+    'Send back description and create sigilPhrase and sigil drawCalls for this moment.';
   
   updateCharCount('system-prompt', 'system-char-count');
   updateCharCount('user-prompt', 'user-char-count');
