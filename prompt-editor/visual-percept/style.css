@@ -504,6 +504,19 @@ button:disabled {
   display: none;
 }
 
+/* Success */
+.success-message {
+  padding: 12px 20px;
+  background: rgba(76, 175, 80, 0.2);
+  border-bottom: 1px solid rgba(76, 175, 80, 0.3);
+  color: #4CAF50;
+  font-size: 13px;
+}
+
+.success-message.hidden {
+  display: none;
+}
+
 /* Response Section */
 .response-section {
   display: flex;
@@ -573,4 +586,3 @@ label span {
 ::-webkit-scrollbar-thumb:hover {
   background: #4a4a4a;
 }
-

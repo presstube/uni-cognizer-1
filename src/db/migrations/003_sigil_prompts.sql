@@ -12,16 +12,17 @@ CREATE TABLE IF NOT EXISTS sigil_prompts (
 );
 
 -- Only one active prompt at a time
-CREATE UNIQUE INDEX idx_sigil_prompts_active 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sigil_prompts_active 
   ON sigil_prompts (active) 
   WHERE active = true;
 
 -- Track updates
-CREATE INDEX idx_sigil_prompts_updated 
+CREATE INDEX IF NOT EXISTS idx_sigil_prompts_updated 
   ON sigil_prompts (updated_at DESC);
 
 -- Seed with current production prompt
-INSERT INTO sigil_prompts (name, slug, prompt, active) VALUES (
+INSERT INTO sigil_prompts (name, slug, prompt, active) 
+VALUES (
   'Sigil Prompt v1.0',
   'sigil-prompt-v1-0',
   'Generate JavaScript canvas drawing commands for a sigil representing "${concept}".
@@ -51,5 +52,4 @@ RULES:
 
 Code:',
   true
-);
-
+) ON CONFLICT (slug) DO NOTHING;

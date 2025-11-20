@@ -13,6 +13,7 @@ import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
 import personalitiesAPI from './src/api/personalities.js';
 import { editorAuth } from './src/api/editor-auth.js';
 import * as sigilPrompts from './src/api/sigil-prompts.js';
+import * as visualPrompts from './src/api/visual-prompts.js';
 import geminiTokenAPI from './src/api/gemini-token.js';
 
 const PORT = process.env.PORT || 3001;
@@ -86,6 +87,14 @@ app.post('/api/sigil-prompts/test-current', editorAuth, sigilPrompts.testCurrent
 app.post('/api/sigil-prompts/:id/activate', editorAuth, sigilPrompts.activateSigilPromptAPI);
 app.post('/api/sigil-prompts/:id/test', editorAuth, sigilPrompts.testSigilPrompt);
 app.delete('/api/sigil-prompts/:id', editorAuth, sigilPrompts.deleteSigilPromptAPI);
+
+// Mount Visual Prompts API (with editor auth in production)
+app.get('/api/visual-prompts', editorAuth, visualPrompts.listVisualPrompts);
+app.get('/api/visual-prompts/active', editorAuth, visualPrompts.getActiveVisualPromptAPI);
+app.get('/api/visual-prompts/:id', editorAuth, visualPrompts.getVisualPromptAPI);
+app.post('/api/visual-prompts', editorAuth, visualPrompts.saveVisualPrompt);
+app.post('/api/visual-prompts/:id/activate', editorAuth, visualPrompts.activateVisualPromptAPI);
+app.delete('/api/visual-prompts/:id', editorAuth, visualPrompts.deleteVisualPromptAPI);
 
 // Health check endpoint (required for Render)
 app.get('/', (req, res) => {

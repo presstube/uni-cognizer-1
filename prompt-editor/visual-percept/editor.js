@@ -36,7 +36,9 @@ const state = {
   ws: null,               // Raw WebSocket connection
   stream: null,            // MediaStream from webcam
   videoElement: null,      // Video element reference
-  currentPromptId: null,   // Database ID of loaded prompt
+  currentPromptId: null,   // Database ID of loaded prompt (null = new)
+  currentPromptSlug: null, // Slug of loaded prompt
+  prompts: [],             // List of available prompts
   isConnected: false,      // Session connection status
   responseBuffer: '',      // Accumulated response text
   sigil: null,             // Sigil instance
@@ -643,6 +645,19 @@ function updateUI() {
   // Enable/disable capture button
   const captureBtn = document.getElementById('capture-btn');
   captureBtn.disabled = !state.videoElement;
+  
+  // Update activate button state
+  const activateBtn = document.getElementById('activate-btn');
+  const promptSelect = document.getElementById('prompt-select');
+  
+  // Disable activate if it's a new unsaved prompt
+  if (state.currentPromptId === null) {
+    activateBtn.disabled = true;
+  } else {
+    // Find current prompt in list to check active status
+    const current = state.prompts.find(p => p.id === state.currentPromptId);
+    activateBtn.disabled = current ? current.active : true;
+  }
 }
 
 function updateStatus(text) {
@@ -674,11 +689,37 @@ function showError(message) {
   }, 5000);
 }
 
+function showSuccess(message) {
+  const successEl = document.getElementById('success');
+  successEl.textContent = message;
+  successEl.classList.remove('hidden');
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    successEl.classList.add('hidden');
+  }, 5000);
+}
+
 // Character counters
 function updateCharCount(textareaId, counterId) {
   const textarea = document.getElementById(textareaId);
   const counter = document.getElementById(counterId);
   counter.textContent = `${textarea.value.length} chars`;
+}
+
+// Update slug from name
+function updateSlug() {
+  const nameInput = document.getElementById('name');
+  const slugInput = document.getElementById('slug');
+  
+  // Only auto-update if we're creating new or slug is empty
+  if (state.currentPromptId === null || !slugInput.value) {
+    const slug = nameInput.value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    slugInput.value = slug;
+  }
 }
 
 // ============================================
@@ -771,19 +812,166 @@ document.getElementById('user-prompt').addEventListener('input', () => {
   updateCharCount('user-prompt', 'user-char-count');
 });
 
-// Save button (placeholder)
-document.getElementById('save-btn').addEventListener('click', () => {
-  showError('Save functionality not yet implemented');
+// Name input - auto slug
+document.getElementById('name').addEventListener('input', updateSlug);
+
+// Prompt Select Change
+document.getElementById('prompt-select').addEventListener('change', async (e) => {
+  const id = e.target.value;
+  
+  // Save last selected ID
+  localStorage.setItem('visual_prompt_editor_last', id);
+  
+  if (id === 'new') {
+    // Reset to empty form
+    updateState({ currentPromptId: null, currentPromptSlug: null });
+    document.getElementById('name').value = '';
+    document.getElementById('slug').value = '';
+    document.getElementById('system-prompt').value = '';
+    document.getElementById('user-prompt').value = '';
+    loadDefaultPrompts(); // Put defaults back
+  } else {
+    // Load from API
+    try {
+      const res = await fetch(`/api/visual-prompts/${id}`);
+      if (!res.ok) throw new Error('Failed to load prompt');
+      const { prompt } = await res.json();
+      
+      updateState({ currentPromptId: prompt.id, currentPromptSlug: prompt.slug });
+      
+      document.getElementById('name').value = prompt.name;
+      document.getElementById('slug').value = prompt.slug;
+      document.getElementById('system-prompt').value = prompt.system_prompt;
+      document.getElementById('user-prompt').value = prompt.user_prompt;
+      
+      // Re-initialize WebSocket with new system prompt?
+      // Actually, better to just close it so next sendFrame re-opens it with new prompt
+      if (state.ws) {
+        state.ws.close();
+        updateState({ ws: null, isConnected: false });
+      }
+      
+    } catch (error) {
+      showError(error.message);
+    }
+  }
+  
+  updateCharCount('system-prompt', 'system-char-count');
+  updateCharCount('user-prompt', 'user-char-count');
+  updateUI();
 });
 
-// Activate button (placeholder)
-document.getElementById('activate-btn').addEventListener('click', () => {
-  showError('Activate functionality not yet implemented');
+// Save button
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const name = document.getElementById('name').value.trim();
+  const slug = document.getElementById('slug').value.trim();
+  const systemPrompt = document.getElementById('system-prompt').value.trim();
+  const userPrompt = document.getElementById('user-prompt').value.trim();
+  
+  if (!name || !slug || !systemPrompt || !userPrompt) {
+    showError('All fields are required');
+    return;
+  }
+  
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('/api/visual-prompts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: state.currentPromptId,
+        name,
+        slug,
+        systemPrompt,
+        userPrompt
+      })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Save failed');
+    }
+    
+    const { prompt } = await res.json();
+    updateState({ currentPromptId: prompt.id, currentPromptSlug: prompt.slug });
+    
+    // Refresh list
+    await loadPrompts();
+    
+    // Select the saved prompt
+    document.getElementById('prompt-select').value = prompt.id;
+    localStorage.setItem('visual_prompt_editor_last', prompt.id);
+    
+    showSuccess('✅ Saved successfully');
+    
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    btn.textContent = '💾 Save';
+    btn.disabled = false;
+  }
 });
 
-// Delete button (placeholder)
-document.getElementById('delete-btn').addEventListener('click', () => {
-  showError('Delete functionality not yet implemented');
+// Activate button
+document.getElementById('activate-btn').addEventListener('click', async () => {
+  if (!state.currentPromptId) return;
+  
+  if (!confirm('Set this as the active prompt for the system?')) return;
+  
+  const btn = document.getElementById('activate-btn');
+  btn.textContent = 'Activating...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch(`/api/visual-prompts/${state.currentPromptId}/activate`, {
+      method: 'POST'
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Activation failed');
+    }
+    
+    await loadPrompts();
+    showSuccess('✅ Prompt activated!');
+    
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    btn.textContent = '✓ Set Active';
+    updateUI(); // Will re-disable if it's now active
+  }
+});
+
+// Delete button
+document.getElementById('delete-btn').addEventListener('click', async () => {
+  if (!state.currentPromptId) return;
+  
+  if (!confirm('Are you sure you want to delete this prompt?')) return;
+  
+  try {
+    const res = await fetch(`/api/visual-prompts/${state.currentPromptId}`, {
+      method: 'DELETE'
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Delete failed');
+    }
+    
+    // Reset to new
+    document.getElementById('prompt-select').value = 'new';
+    document.getElementById('prompt-select').dispatchEvent(new Event('change'));
+    
+    await loadPrompts();
+    showSuccess('✅ Prompt deleted');
+    
+  } catch (error) {
+    showError(error.message);
+  }
 });
 
 // Keyboard shortcuts
@@ -804,6 +992,36 @@ document.addEventListener('keydown', (e) => {
 // ============================================
 // SECTION 6: Initialization
 // ============================================
+
+async function loadPrompts() {
+  try {
+    const res = await fetch('/api/visual-prompts');
+    if (res.ok) {
+      const data = await res.json();
+      state.prompts = data.prompts;
+      
+      const select = document.getElementById('prompt-select');
+      const currentVal = select.value;
+      
+      // Clear and rebuild
+      select.innerHTML = '<option value="new">+ New Prompt</option>';
+      
+      state.prompts.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} ${p.active ? '⭐' : ''}`;
+        select.appendChild(opt);
+      });
+      
+      // Restore selection if still exists
+      if (currentVal !== 'new' && state.prompts.find(p => p.id === currentVal)) {
+        select.value = currentVal;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load prompts:', error);
+  }
+}
 
 async function init() {
   console.log('🚀 Initializing Visual Percept Prompt Editor');
@@ -849,8 +1067,34 @@ async function init() {
   typewrite(phraseElement, 'awaiting sigil...', 20);
   state.sigil.thinkingVaried();
   
-  // Load default prompts
-  loadDefaultPrompts();
+  // Load prompts from DB
+  await loadPrompts();
+  
+  // Auto-load logic
+  const lastId = localStorage.getItem('visual_prompt_editor_last');
+  
+  if (lastId && lastId !== 'new') {
+    // Try to load last used
+    const select = document.getElementById('prompt-select');
+    select.value = lastId;
+    select.dispatchEvent(new Event('change')); // Trigger load
+  } else {
+    // Try to find active
+    try {
+      const res = await fetch('/api/visual-prompts/active');
+      if (res.ok) {
+        const { prompt } = await res.json();
+        const select = document.getElementById('prompt-select');
+        select.value = prompt.id;
+        select.dispatchEvent(new Event('change'));
+      } else {
+        // Fallback to default hardcoded
+        loadDefaultPrompts();
+      }
+    } catch (e) {
+      loadDefaultPrompts();
+    }
+  }
   
   // Update UI
   updateUI();
@@ -916,4 +1160,3 @@ init().catch(error => {
   console.error('Initialization failed:', error);
   showError('Failed to initialize: ' + error.message);
 });
-

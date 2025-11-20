@@ -21,7 +21,8 @@ export async function runMigrations() {
   const migrations = [
     '001_initial_schema.sql',
     '002_personalities.sql',
-    '003_sigil_prompts.sql'
+    '003_sigil_prompts.sql',
+    '004_visual_prompts.sql'
   ];
   
   try {
@@ -54,6 +55,30 @@ export async function runMigrations() {
       const sql = readFileSync(migrationPath, 'utf-8');
       
       await pool.query(sql);
+      
+      // Record successful migration
+      if (!tableExists && version === 1) {
+         await pool.query(`
+           CREATE TABLE schema_migrations (
+             version INTEGER PRIMARY KEY,
+             applied_at TIMESTAMPTZ DEFAULT NOW()
+           )
+         `);
+         await pool.query('INSERT INTO schema_migrations (version) VALUES (1)');
+      } else {
+         // Ensure table exists for subsequent migrations if it wasn't there initially
+         await pool.query(`
+           CREATE TABLE IF NOT EXISTS schema_migrations (
+             version INTEGER PRIMARY KEY,
+             applied_at TIMESTAMPTZ DEFAULT NOW()
+           )
+         `);
+         await pool.query(
+           'INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING',
+           [version]
+         );
+      }
+      
       console.log(`✓ Migration ${version} (${migrationFile}) applied`);
     }
     
@@ -70,4 +95,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   await runMigrations();
   process.exit(0);
 }
-
