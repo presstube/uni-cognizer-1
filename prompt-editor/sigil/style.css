@@ -255,6 +255,120 @@ button.loading::after {
   font-style: italic;
 }
 
+/* LLM Settings Panel */
+.llm-settings-panel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.llm-settings-panel details {
+  cursor: pointer;
+}
+
+.llm-settings-panel summary {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 12px;
+  user-select: none;
+  list-style: none;
+}
+
+.llm-settings-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.llm-settings-panel summary:hover {
+  color: #aaa;
+}
+
+.llm-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.llm-controls .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.llm-controls .control-group label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin: 0;
+}
+
+.llm-controls .control-group .hint {
+  float: right;
+  color: #666;
+  font-size: 10px;
+  text-transform: none;
+  font-weight: normal;
+}
+
+.llm-controls input[type="range"] {
+  width: 100%;
+  margin: 0;
+  background: #111;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+.llm-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.llm-controls input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.llm-controls input[type="number"] {
+  width: 100%;
+  margin: 0;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.preset-btn {
+  flex: 1;
+  padding: 8px;
+  background: #1a1a1a;
+  color: #ddd;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.preset-btn:hover {
+  background: #252525;
+}
+
 /* Canvas */
 .canvas-wrapper {
   position: relative;

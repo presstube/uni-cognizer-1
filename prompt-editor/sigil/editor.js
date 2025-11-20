@@ -8,6 +8,31 @@ let currentPrompt = null;
 let currentId = null;
 let sigil = null;
 let customImageData = null;
+let llmSettings = {
+  provider: 'anthropic',
+  model: 'claude-sonnet-4-5-20250929',
+  temperature: 0.7,
+  top_p: 0.9,
+  max_tokens: 1024,
+  top_k: null  // Gemini only
+};
+
+// Model lists per provider
+const MODEL_LISTS = {
+  anthropic: [
+    { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5' },
+    { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
+    { value: 'claude-opus-4', label: 'Claude Opus 4' },
+    { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' }
+  ],
+  gemini: [
+    { value: 'models/gemini-3-pro-preview', label: 'Gemini 3 Pro (Preview)' },
+    { value: 'models/gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+    { value: 'models/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Exp)' },
+    { value: 'models/gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+    { value: 'models/gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
+  ]
+};
 
 // DOM Elements
 const promptSelect = document.getElementById('prompt-select');
@@ -21,6 +46,17 @@ const includeImageCheckbox = document.getElementById('include-image');
 const imageFileInput = document.getElementById('image-file');
 const refImage = document.getElementById('ref-image');
 const resetImageBtn = document.getElementById('reset-image');
+
+// LLM Settings DOM Elements
+const llmProviderSelect = document.getElementById('llm-provider');
+const llmModelSelect = document.getElementById('llm-model');
+const llmTemperatureSlider = document.getElementById('llm-temperature');
+const llmTopPSlider = document.getElementById('llm-top-p');
+const llmTopKSlider = document.getElementById('llm-top-k');
+const llmMaxTokensInput = document.getElementById('llm-max-tokens');
+const tempValueSpan = document.getElementById('temp-value');
+const topPValueSpan = document.getElementById('topp-value');
+const topKValueSpan = document.getElementById('topk-value');
 
 // Initialize
 async function init() {
@@ -37,8 +73,24 @@ async function init() {
   imageFileInput.addEventListener('change', handleImageUpload);
   resetImageBtn.addEventListener('click', handleResetImage);
   
+  // LLM settings listeners
+  llmProviderSelect.addEventListener('change', handleProviderChange);
+  llmModelSelect.addEventListener('change', handleModelChange);
+  llmTemperatureSlider.addEventListener('input', handleTemperatureChange);
+  llmTopPSlider.addEventListener('input', handleTopPChange);
+  llmTopKSlider.addEventListener('input', handleTopKChange);
+  llmMaxTokensInput.addEventListener('input', handleMaxTokensChange);
+  
+  // Preset buttons
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => handlePreset(btn.dataset.preset));
+  });
+  
   // Initialize reset button visibility
   resetImageBtn.classList.add('hidden');
+  
+  // Initialize LLM controls
+  updateLLMControls();
 }
 
 // Initialize Sigil viewer
@@ -123,6 +175,7 @@ async function handlePromptChange() {
   
   if (value === 'new') {
     clearForm();
+    resetLLMSettings();
     currentId = null;
     currentPrompt = null;
     activateBtn.disabled = true;
@@ -139,6 +192,14 @@ async function handlePromptChange() {
       slugInput.value = currentPrompt.slug;
       promptTextarea.value = currentPrompt.prompt;
       
+      // Load LLM settings from prompt
+      if (currentPrompt.llm_settings) {
+        llmSettings = { ...llmSettings, ...currentPrompt.llm_settings };
+        updateLLMControls();
+      } else {
+        resetLLMSettings();
+      }
+      
       activateBtn.disabled = currentPrompt.active;
       
     } catch (error) {
@@ -153,6 +214,145 @@ function clearForm() {
   nameInput.value = '';
   slugInput.value = '';
   promptTextarea.value = '';
+}
+
+// Reset LLM settings to defaults
+function resetLLMSettings() {
+  llmSettings = {
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-5-20250929',
+    temperature: 0.7,
+    top_p: 0.9,
+    max_tokens: 1024,
+    top_k: null
+  };
+  updateLLMControls();
+}
+
+// Update LLM controls UI from state
+function updateLLMControls() {
+  // Update provider dropdown
+  llmProviderSelect.value = llmSettings.provider;
+  
+  // Update model dropdown based on provider
+  updateModelList();
+  
+  // Update sliders/inputs
+  llmTemperatureSlider.value = llmSettings.temperature;
+  llmTopPSlider.value = llmSettings.top_p;
+  llmMaxTokensInput.value = llmSettings.max_tokens;
+  
+  // Update value displays
+  tempValueSpan.textContent = llmSettings.temperature.toFixed(1);
+  topPValueSpan.textContent = llmSettings.top_p.toFixed(2);
+  
+  // Show/hide controls based on provider
+  const topKGroup = document.getElementById('top-k-group');
+  const topPGroup = document.getElementById('top-p-group');
+  
+  if (llmSettings.provider === 'gemini') {
+    // Gemini: Show both top_p and top_k
+    topPGroup.style.display = 'block';
+    topKGroup.style.display = 'block';
+    llmTopKSlider.value = llmSettings.top_k || 40;
+    topKValueSpan.textContent = llmSettings.top_k || 40;
+  } else {
+    // Anthropic: Hide top_p and top_k (only uses temperature)
+    topPGroup.style.display = 'none';
+    topKGroup.style.display = 'none';
+  }
+  
+  // Update temperature max based on provider
+  const maxTemp = llmSettings.provider === 'gemini' ? 2.0 : 1.0;
+  llmTemperatureSlider.max = maxTemp;
+}
+
+// Update model list based on provider
+function updateModelList() {
+  llmModelSelect.innerHTML = '';
+  const models = MODEL_LISTS[llmSettings.provider] || [];
+  models.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model.value;
+    option.textContent = model.label;
+    if (model.value === llmSettings.model) {
+      option.selected = true;
+    }
+    llmModelSelect.appendChild(option);
+  });
+}
+
+// LLM Settings Event Handlers
+function handleProviderChange() {
+  llmSettings.provider = llmProviderSelect.value;
+  
+  // Reset model to first in list for new provider
+  const models = MODEL_LISTS[llmSettings.provider] || [];
+  if (models.length > 0) {
+    llmSettings.model = models[0].value;
+  }
+  
+  // Reset top_k for Gemini
+  if (llmSettings.provider === 'gemini') {
+    llmSettings.top_k = 40;
+  } else {
+    llmSettings.top_k = null;
+  }
+  
+  updateLLMControls();
+}
+
+function handleModelChange() {
+  llmSettings.model = llmModelSelect.value;
+}
+
+function handleTemperatureChange() {
+  llmSettings.temperature = parseFloat(llmTemperatureSlider.value);
+  tempValueSpan.textContent = llmSettings.temperature.toFixed(1);
+}
+
+function handleTopPChange() {
+  llmSettings.top_p = parseFloat(llmTopPSlider.value);
+  topPValueSpan.textContent = llmSettings.top_p.toFixed(2);
+}
+
+function handleTopKChange() {
+  llmSettings.top_k = parseInt(llmTopKSlider.value);
+  topKValueSpan.textContent = llmSettings.top_k;
+}
+
+function handleMaxTokensChange() {
+  llmSettings.max_tokens = parseInt(llmMaxTokensInput.value);
+}
+
+function handlePreset(presetName) {
+  const presets = {
+    deterministic: {
+      temperature: 0.2,
+      top_p: 0.8,
+      top_k: 20
+    },
+    balanced: {
+      temperature: 0.7,
+      top_p: 0.9,
+      top_k: 40
+    },
+    creative: {
+      temperature: 0.9,
+      top_p: 0.95,
+      top_k: 40
+    }
+  };
+  
+  const preset = presets[presetName];
+  if (preset) {
+    llmSettings.temperature = preset.temperature;
+    llmSettings.top_p = preset.top_p;
+    if (llmSettings.provider === 'gemini') {
+      llmSettings.top_k = preset.top_k;
+    }
+    updateLLMControls();
+  }
 }
 
 // Helper: Convert file to base64
@@ -243,7 +443,8 @@ async function handleSave() {
         id: currentId,
         name,
         slug,
-        prompt
+        prompt,
+        llmSettings
       })
     });
     
@@ -346,7 +547,13 @@ async function handlePhraseSubmit(e) {
     const res = await fetch(`${API_BASE}/sigil-prompts/test-current`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phrase, prompt, includeImage, customImage: customImageData })
+      body: JSON.stringify({ 
+        phrase, 
+        prompt, 
+        includeImage, 
+        customImage: customImageData,
+        llmSettings
+      })
     });
     
     if (!res.ok) {

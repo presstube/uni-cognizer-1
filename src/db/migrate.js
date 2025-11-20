@@ -22,7 +22,8 @@ export async function runMigrations() {
     '001_initial_schema.sql',
     '002_personalities.sql',
     '003_sigil_prompts.sql',
-    '004_visual_prompts.sql'
+    '004_visual_prompts.sql',
+    '005_add_llm_settings_to_sigil_prompts.sql'
   ];
   
   try {

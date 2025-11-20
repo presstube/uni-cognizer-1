@@ -68,23 +68,45 @@ export async function getSigilPromptAPI(req, res) {
  */
 export async function saveSigilPrompt(req, res) {
   try {
-    const { id, name, slug, prompt } = req.body;
+    const { id, name, slug, prompt, llmSettings } = req.body;
     
     if (!name || !slug || !prompt) {
       return res.status(400).json({ error: 'Name, slug, and prompt are required' });
+    }
+    
+    // Validate llmSettings if provided
+    if (llmSettings) {
+      if (!['anthropic', 'gemini'].includes(llmSettings.provider)) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+      // Validate ranges
+      if (llmSettings.temperature !== undefined) {
+        const maxTemp = llmSettings.provider === 'gemini' ? 2.0 : 1.0;
+        if (llmSettings.temperature < 0 || llmSettings.temperature > maxTemp) {
+          return res.status(400).json({ error: `Temperature must be 0-${maxTemp}` });
+        }
+      }
+      if (llmSettings.top_p !== undefined && (llmSettings.top_p < 0 || llmSettings.top_p > 1)) {
+        return res.status(400).json({ error: 'Top P must be 0-1' });
+      }
+      if (llmSettings.top_k !== undefined && llmSettings.provider === 'gemini') {
+        if (llmSettings.top_k < 1 || llmSettings.top_k > 40) {
+          return res.status(400).json({ error: 'Top K must be 1-40 for Gemini' });
+        }
+      }
     }
     
     let savedPrompt;
     
     if (id) {
       // Update existing
-      savedPrompt = await updateSigilPrompt(id, name, slug, prompt);
+      savedPrompt = await updateSigilPrompt(id, name, slug, prompt, llmSettings);
       if (!savedPrompt) {
         return res.status(404).json({ error: 'Prompt not found' });
       }
     } else {
       // Create new
-      savedPrompt = await createSigilPrompt(name, slug, prompt);
+      savedPrompt = await createSigilPrompt(name, slug, prompt, llmSettings);
     }
     
     res.json({ prompt: savedPrompt });
@@ -129,7 +151,7 @@ export async function activateSigilPromptAPI(req, res) {
  */
 export async function testCurrentPrompt(req, res) {
   try {
-    const { phrase, prompt, includeImage, customImage } = req.body;
+    const { phrase, prompt, includeImage, customImage, llmSettings } = req.body;
     
     if (!phrase || !phrase.trim()) {
       return res.status(400).json({ error: 'Phrase is required' });
@@ -142,14 +164,16 @@ export async function testCurrentPrompt(req, res) {
     const imageStatus = includeImage !== false 
       ? (customImage ? 'with custom image' : 'with default image')
       : 'without image';
-    console.log(`[Sigil] Testing current prompt ${imageStatus} - phrase: "${phrase}"`);
+    const provider = llmSettings?.provider || 'anthropic';
+    console.log(`[Sigil] Testing ${provider} ${imageStatus} - phrase: "${phrase}"`);
     
-    // Generate sigil with the prompt from request body
+    // Generate sigil with LLM settings
     const calls = await generateSigilWithCustomPrompt(
       phrase, 
       prompt, 
       includeImage !== false,
-      customImage || null
+      customImage || null,
+      llmSettings || null
     );
     
     res.json({ calls });
