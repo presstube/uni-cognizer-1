@@ -77,34 +77,10 @@ body {
   transition: opacity 0s;
 }
 
-.sigil-container {
-  background: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-  padding: 20px;
-}
-
-#sigil-canvas {
-  width: 200px;
-  height: 200px;
-}
-
-.sigil-phrase {
-  font-size: 14px;
-  font-weight: 400;
-  font-style: italic;
-  color: #666;
-  text-align: center;
-  font-family: 'Monaco', 'Courier New', monospace;
-  letter-spacing: 1px;
-  min-height: 24px;
-}
-
-.sigil-phrase:empty:before {
-  content: '';
+/* Sigil Display Container - Component fills this */
+.sigil-display {
+  flex: 1;
+  min-height: 300px;
 }
 
 .pane-title {

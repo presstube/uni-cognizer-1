@@ -1,5 +1,4 @@
-import { Sigil } from './sigil.standalone.js';
-import { typewrite } from './typewriter.js';
+import { SigilAndPhrase } from '../shared/sigil-and-phrase.js';
 import { MotionDetector } from './motion-detector.js';
 
 // ============================================
@@ -41,7 +40,7 @@ const state = {
   prompts: [],             // List of available prompts
   isConnected: false,      // Session connection status
   responseBuffer: '',      // Accumulated response text
-  sigil: null,             // Sigil instance
+  sigilAndPhrase: null,    // SigilAndPhrase instance for rendering
   isContinuous: false,     // Continuous mode flag
   continuousTimer: null,   // Timer for continuous mode
   continuousInterval: savedSettings.continuousInterval || 2000, // Interval in ms (saved in LSO)
@@ -480,12 +479,8 @@ async function sendFrame() {
     state.responseBuffer = '';
     updateResponseDisplay();
     
-    // Start typewriter for "awaiting sigil..." and varied thinking animation
-    const phraseElement = document.getElementById('sigil-phrase');
-    typewrite(phraseElement, 'awaiting sigil...', 20);
-    if (state.sigil) {
-      state.sigil.thinkingVaried();
-    }
+    // Start "awaiting sigil..." state
+    state.sigilAndPhrase.awaiting();
     
     // Build message (matching cam-tick format)
     const message = {
@@ -571,66 +566,15 @@ function handleResponse(message) {
         
         const data = JSON.parse(jsonText);
         if (data.sigilPhrase && data.drawCalls) {
-          renderSigil(data.sigilPhrase, data.drawCalls);
+          state.sigilAndPhrase.render({
+            phrase: data.sigilPhrase,
+            drawCalls: data.drawCalls
+          });
         }
       } catch (error) {
         console.log('Response not JSON or missing sigil data:', error.message);
       }
     }
-  }
-}
-
-// ============================================
-// SECTION 4: Sigil Rendering
-// ============================================
-
-function renderSigil(phrase, drawCalls) {
-  try {
-    console.log('🎨 Rendering sigil:', phrase);
-    console.log('📋 Draw calls type:', typeof drawCalls);
-    console.log('📋 Draw calls value:', drawCalls);
-    
-    // Validate inputs
-    if (!drawCalls || typeof drawCalls !== 'string') {
-      throw new Error(`Invalid drawCalls: expected string, got ${typeof drawCalls}`);
-    }
-    
-    // Fix orphaned lines: Ensure moveTo before arc() calls
-    // This prevents unwanted connecting lines to arc starting points
-    const fixedDrawCalls = drawCalls.replace(
-      /ctx\.arc\(/g,
-      (match, offset) => {
-        // Check if there's already a moveTo on the previous line
-        const beforeArc = drawCalls.substring(Math.max(0, offset - 50), offset);
-        if (beforeArc.includes('moveTo')) {
-          return match; // Already has moveTo, leave it
-        }
-        // Add moveTo to arc center before drawing arc
-        // Extract arc parameters: arc(x, y, radius, ...)
-        const arcCall = drawCalls.substring(offset, offset + 100);
-        const params = arcCall.match(/ctx\.arc\(([^,]+),\s*([^,]+),/);
-        if (params) {
-          const [, x, y] = params;
-          return `ctx.moveTo(${x},${y});\nctx.arc(`;
-        }
-        return match;
-      }
-    );
-    
-    console.log('📋 Fixed draw calls:', fixedDrawCalls);
-    
-    // Typewrite the phrase (faster for actual sigil phrases)
-    const phraseElement = document.getElementById('sigil-phrase');
-    typewrite(phraseElement, phrase.toLowerCase(), 10);
-    
-    // Draw the sigil (automatically stops thinking animation)
-    // Note: drawSigil expects an object with a 'calls' property
-    if (state.sigil) {
-      state.sigil.drawSigil({ calls: fixedDrawCalls });
-    }
-  } catch (error) {
-    console.error('Failed to render sigil:', error);
-    showError('Failed to render sigil: ' + error.message);
   }
 }
 
@@ -1048,24 +992,10 @@ async function init() {
     console.log('✅ Motion detection initialized');
   }
   
-  // Initialize sigil
-  state.sigil = new Sigil({
-    canvas: document.getElementById('sigil-canvas'),
-    canvasSize: 200,
-    drawDuration: 200,
-    undrawDuration: 300,
-    thinkingShiftInterval: 100,
-    thinkingVariedMin: 1000,
-    thinkingVariedMax: 3000,
-    scale: 1.0,
-    lineColor: '#fff',
-    lineWeight: 1.2
+  // Initialize sigil and phrase renderer
+  state.sigilAndPhrase = new SigilAndPhrase({
+    container: '#sigil-container'
   });
-  
-  // Start with "awaiting sigil..." and varied thinking mode
-  const phraseElement = document.getElementById('sigil-phrase');
-  typewrite(phraseElement, 'awaiting sigil...', 20);
-  state.sigil.thinkingVaried();
   
   // Load prompts from DB
   await loadPrompts();

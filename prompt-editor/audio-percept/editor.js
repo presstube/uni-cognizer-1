@@ -1,4 +1,4 @@
-import { Sigil } from './sigil.standalone.js';
+import { SigilAndPhrase } from '../shared/sigil-and-phrase.js';
 
 // ============================================
 // SECTION 1: State Management
@@ -20,7 +20,7 @@ const state = {
   packetInterval: 2000,     // Send audio packets every 2 seconds
   pcmBuffer: [],           // Buffer for PCM audio data (Int16Array)
   setupComplete: false,    // Track if WebSocket setup is complete
-  sigil: null              // Sigil instance for rendering
+  sigilAndPhrase: null     // SigilAndPhrase instance for rendering
 };
 
 // Update state (immutable pattern)
@@ -471,7 +471,10 @@ function handleResponse(message) {
         
         // Render sigil if present
         if (json.sigilPhrase && json.sigilDrawCalls) {
-          renderSigil(json.sigilPhrase, json.sigilDrawCalls);
+          state.sigilAndPhrase.render({
+            phrase: json.sigilPhrase,
+            drawCalls: json.sigilDrawCalls
+          });
         }
         
         // Clear buffer for next response
@@ -485,51 +488,7 @@ function handleResponse(message) {
 }
 
 // ============================================
-// SECTION 4: Sigil Rendering
-// ============================================
-
-function renderSigil(phrase, drawCalls) {
-  try {
-    console.log('🎨 Rendering sigil:', phrase);
-    
-    // Validate inputs
-    if (!drawCalls || typeof drawCalls !== 'string') {
-      throw new Error(`Invalid drawCalls: expected string, got ${typeof drawCalls}`);
-    }
-    
-    // Fix orphaned lines: Ensure moveTo before arc() calls
-    // This prevents unwanted connecting lines to arc starting points
-    const fixedDrawCalls = drawCalls.replace(
-      /ctx\.arc\(/g,
-      (match, offset) => {
-        // Look back to see if there's a moveTo before this arc
-        const before = drawCalls.substring(Math.max(0, offset - 50), offset);
-        const hasRecentMoveTo = /moveTo\([^)]+\)\s*$/.test(before.trim());
-        
-        // If no recent moveTo, we need to get the arc's center coords and add a moveTo
-        // This is a bit hacky but prevents connecting lines
-        return hasRecentMoveTo ? match : `ctx.moveTo(arguments[0], arguments[1]);${match}`;
-      }
-    );
-    
-    // Update phrase display
-    const phraseElement = document.getElementById('sigil-phrase');
-    if (phraseElement) {
-      phraseElement.textContent = phrase;
-    }
-    
-    // Note: drawSigil expects an object with a 'calls' property
-    if (state.sigil) {
-      state.sigil.drawSigil({ calls: fixedDrawCalls });
-    }
-  } catch (error) {
-    console.error('Failed to render sigil:', error);
-    showError('Failed to render sigil: ' + error.message);
-  }
-}
-
-// ============================================
-// SECTION 5: UI Updates
+// SECTION 4: UI Updates
 // ============================================
 
 function updateUI() {
@@ -639,7 +598,7 @@ function updateSlug() {
 }
 
 // ============================================
-// SECTION 6: Prompt Management
+// SECTION 5: Prompt Management
 // ============================================
 
 async function loadPrompts() {
@@ -710,7 +669,7 @@ Always respond with valid JSON in this exact format:
 }
 
 // ============================================
-// SECTION 7: Event Handlers
+// SECTION 6: Event Handlers
 // ============================================
 
 // Toggle listening button
@@ -911,30 +870,16 @@ document.getElementById('user-prompt').addEventListener('input', () => {
 document.getElementById('name').addEventListener('input', updateSlug);
 
 // ============================================
-// SECTION 8: Initialization
+// SECTION 7: Initialization
 // ============================================
 
 async function init() {
   console.log('🚀 Initializing Audio Percept Prompt Editor');
   
-  // Initialize sigil
-  state.sigil = new Sigil({
-    canvas: document.getElementById('sigil-canvas'),
-    canvasSize: 200,
-    drawDuration: 200,
-    undrawDuration: 300,
-    thinkingShiftInterval: 100,
-    thinkingVariedMin: 1000,
-    thinkingVariedMax: 3000,
-    scale: 1.0,
-    lineColor: '#fff',
-    lineWeight: 1.2
+  // Initialize sigil and phrase renderer
+  state.sigilAndPhrase = new SigilAndPhrase({
+    container: '#sigil-container'
   });
-  
-  // Start with "awaiting sigil..." message
-  const phraseElement = document.getElementById('sigil-phrase');
-  phraseElement.textContent = 'awaiting sigil...';
-  state.sigil.thinkingVaried();
   
   // Load prompts from DB
   await loadPrompts();
