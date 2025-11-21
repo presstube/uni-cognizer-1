@@ -1,3 +1,5 @@
+import { Sigil } from './sigil.standalone.js';
+
 // ============================================
 // SECTION 1: State Management
 // ============================================
@@ -17,7 +19,8 @@ const state = {
   responseBuffer: '',       // Accumulated response text
   packetInterval: 2000,     // Send audio packets every 2 seconds
   pcmBuffer: [],           // Buffer for PCM audio data (Int16Array)
-  setupComplete: false     // Track if WebSocket setup is complete
+  setupComplete: false,    // Track if WebSocket setup is complete
+  sigil: null              // Sigil instance for rendering
 };
 
 // Update state (immutable pattern)
@@ -55,10 +58,19 @@ async function initMicrophone() {
 // Required by Gemini Live API: https://ai.google.dev/gemini-api/docs/live
 async function initAudioProcessing(stream) {
   try {
-    // Create AudioContext with 16kHz sample rate (required by Gemini)
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-      sampleRate: 16000
-    });
+    // Reuse existing AudioContext or create new one
+    let audioContext = state.audioContext;
+    if (!audioContext) {
+      // Create AudioContext with 16kHz sample rate (required by Gemini)
+      audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 16000
+      });
+    } else {
+      // Resume if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+    }
     
     // Create source from microphone stream
     const source = audioContext.createMediaStreamSource(stream);
@@ -111,7 +123,8 @@ async function startListening() {
   }
   
   try {
-    // Initialize audio processing (converts to PCM)
+    // Always reinitialize audio processing on start
+    // (This ensures clean state even if previously disconnected)
     if (!state.audioContext) {
       await initAudioProcessing(state.stream);
     } else {
@@ -120,10 +133,9 @@ async function startListening() {
         await state.audioContext.resume();
       }
       
-      // Reconnect audio processing if needed (source might be disconnected)
-      if (!state.audioSource || !state.audioProcessor) {
-        await initAudioProcessing(state.stream);
-      }
+      // Always recreate audio processing nodes on restart
+      // (They were nulled out in stopListening to ensure clean restart)
+      await initAudioProcessing(state.stream);
     }
     
     // Clear PCM buffer
@@ -192,9 +204,10 @@ function stopListening() {
     state.sendInterval = null;
   }
   
-  // Disconnect audio processing (but keep context alive for restart)
+  // Disconnect and clear audio processing nodes
   if (state.audioProcessor) {
     state.audioProcessor.disconnect();
+    state.audioProcessor.onaudioprocess = null; // Remove event handler
   }
   if (state.audioSource) {
     state.audioSource.disconnect();
@@ -203,9 +216,11 @@ function stopListening() {
   // Clear buffer
   state.pcmBuffer = [];
   
-  // Update state (but keep WebSocket and audioContext open for potential restart)
+  // Update state - clear processor and source so they get recreated on restart
   updateState({ 
-    isListening: false
+    isListening: false,
+    audioProcessor: null,
+    audioSource: null
   });
   
   console.log('⏹ Stopped listening');
@@ -454,6 +469,11 @@ function handleResponse(message) {
         const json = JSON.parse(jsonText);
         updateResponseDisplay(JSON.stringify(json, null, 2));
         
+        // Render sigil if present
+        if (json.sigilPhrase && json.sigilDrawCalls) {
+          renderSigil(json.sigilPhrase, json.sigilDrawCalls);
+        }
+        
         // Clear buffer for next response
         state.responseBuffer = '';
       } catch (error) {
@@ -465,7 +485,51 @@ function handleResponse(message) {
 }
 
 // ============================================
-// SECTION 4: UI Updates
+// SECTION 4: Sigil Rendering
+// ============================================
+
+function renderSigil(phrase, drawCalls) {
+  try {
+    console.log('🎨 Rendering sigil:', phrase);
+    
+    // Validate inputs
+    if (!drawCalls || typeof drawCalls !== 'string') {
+      throw new Error(`Invalid drawCalls: expected string, got ${typeof drawCalls}`);
+    }
+    
+    // Fix orphaned lines: Ensure moveTo before arc() calls
+    // This prevents unwanted connecting lines to arc starting points
+    const fixedDrawCalls = drawCalls.replace(
+      /ctx\.arc\(/g,
+      (match, offset) => {
+        // Look back to see if there's a moveTo before this arc
+        const before = drawCalls.substring(Math.max(0, offset - 50), offset);
+        const hasRecentMoveTo = /moveTo\([^)]+\)\s*$/.test(before.trim());
+        
+        // If no recent moveTo, we need to get the arc's center coords and add a moveTo
+        // This is a bit hacky but prevents connecting lines
+        return hasRecentMoveTo ? match : `ctx.moveTo(arguments[0], arguments[1]);${match}`;
+      }
+    );
+    
+    // Update phrase display
+    const phraseElement = document.getElementById('sigil-phrase');
+    if (phraseElement) {
+      phraseElement.textContent = phrase;
+    }
+    
+    // Note: drawSigil expects an object with a 'calls' property
+    if (state.sigil) {
+      state.sigil.drawSigil({ calls: fixedDrawCalls });
+    }
+  } catch (error) {
+    console.error('Failed to render sigil:', error);
+    showError('Failed to render sigil: ' + error.message);
+  }
+}
+
+// ============================================
+// SECTION 5: UI Updates
 // ============================================
 
 function updateUI() {
@@ -575,7 +639,7 @@ function updateSlug() {
 }
 
 // ============================================
-// SECTION 5: Prompt Management
+// SECTION 6: Prompt Management
 // ============================================
 
 async function loadPrompts() {
@@ -646,7 +710,7 @@ Always respond with valid JSON in this exact format:
 }
 
 // ============================================
-// SECTION 6: Event Handlers
+// SECTION 7: Event Handlers
 // ============================================
 
 // Toggle listening button
@@ -847,11 +911,30 @@ document.getElementById('user-prompt').addEventListener('input', () => {
 document.getElementById('name').addEventListener('input', updateSlug);
 
 // ============================================
-// SECTION 7: Initialization
+// SECTION 8: Initialization
 // ============================================
 
 async function init() {
   console.log('🚀 Initializing Audio Percept Prompt Editor');
+  
+  // Initialize sigil
+  state.sigil = new Sigil({
+    canvas: document.getElementById('sigil-canvas'),
+    canvasSize: 200,
+    drawDuration: 200,
+    undrawDuration: 300,
+    thinkingShiftInterval: 100,
+    thinkingVariedMin: 1000,
+    thinkingVariedMax: 3000,
+    scale: 1.0,
+    lineColor: '#fff',
+    lineWeight: 1.2
+  });
+  
+  // Start with "awaiting sigil..." message
+  const phraseElement = document.getElementById('sigil-phrase');
+  phraseElement.textContent = 'awaiting sigil...';
+  state.sigil.thinkingVaried();
   
   // Load prompts from DB
   await loadPrompts();

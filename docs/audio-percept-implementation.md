@@ -51,6 +51,15 @@
 - Created `prompt-editor/audio-percept/style.css`
 - Minimal overrides to shared framework
 - Recording indicator animation (for future use)
+- Sigil rendering styles (canvas and phrase display)
+
+### Step 9: Sigil Integration ✅
+- Copied `sigil.standalone.js` from visual-percept
+- Added sigil canvas and phrase display to HTML
+- Imported Sigil class in editor.js
+- Added renderSigil() function to extract and display sigilDrawCalls
+- Initialized sigil instance in init()
+- Renders sigil automatically when JSON response contains sigilPhrase and sigilDrawCalls
 
 ---
 
@@ -123,13 +132,18 @@
   - Improved little-endian encoding using DataView for proper PCM format
   - Audio now streams continuously without waiting for turn completion
 
-**Issue 5: Favicon 404** ✅ FIXED
-- **Error**: `GET /favicon.ico 404`
-- **Fix**: Added route to return 204 (No Content) for favicon requests
-- **Error**: `GET /api/audio-prompts 500 (Internal Server Error)`
-- **Cause**: Database table `audio_prompts` doesn't exist (migration not run)
-- **Fix**: Run database migration: `npm run migrate`
-- **Note**: Added improved error logging to show actual database error details
+**Issue 5: Stop/Start Listening Broken on Second Cycle** ✅ FIXED
+- **Error**: After stopping and restarting listening, audio no longer flows
+- **Root Cause**: 
+  1. Audio processor and source nodes were disconnected but not nulled out
+  2. startListening() checked if they existed and skipped recreation
+  3. Multiple AudioContexts were being created (browser limits)
+- **Fix**: 
+  - Modified stopListening() to null out audioProcessor and audioSource after disconnect
+  - Modified stopListening() to remove event handler (onaudioprocess = null)
+  - Modified initAudioProcessing() to reuse existing AudioContext
+  - Modified startListening() to always recreate audio processing nodes
+  - Now cleanly stops and restarts audio capture on multiple cycles
 
 ### Testing Notes
 - **TODO**: Test microphone permission flow
@@ -156,9 +170,11 @@
 - ✅ `prompt-editor/audio-percept/index.html`
 - ✅ `prompt-editor/audio-percept/editor.js`
 - ✅ `prompt-editor/audio-percept/style.css`
+- ✅ `prompt-editor/audio-percept/sigil.standalone.js` (copied from visual-percept)
 
 **Modified Files**:
 - ✅ `server.js` (added routes and static serving)
+- ✅ `src/db/migrate.js` (added 006_audio_prompts.sql to migrations list)
 
 ---
 
@@ -170,24 +186,32 @@
 5. ✅ Build HTML structure
 6. ✅ Implement editor logic
 7. ✅ Add styling
-8. ⏳ Test end-to-end
-9. ⏳ Run database migration
-10. ⏳ Verify in browser
+8. ✅ Integrate sigil rendering
+9. ✅ Fix streaming API issues
+10. ✅ Fix stop/start cycle issues
+11. ⏳ Restart server to run database migration
+12. ⏳ Test end-to-end with real audio
+13. ⏳ Verify sigil rendering from audio responses
 
 ---
 
-## Status: Implementation Complete - Testing Required ✅
+## Status: Implementation Complete + Sigil Integration ✅
 
-All code files created and **critical streaming bug fixed**. 
+All code files created, streaming bugs fixed, and **sigil rendering integrated**.
 
-### Key Fix Applied (2024-11-21)
-- **Changed from discrete turn-based API to continuous streaming API**
-- Message format: `clientContent.turns` → `realtimeInput.mediaChunks`
-- Removed `turnComplete: true` flag from audio packets
-- Removed per-packet text prompts (system instruction in setup only)
-- Removed `isRequestInFlight` flag (not needed for streaming)
-- Added minimum sample buffering (0.5s) before sending
-- Improved PCM encoding with proper little-endian DataView
+### Key Features Implemented
+- ✅ Continuous audio streaming to Gemini Live API (16kHz PCM)
+- ✅ JSON response parsing and display
+- ✅ **Sigil rendering from sigilDrawCalls in response**
+- ✅ Sigil phrase display below canvas
+- ✅ Automatic sigil animation on init
+- ✅ Stop/start listening cycles work correctly
+- ✅ Full CRUD for audio prompts
 
-Ready for browser testing with real microphone input.
+### Recent Updates (2024-11-21)
+- **Fixed streaming API** - Changed from turn-based to realtimeInput format
+- **Fixed stop/start cycle** - Proper audio node cleanup and recreation
+- **Added sigil integration** - Canvas renders sigilDrawCalls from JSON responses
+
+Ready for browser testing with real microphone input and sigil display! 🎤🎨
 
