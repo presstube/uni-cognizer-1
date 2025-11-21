@@ -1,4 +1,4 @@
-import { SigilAndPhrase } from '../shared/sigil-and-phrase.js';
+import { SigilAndPhrase } from '../../shared/sigil-and-phrase.js';
 
 // ============================================
 // SECTION 1: State Management

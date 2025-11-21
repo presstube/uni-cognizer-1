@@ -1,0 +1,60 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+body.started {
+  cursor: default;
+}
+
+#sigil {
+  width: 300px;
+  height: 300px;
+}
+
+#start-prompt {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  text-align: center;
+  transition: opacity 0.3s;
+}
+
+#start-prompt.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#error-message {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ff4444;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+#error-message.visible {
+  opacity: 1;
+}
+

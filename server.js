@@ -56,8 +56,11 @@ app.use('/prompt-editor/visual-percept', express.static('prompt-editor/visual-pe
 // Serve Audio Percept Prompt Editor
 app.use('/prompt-editor/audio-percept', express.static('prompt-editor/audio-percept'));
 
-// Serve shared prompt editor assets (CSS, etc.)
-app.use('/prompt-editor/shared', express.static('prompt-editor/shared'));
+// Serve shared assets (moved to top-level)
+app.use('/shared', express.static('shared'));
+
+// Door apps (user-facing)
+app.use('/door', express.static('door'));
 
 // Legacy redirects (permanent 301)
 app.get('/forge', (req, res) => {
