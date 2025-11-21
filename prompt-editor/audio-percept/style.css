@@ -1,0 +1,24 @@
+/* Audio Percept Editor Specific Styles */
+
+/* Minimal overrides/extensions to shared framework */
+
+/* Recording indicator (if needed) */
+.recording-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #f44336;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+

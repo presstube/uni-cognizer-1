@@ -1,0 +1,319 @@
+/* Unified CSS Framework for Prompt Editors */
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* Panes */
+.left-pane,
+.right-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.left-pane {
+  padding: 20px;
+  gap: 15px;
+  border-right: 1px solid #3a3a3a;
+}
+
+.right-pane {
+  gap: 0;
+}
+
+/* Form Elements */
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row:has(.inline-field) {
+  flex-direction: row;
+}
+
+.row:not(:has(.inline-field)) {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col {
+  flex: 1;
+}
+
+.inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b0b0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  padding: 10px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+#system-prompt {
+  flex: 1;
+  min-height: 200px;
+  resize: none;
+}
+
+#user-prompt {
+  min-height: 80px;
+  resize: none;
+}
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #4CAF50;
+  color: white;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-secondary {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #1976D2;
+}
+
+.btn-success {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-danger {
+  background: #f44336;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #da190b;
+}
+
+.btn-small {
+  padding: 5px 10px;
+  font-size: 12px;
+  background: #3a3a3a;
+  color: #e0e0e0;
+}
+
+.btn-small:hover {
+  background: #4a4a4a;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 20px;
+  background: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
+  flex-wrap: wrap;
+}
+
+/* Status */
+.status {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.status-connected {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status-processing {
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.status-disconnected {
+  background: rgba(158, 158, 158, 0.2);
+  color: #9e9e9e;
+  border: 1px solid rgba(158, 158, 158, 0.3);
+}
+
+/* Error */
+.error {
+  padding: 12px 20px;
+  background: rgba(244, 67, 54, 0.2);
+  border-bottom: 1px solid rgba(244, 67, 54, 0.3);
+  color: #f44336;
+  font-size: 13px;
+}
+
+.error.hidden {
+  display: none;
+}
+
+/* Success */
+.success-message {
+  padding: 12px 20px;
+  background: rgba(76, 175, 80, 0.2);
+  border-bottom: 1px solid rgba(76, 175, 80, 0.3);
+  color: #4CAF50;
+  font-size: 13px;
+}
+
+.success-message.hidden {
+  display: none;
+}
+
+/* Response Section */
+.response-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  padding: 20px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.response-section label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b0b0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.response-text {
+  flex: 1;
+  padding: 15px;
+  background: #000;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  color: #4CAF50;
+  min-height: 0;
+}
+
+.response-text:empty:before {
+  content: 'JSON response will appear here...';
+  color: #666;
+  font-style: italic;
+}
+
+/* Character Counter */
+label span {
+  float: right;
+  font-size: 11px;
+  color: #666;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a;
+}
+

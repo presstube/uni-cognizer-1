@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎤 Audio Percept Prompt Editor</title>
+  <link rel="stylesheet" href="../shared/prompt-editor.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Left Pane: Prompts -->
+  <div class="left-pane">
+    <div class="row">
+      <label>Load Prompt</label>
+      <select id="prompt-select">
+        <option value="new">+ New Prompt</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="inline-field">
+          <label>Name</label>
+          <input type="text" id="name" placeholder="Audio Analysis v1.0" maxlength="200">
+        </div>
+      </div>
+      <div class="col">
+        <div class="inline-field">
+          <label>Slug</label>
+          <input type="text" id="slug" placeholder="audio-analysis-v1-0" maxlength="100">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="save-btn" class="btn-secondary">💾 Save</button>
+      <button id="activate-btn" class="btn-success">✓ Set Active</button>
+      <button id="delete-btn" class="btn-danger">Delete</button>
+    </div>
+
+    <label>System Prompt <span id="system-char-count">0 chars</span></label>
+    <textarea id="system-prompt" placeholder="You are analyzing audio percepts..."></textarea>
+
+    <label>User Prompt <span id="user-char-count">0 chars</span></label>
+    <textarea id="user-prompt" placeholder="What do you hear?"></textarea>
+  </div>
+
+  <!-- Right Pane: Response -->
+  <div class="right-pane">
+    <div class="controls">
+      <button id="toggle-btn" class="btn-primary">🎤 START LISTENING</button>
+      <div id="status" class="status">⚫ Disconnected</div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="success" class="success-message hidden"></div>
+    <div id="error" class="error hidden"></div>
+
+    <div class="response-section">
+      <label>JSON Response</label>
+      <div id="response-text" class="response-text"></div>
+    </div>
+  </div>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
+

@@ -14,6 +14,7 @@ import personalitiesAPI from './src/api/personalities.js';
 import { editorAuth } from './src/api/editor-auth.js';
 import * as sigilPrompts from './src/api/sigil-prompts.js';
 import * as visualPrompts from './src/api/visual-prompts.js';
+import * as audioPrompts from './src/api/audio-prompts.js';
 import geminiTokenAPI from './src/api/gemini-token.js';
 
 const PORT = process.env.PORT || 3001;
@@ -51,6 +52,12 @@ app.use('/prompt-editor/sigil', express.static('prompt-editor/sigil'));
 
 // Serve Visual Percept Prompt Editor
 app.use('/prompt-editor/visual-percept', express.static('prompt-editor/visual-percept'));
+
+// Serve Audio Percept Prompt Editor
+app.use('/prompt-editor/audio-percept', express.static('prompt-editor/audio-percept'));
+
+// Serve shared prompt editor assets (CSS, etc.)
+app.use('/prompt-editor/shared', express.static('prompt-editor/shared'));
 
 // Legacy redirects (permanent 301)
 app.get('/forge', (req, res) => {
@@ -95,6 +102,19 @@ app.get('/api/visual-prompts/:id', editorAuth, visualPrompts.getVisualPromptAPI)
 app.post('/api/visual-prompts', editorAuth, visualPrompts.saveVisualPrompt);
 app.post('/api/visual-prompts/:id/activate', editorAuth, visualPrompts.activateVisualPromptAPI);
 app.delete('/api/visual-prompts/:id', editorAuth, visualPrompts.deleteVisualPromptAPI);
+
+// Mount Audio Prompts API (with editor auth in production)
+app.get('/api/audio-prompts', editorAuth, audioPrompts.listAudioPrompts);
+app.get('/api/audio-prompts/active', editorAuth, audioPrompts.getActiveAudioPromptAPI);
+app.get('/api/audio-prompts/:id', editorAuth, audioPrompts.getAudioPromptAPI);
+app.post('/api/audio-prompts', editorAuth, audioPrompts.saveAudioPrompt);
+app.post('/api/audio-prompts/:id/activate', editorAuth, audioPrompts.activateAudioPromptAPI);
+app.delete('/api/audio-prompts/:id', editorAuth, audioPrompts.deleteAudioPromptAPI);
+
+// Favicon (prevent 404)
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
 
 // Health check endpoint (required for Render)
 app.get('/', (req, res) => {
