@@ -566,6 +566,15 @@ async function handlePhraseSubmit(e) {
     console.log('✅ Sigil generated successfully');
     console.log('📊 Canvas code length:', data.calls.length, 'characters\n');
     
+    // Log copy-pastable JSON fragment
+    const resultJson = {
+      sigilPhrase: phrase,
+      drawCalls: data.calls
+    };
+    console.log('📋 Copy-pastable JSON fragment:');
+    console.log(JSON.stringify(resultJson, null, 2));
+    console.log('');
+    
     // Draw the result
     sigil.drawSigil({ calls: data.calls });
     
