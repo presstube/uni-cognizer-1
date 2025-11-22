@@ -17,7 +17,10 @@ let state = {
   responseBuffer: '',
   systemPrompt: '',
   sigil: null,
-  packetInterval: 2000
+  packetInterval: 500,
+  currentAmplitude: 0,
+  smoothedAmplitude: 0,
+  rafId: null
 };
 
 // ============================================
@@ -58,12 +61,28 @@ async function initAudioProcessing(stream) {
     }
     
     const source = audioContext.createMediaStreamSource(stream);
-    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    const processor = audioContext.createScriptProcessor(512, 1, 1);
     
     processor.onaudioprocess = (event) => {
       if (!state.isListening) return;
       
       const inputBuffer = event.inputBuffer.getChannelData(0);
+      
+      // Calculate amplitude (RMS - Root Mean Square)
+      let sum = 0;
+      for (let i = 0; i < inputBuffer.length; i++) {
+        sum += inputBuffer[i] * inputBuffer[i];
+      }
+      const rms = Math.sqrt(sum / inputBuffer.length);
+      
+      // Normalize to 0.0 - 1.0 range
+      // Typical loud speech RMS is around 0.05-0.1, so we boost by 10x
+      const normalizedAmplitude = Math.min(1.0, rms * 10.0);
+      state.currentAmplitude = normalizedAmplitude;
+      
+      // Note: Visual update handled by RAF loop, not here
+      
+      // Convert to PCM for sending
       const pcmData = new Int16Array(inputBuffer.length);
       for (let i = 0; i < inputBuffer.length; i++) {
         const s = Math.max(-1, Math.min(1, inputBuffer[i]));
@@ -107,8 +126,11 @@ async function startListening() {
     state.pcmBuffer = [];
     state = { ...state, isListening: true };
     
+    // Start smooth glow animation loop
+    startGlowAnimation();
+    
     state.sendInterval = setInterval(() => {
-      const MIN_SAMPLES = 8000;
+      const MIN_SAMPLES = 4000;  // 0.25 seconds @ 16kHz (faster responses)
       
       if (state.pcmBuffer.length >= MIN_SAMPLES && state.setupComplete) {
         const samplesToSend = Math.min(state.pcmBuffer.length, 32000);
@@ -160,6 +182,9 @@ function stopListening() {
   if (state.audioSource) {
     state.audioSource.disconnect();
   }
+  
+  // Stop smooth glow animation loop
+  stopGlowAnimation();
   
   state.pcmBuffer = [];
   state = { 
@@ -353,20 +378,67 @@ function handleResponse(message) {
         }
         
         const json = JSON.parse(jsonText);
+        console.log('✅ Parsed JSON response:', json);
         
         if (json.sigilPhrase && json.sigilDrawCalls) {
           state.sigil.render({
             phrase: json.sigilPhrase,
             drawCalls: json.sigilDrawCalls
           });
+        } else {
+          console.warn('⚠️ JSON missing sigilPhrase or sigilDrawCalls:', json);
         }
         
         state.responseBuffer = '';
       } catch (error) {
-        console.log('Response not JSON, displaying as text');
+        console.error('❌ Failed to parse response as JSON:', error);
+        console.log('Raw response:', state.responseBuffer);
+        console.log('This likely means the audio prompt needs to be configured to return sigil data.');
       }
     }
   }
+}
+
+// ============================================
+// Smooth Glow Animation (60fps via RAF)
+// ============================================
+
+function startGlowAnimation() {
+  const smoothingFactor = 0.15; // Lower = smoother (0.15 is very smooth)
+  
+  function animate() {
+    // Exponentially smooth toward target amplitude
+    state.smoothedAmplitude += (state.currentAmplitude - state.smoothedAmplitude) * smoothingFactor;
+    
+    // Update visual at 60fps
+    const glowEl = document.getElementById('audio-glow');
+    if (glowEl) {
+      glowEl.style.opacity = state.smoothedAmplitude;
+    }
+    
+    // Continue if still listening
+    if (state.isListening) {
+      state.rafId = requestAnimationFrame(animate);
+    }
+  }
+  
+  animate();
+}
+
+function stopGlowAnimation() {
+  if (state.rafId) {
+    cancelAnimationFrame(state.rafId);
+    state.rafId = null;
+  }
+  
+  // Fade out glow
+  const glowEl = document.getElementById('audio-glow');
+  if (glowEl) {
+    glowEl.style.opacity = 0;
+  }
+  
+  // Reset smoothed amplitude
+  state.smoothedAmplitude = 0;
 }
 
 // ============================================
@@ -408,10 +480,11 @@ async function init() {
     }
     const { prompt } = await res.json();
     
-    // Initialize sigil renderer (300px for full-screen)
+    // Initialize sigil renderer (300px for full-screen, transparent background)
     const sigil = new SigilAndPhrase({ 
       container: '#sigil',
-      canvasSize: 300
+      canvasSize: 300,
+      backgroundColor: 'transparent'
     });
     
     // Store in state
