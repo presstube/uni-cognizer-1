@@ -276,15 +276,40 @@ async function startSession() {
     ws.onopen = () => {
       console.log('✅ WebSocket connection opened');
       
-      // Send setup message
+      // Get system prompt
       const systemPrompt = document.getElementById('system-prompt').value;
+      
+      // Get experimental generation config values
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      const topP = parseFloat(document.getElementById('top-p').value);
+      const topK = parseInt(document.getElementById('top-k').value);
+      const maxTokens = parseInt(document.getElementById('max-tokens').value);
+      
+      // Build generation config with experimental parameters
+      const generationConfig = {
+        responseModalities: ['TEXT'],
+        responseMimeType: 'application/json'
+      };
+      
+      // Add experimental parameters
+      if (!isNaN(temperature)) {
+        generationConfig.temperature = temperature;
+      }
+      if (!isNaN(topP)) {
+        generationConfig.topP = topP;
+      }
+      if (!isNaN(topK)) {
+        generationConfig.topK = topK;
+      }
+      if (!isNaN(maxTokens)) {
+        generationConfig.maxOutputTokens = maxTokens;
+      }
+      
+      // Send setup message
       const setupMessage = {
         setup: {
           model: 'models/gemini-2.0-flash-exp',
-          generationConfig: {
-            responseModalities: ['TEXT'],
-            responseMimeType: 'application/json'
-          },
+          generationConfig,
           systemInstruction: {
             parts: [{
               text: systemPrompt || 'You are analyzing audio percepts.'
@@ -293,7 +318,8 @@ async function startSession() {
         }
       };
       
-      console.log('📤 Sending setup message');
+      console.log('📤 Sending setup message with generationConfig:', generationConfig);
+      console.log('🧪 EXPERIMENTAL: Testing if Live API accepts temperature, topP, topK, maxOutputTokens');
       ws.send(JSON.stringify(setupMessage));
     };
     
@@ -316,6 +342,13 @@ async function startSession() {
     
     ws.onclose = async (event) => {
       console.log('WebSocket closed:', event.reason);
+      
+      // Log if closure might be due to unsupported parameters
+      if (event.reason && event.reason.includes('generationConfig')) {
+        console.error('🚨 EXPERIMENTAL CONFIG REJECTED:', event.reason);
+        console.log('💡 The Live API does not support one or more generationConfig parameters.');
+      }
+      
       updateState({ isConnected: false, ws: null, setupComplete: false });
       
       // If we're still listening, try to reconnect
@@ -432,7 +465,8 @@ function handleResponse(message) {
   
   // Skip setup messages
   if (message.setupComplete) {
-    console.log('Setup complete, ready to stream audio');
+    console.log('✅ Setup complete, ready to stream audio');
+    console.log('🎉 EXPERIMENTAL CONFIG ACCEPTED! Live API accepted all generationConfig parameters.');
     updateState({ isConnected: true, setupComplete: true });
     updateStatus(state.isListening ? '🔴 Listening...' : '🟢 Connected');
     return;
@@ -728,6 +762,12 @@ document.getElementById('prompt-select').addEventListener('change', async (e) =>
       document.getElementById('system-prompt').value = prompt.system_prompt;
       document.getElementById('user-prompt').value = prompt.user_prompt;
       
+      // Load generation config (with defaults if not set)
+      document.getElementById('temperature').value = prompt.temperature ?? 0.8;
+      document.getElementById('top-p').value = prompt.top_p ?? 0.9;
+      document.getElementById('top-k').value = prompt.top_k ?? 40;
+      document.getElementById('max-tokens').value = prompt.max_output_tokens ?? 1024;
+      
       // Re-initialize WebSocket with new system prompt
       if (state.ws) {
         state.ws.close();
@@ -751,6 +791,12 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const systemPrompt = document.getElementById('system-prompt').value.trim();
   const userPrompt = document.getElementById('user-prompt').value.trim();
   
+  // Get generation config values
+  const temperature = parseFloat(document.getElementById('temperature').value);
+  const topP = parseFloat(document.getElementById('top-p').value);
+  const topK = parseInt(document.getElementById('top-k').value);
+  const maxOutputTokens = parseInt(document.getElementById('max-tokens').value);
+  
   if (!name || !slug || !systemPrompt || !userPrompt) {
     showError('All fields are required');
     return;
@@ -769,7 +815,13 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         name,
         slug,
         systemPrompt,
-        userPrompt
+        userPrompt,
+        generationConfig: {
+          temperature,
+          topP,
+          topK,
+          maxOutputTokens
+        }
       })
     });
     

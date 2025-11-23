@@ -24,7 +24,8 @@ export async function runMigrations() {
     '003_sigil_prompts.sql',
     '004_visual_prompts.sql',
     '005_add_llm_settings_to_sigil_prompts.sql',
-    '006_audio_prompts.sql'
+    '006_audio_prompts.sql',
+    '007_add_generation_config_to_audio_prompts.sql'
   ];
   
   try {

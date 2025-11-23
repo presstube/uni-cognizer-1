@@ -37,13 +37,22 @@ export async function getActiveAudioPrompt() {
 /**
  * Create a new audio prompt
  */
-export async function createAudioPrompt(name, slug, systemPrompt, userPrompt) {
+export async function createAudioPrompt(name, slug, systemPrompt, userPrompt, generationConfig = {}) {
   const pool = getPool();
   const result = await pool.query(
-    `INSERT INTO audio_prompts (name, slug, system_prompt, user_prompt)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO audio_prompts (name, slug, system_prompt, user_prompt, temperature, top_p, top_k, max_output_tokens)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [name, slug, systemPrompt, userPrompt]
+    [
+      name, 
+      slug, 
+      systemPrompt, 
+      userPrompt,
+      generationConfig.temperature ?? 0.8,
+      generationConfig.topP ?? 0.9,
+      generationConfig.topK ?? 40,
+      generationConfig.maxOutputTokens ?? 1024
+    ]
   );
   return result.rows[0];
 }
@@ -51,14 +60,26 @@ export async function createAudioPrompt(name, slug, systemPrompt, userPrompt) {
 /**
  * Update an existing audio prompt
  */
-export async function updateAudioPrompt(id, name, slug, systemPrompt, userPrompt) {
+export async function updateAudioPrompt(id, name, slug, systemPrompt, userPrompt, generationConfig = {}) {
   const pool = getPool();
   const result = await pool.query(
-    `UPDATE audio_prompts
-     SET name = $2, slug = $3, system_prompt = $4, user_prompt = $5, updated_at = NOW()
+    `UPDATE audio_prompts 
+     SET name = $2, slug = $3, system_prompt = $4, user_prompt = $5, 
+         temperature = $6, top_p = $7, top_k = $8, max_output_tokens = $9,
+         updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [id, name, slug, systemPrompt, userPrompt]
+    [
+      id, 
+      name, 
+      slug, 
+      systemPrompt, 
+      userPrompt,
+      generationConfig.temperature ?? 0.8,
+      generationConfig.topP ?? 0.9,
+      generationConfig.topK ?? 40,
+      generationConfig.maxOutputTokens ?? 1024
+    ]
   );
   return result.rows[0];
 }
