@@ -67,7 +67,7 @@ export async function getVisualPromptAPI(req, res) {
  */
 export async function saveVisualPrompt(req, res) {
   try {
-    const { id, name, slug, systemPrompt, userPrompt } = req.body;
+    const { id, name, slug, systemPrompt, userPrompt, generationConfig } = req.body;
     
     if (!name || !slug || !systemPrompt || !userPrompt) {
       return res.status(400).json({ error: 'Name, slug, systemPrompt, and userPrompt are required' });
@@ -77,13 +77,13 @@ export async function saveVisualPrompt(req, res) {
     
     if (id) {
       // Update existing
-      savedPrompt = await updateVisualPrompt(id, name, slug, systemPrompt, userPrompt);
+      savedPrompt = await updateVisualPrompt(id, name, slug, systemPrompt, userPrompt, generationConfig);
       if (!savedPrompt) {
         return res.status(404).json({ error: 'Prompt not found' });
       }
     } else {
       // Create new
-      savedPrompt = await createVisualPrompt(name, slug, systemPrompt, userPrompt);
+      savedPrompt = await createVisualPrompt(name, slug, systemPrompt, userPrompt, generationConfig);
     }
     
     res.json({ prompt: savedPrompt });

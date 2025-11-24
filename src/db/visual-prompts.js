@@ -37,13 +37,20 @@ export async function getActiveVisualPrompt() {
 /**
  * Create a new visual prompt
  */
-export async function createVisualPrompt(name, slug, systemPrompt, userPrompt) {
+export async function createVisualPrompt(name, slug, systemPrompt, userPrompt, generationConfig = {}) {
   const pool = getPool();
+  const {
+    temperature = 0.8,
+    topP = 0.9,
+    topK = 40,
+    maxOutputTokens = 1024
+  } = generationConfig;
+  
   const result = await pool.query(
-    `INSERT INTO visual_prompts (name, slug, system_prompt, user_prompt)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO visual_prompts (name, slug, system_prompt, user_prompt, temperature, top_p, top_k, max_output_tokens)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [name, slug, systemPrompt, userPrompt]
+    [name, slug, systemPrompt, userPrompt, temperature, topP, topK, maxOutputTokens]
   );
   return result.rows[0];
 }
@@ -51,14 +58,22 @@ export async function createVisualPrompt(name, slug, systemPrompt, userPrompt) {
 /**
  * Update an existing visual prompt
  */
-export async function updateVisualPrompt(id, name, slug, systemPrompt, userPrompt) {
+export async function updateVisualPrompt(id, name, slug, systemPrompt, userPrompt, generationConfig = {}) {
   const pool = getPool();
+  const {
+    temperature = 0.8,
+    topP = 0.9,
+    topK = 40,
+    maxOutputTokens = 1024
+  } = generationConfig;
+  
   const result = await pool.query(
     `UPDATE visual_prompts
-     SET name = $2, slug = $3, system_prompt = $4, user_prompt = $5, updated_at = NOW()
+     SET name = $2, slug = $3, system_prompt = $4, user_prompt = $5, 
+         temperature = $6, top_p = $7, top_k = $8, max_output_tokens = $9, updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [id, name, slug, systemPrompt, userPrompt]
+    [id, name, slug, systemPrompt, userPrompt, temperature, topP, topK, maxOutputTokens]
   );
   return result.rows[0];
 }

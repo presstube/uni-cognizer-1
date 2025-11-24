@@ -45,24 +45,30 @@ app.use(express.json({ limit: '10mb' })); // Increased for base64 image uploads
 app.use('/prompt-editor', editorAuth);
 
 // Serve Personality Prompt Editor
-app.use('/prompt-editor/personality', express.static('prompt-editor/personality'));
+app.use('/prompt-editor/personality', express.static('web/prompt-editor/personality'));
 
 // Serve Sigil Prompt Editor
-app.use('/prompt-editor/sigil', express.static('prompt-editor/sigil'));
+app.use('/prompt-editor/sigil', express.static('web/prompt-editor/sigil'));
 
 // Serve Visual Percept Prompt Editor
-app.use('/prompt-editor/visual-percept', express.static('prompt-editor/visual-percept'));
+app.use('/prompt-editor/visual-percept', express.static('web/prompt-editor/visual-percept'));
 
 // Serve Audio Percept Prompt Editor
-app.use('/prompt-editor/audio-percept', express.static('prompt-editor/audio-percept'));
+app.use('/prompt-editor/audio-percept', express.static('web/prompt-editor/audio-percept'));
 
-// Serve shared assets (moved to top-level)
-app.use('/shared', express.static('shared'));
+// Serve shared assets (now under /web)
+// Note: Need both /shared and /web/shared for different relative import contexts
+app.use('/shared', express.static('web/shared'));          // For /see app (../shared/ resolves to /shared/)
+app.use('/web/shared', express.static('web/shared'));      // For absolute refs in HTML/CSS
 
-// Door apps (user-facing)
-app.use('/door', express.static('door'));
+// User-facing apps (serve /see from web/see)
+app.use('/see', express.static('web/see'));
 
 // Legacy redirects (permanent 301)
+app.get('/door/see', (req, res) => {
+  res.redirect(301, '/see');
+});
+
 app.get('/forge', (req, res) => {
   res.redirect(301, '/prompt-editor/personality');
 });

@@ -397,15 +397,40 @@ async function startSession() {
     ws.onopen = () => {
       console.log('✅ WebSocket connection opened');
       
-      // Send setup message
+      // Get system prompt
       const systemPrompt = document.getElementById('system-prompt').value;
+      
+      // Get generation config values
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      const topP = parseFloat(document.getElementById('top-p').value);
+      const topK = parseInt(document.getElementById('top-k').value);
+      const maxTokens = parseInt(document.getElementById('max-tokens').value);
+      
+      // Build generation config
+      const generationConfig = {
+        responseModalities: ['TEXT'],
+        responseMimeType: 'application/json'
+      };
+      
+      // Add optional parameters if valid
+      if (!isNaN(temperature)) {
+        generationConfig.temperature = temperature;
+      }
+      if (!isNaN(topP)) {
+        generationConfig.topP = topP;
+      }
+      if (!isNaN(topK)) {
+        generationConfig.topK = topK;
+      }
+      if (!isNaN(maxTokens)) {
+        generationConfig.maxOutputTokens = maxTokens;
+      }
+      
+      // Send setup message
       const setupMessage = {
         setup: {
           model: 'models/gemini-2.0-flash-exp',
-          generationConfig: {
-            responseModalities: ['TEXT'],
-            responseMimeType: 'application/json'
-          },
+          generationConfig,
           systemInstruction: {
             parts: [{
               text: systemPrompt || 'You are analyzing visual percepts.'
@@ -414,7 +439,7 @@ async function startSession() {
         }
       };
       
-      console.log('📤 Sending setup message');
+      console.log('📤 Sending setup message with generationConfig:', generationConfig);
       ws.send(JSON.stringify(setupMessage));
     };
     
@@ -788,6 +813,12 @@ document.getElementById('prompt-select').addEventListener('change', async (e) =>
       document.getElementById('system-prompt').value = prompt.system_prompt;
       document.getElementById('user-prompt').value = prompt.user_prompt;
       
+      // Load generation config (with defaults if not set)
+      document.getElementById('temperature').value = prompt.temperature ?? 0.8;
+      document.getElementById('top-p').value = prompt.top_p ?? 0.9;
+      document.getElementById('top-k').value = prompt.top_k ?? 40;
+      document.getElementById('max-tokens').value = prompt.max_output_tokens ?? 1024;
+      
       // Re-initialize WebSocket with new system prompt?
       // Actually, better to just close it so next sendFrame re-opens it with new prompt
       if (state.ws) {
@@ -812,6 +843,12 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const systemPrompt = document.getElementById('system-prompt').value.trim();
   const userPrompt = document.getElementById('user-prompt').value.trim();
   
+  // Get generation config values
+  const temperature = parseFloat(document.getElementById('temperature').value);
+  const topP = parseFloat(document.getElementById('top-p').value);
+  const topK = parseInt(document.getElementById('top-k').value);
+  const maxOutputTokens = parseInt(document.getElementById('max-tokens').value);
+  
   if (!name || !slug || !systemPrompt || !userPrompt) {
     showError('All fields are required');
     return;
@@ -830,7 +867,13 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         name,
         slug,
         systemPrompt,
-        userPrompt
+        userPrompt,
+        generationConfig: {
+          temperature,
+          topP,
+          topK,
+          maxOutputTokens
+        }
       })
     });
     

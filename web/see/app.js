@@ -1,5 +1,5 @@
-import { SigilAndPhrase } from '../../shared/sigil-and-phrase.js';
-import { createGeminiLiveHandler } from '../../shared/gemini-live-handler.js';
+import { SigilAndPhrase } from '../shared/sigil-and-phrase.js';
+import { createGeminiLiveHandler } from '../shared/gemini-live-handler.js';
 
 // ============================================
 // State Management (functional with closure)

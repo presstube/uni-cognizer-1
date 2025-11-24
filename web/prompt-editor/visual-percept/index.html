@@ -49,6 +49,33 @@
     <label>User Prompt <span id="user-char-count">0 chars</span></label>
     <textarea id="user-prompt" 
               placeholder="What do you see in this frame?"></textarea>
+    
+    <!-- Generation Config -->
+    <div style="margin-top: 1rem; padding: 1rem; background: #1a1a1a; border-radius: 4px; border: 1px solid #333;">
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">⚙️ Generation Config</label>
+      <div style="font-size: 11px; color: #666; margin-bottom: 0.75rem;">
+        Controls how Gemini Live API generates responses.
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+        <div>
+          <label style="font-size: 12px;">Temperature (0-2)</label>
+          <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.8" style="width: 100%; padding: 0.25rem;">
+        </div>
+        <div>
+          <label style="font-size: 12px;">Top P (0-1)</label>
+          <input type="number" id="top-p" min="0" max="1" step="0.1" value="0.9" style="width: 100%; padding: 0.25rem;">
+        </div>
+        <div>
+          <label style="font-size: 12px;">Top K</label>
+          <input type="number" id="top-k" min="1" max="100" step="1" value="40" style="width: 100%; padding: 0.25rem;">
+        </div>
+        <div>
+          <label style="font-size: 12px;">Max Tokens</label>
+          <input type="number" id="max-tokens" min="128" max="8192" step="128" value="1024" style="width: 100%; padding: 0.25rem;">
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Right Pane: Preview + Output -->
