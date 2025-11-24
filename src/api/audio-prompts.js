@@ -77,23 +77,23 @@ export async function getAudioPromptAPI(req, res) {
  */
 export async function saveAudioPrompt(req, res) {
   try {
-    const { id, name, slug, systemPrompt, userPrompt, generationConfig } = req.body;
+    const { id, name, slug, systemPrompt, generationConfig } = req.body;
     
-    if (!name || !slug || !systemPrompt || !userPrompt) {
-      return res.status(400).json({ error: 'Name, slug, systemPrompt, and userPrompt are required' });
+    if (!name || !slug || !systemPrompt) {
+      return res.status(400).json({ error: 'Name, slug, and systemPrompt are required' });
     }
     
     let savedPrompt;
     
     if (id) {
       // Update existing
-      savedPrompt = await updateAudioPrompt(id, name, slug, systemPrompt, userPrompt, generationConfig);
+      savedPrompt = await updateAudioPrompt(id, name, slug, systemPrompt, generationConfig);
       if (!savedPrompt) {
         return res.status(404).json({ error: 'Prompt not found' });
       }
     } else {
       // Create new
-      savedPrompt = await createAudioPrompt(name, slug, systemPrompt, userPrompt, generationConfig);
+      savedPrompt = await createAudioPrompt(name, slug, systemPrompt, generationConfig);
     }
     
     res.json({ prompt: savedPrompt });

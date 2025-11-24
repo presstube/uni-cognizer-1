@@ -1,4 +1,5 @@
 import { SigilAndPhrase } from '../../shared/sigil-and-phrase.js';
+import { createGeminiLiveHandler } from '../../shared/gemini-live-handler.js';
 
 // ============================================
 // SECTION 1: State Management
@@ -16,7 +17,6 @@ const state = {
   prompts: [],             // List of available prompts
   isConnected: false,      // Session connection status
   isListening: false,      // Listening status
-  responseBuffer: '',       // Accumulated response text
   packetInterval: 2000,     // Send audio packets every 2 seconds
   pcmBuffer: [],           // Buffer for PCM audio data (Int16Array)
   setupComplete: false,    // Track if WebSocket setup is complete
@@ -248,6 +248,42 @@ function createWebSocketUrl(token) {
   return `${WS_BASE}.${endpoint}?${param}=${token}`;
 }
 
+// ============================================
+// SECTION 3B: Response Handler
+// ============================================
+
+const handleResponse = createGeminiLiveHandler({
+  onSetupComplete: () => {
+    updateState({ isConnected: true, setupComplete: true });
+    updateStatus(state.isListening ? '🔴 Listening...' : '🟢 Connected');
+  },
+  
+  onPartialText: (fullBuffer, newChunk) => {
+    updateResponseDisplay(fullBuffer);
+  },
+  
+  onTurnComplete: (buffer) => {
+    updateStatus(state.isListening ? '🔴 Listening...' : '🟢 Connected');
+  },
+  
+  onValidJSON: (json) => {
+    updateResponseDisplay(JSON.stringify(json, null, 2));
+    
+    if (json.sigilPhrase && json.sigilDrawCalls) {
+      state.sigilAndPhrase.render({
+        phrase: json.sigilPhrase,
+        drawCalls: json.sigilDrawCalls
+      });
+    }
+  },
+  
+  onInvalidJSON: (error, rawText) => {
+    // Show raw text in UI instead of breaking
+    updateResponseDisplay(`[Not JSON]\n${rawText}`);
+    // Buffer automatically cleared by handler - next turn will work fine
+  }
+});
+
 async function startSession() {
   if (state.ws && state.ws.readyState === WebSocket.OPEN && state.setupComplete) {
     console.log('WebSocket already active and ready');
@@ -459,68 +495,6 @@ function sendAudioPacket(base64PCM) {
   }
 }
 
-function handleResponse(message) {
-  // Handle streaming response from Live API
-  console.log('📥 Message received:', message);
-  
-  // Skip setup messages
-  if (message.setupComplete) {
-    console.log('✅ Setup complete, ready to stream audio');
-    console.log('🎉 EXPERIMENTAL CONFIG ACCEPTED! Live API accepted all generationConfig parameters.');
-    updateState({ isConnected: true, setupComplete: true });
-    updateStatus(state.isListening ? '🔴 Listening...' : '🟢 Connected');
-    return;
-  }
-  
-  // Handle server content (responses to audio)
-  if (message.serverContent) {
-    const content = message.serverContent;
-    
-    // Extract text from response
-    if (content.modelTurn && content.modelTurn.parts) {
-      for (const part of content.modelTurn.parts) {
-        if (part.text) {
-          state.responseBuffer += part.text;
-          updateResponseDisplay();
-        }
-      }
-    }
-    
-    // Check if turn is complete
-    if (content.turnComplete) {
-      console.log('✅ Turn complete');
-      updateStatus(state.isListening ? '🔴 Listening...' : '🟢 Connected');
-      
-      // Try to parse and display JSON
-      try {
-        let jsonText = state.responseBuffer.trim();
-        
-        // Remove markdown code fences if present
-        if (jsonText.startsWith('```')) {
-          jsonText = jsonText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-        }
-        
-        const json = JSON.parse(jsonText);
-        updateResponseDisplay(JSON.stringify(json, null, 2));
-        
-        // Render sigil if present
-        if (json.sigilPhrase && json.sigilDrawCalls) {
-          state.sigilAndPhrase.render({
-            phrase: json.sigilPhrase,
-            drawCalls: json.sigilDrawCalls
-          });
-        }
-        
-        // Clear buffer for next response
-        state.responseBuffer = '';
-      } catch (error) {
-        // Display raw text if not JSON
-        console.log('Response not JSON, displaying as text');
-      }
-    }
-  }
-}
-
 // ============================================
 // SECTION 4: UI Updates
 // ============================================
@@ -573,7 +547,7 @@ function updateStatus(text) {
 function updateResponseDisplay(formattedText = null) {
   const responseEl = document.getElementById('response-text');
   if (responseEl) {
-    responseEl.textContent = formattedText || state.responseBuffer;
+    responseEl.textContent = formattedText || '';
     // Auto-scroll to bottom
     responseEl.scrollTop = responseEl.scrollHeight;
   }
@@ -669,7 +643,6 @@ async function loadPrompts() {
 
 function loadDefaultPrompts() {
   const systemPromptEl = document.getElementById('system-prompt');
-  const userPromptEl = document.getElementById('user-prompt');
   
   if (systemPromptEl) {
     systemPromptEl.value = `You are analyzing audio percepts from a microphone for UNI, an AI experiencing the world through sensors.
@@ -694,12 +667,7 @@ Always respond with valid JSON in this exact format:
 }`;
   }
   
-  if (userPromptEl) {
-    userPromptEl.value = 'Analyze this audio chunk and return the JSON percept.';
-  }
-  
   updateCharCount('system-prompt', 'system-char-count');
-  updateCharCount('user-prompt', 'user-char-count');
 }
 
 // ============================================
@@ -746,7 +714,6 @@ document.getElementById('prompt-select').addEventListener('change', async (e) =>
     document.getElementById('name').value = '';
     document.getElementById('slug').value = '';
     document.getElementById('system-prompt').value = '';
-    document.getElementById('user-prompt').value = '';
     loadDefaultPrompts();
   } else {
     // Load from API
@@ -760,13 +727,14 @@ document.getElementById('prompt-select').addEventListener('change', async (e) =>
       document.getElementById('name').value = prompt.name;
       document.getElementById('slug').value = prompt.slug;
       document.getElementById('system-prompt').value = prompt.system_prompt;
-      document.getElementById('user-prompt').value = prompt.user_prompt;
       
       // Load generation config (with defaults if not set)
       document.getElementById('temperature').value = prompt.temperature ?? 0.8;
       document.getElementById('top-p').value = prompt.top_p ?? 0.9;
       document.getElementById('top-k').value = prompt.top_k ?? 40;
       document.getElementById('max-tokens').value = prompt.max_output_tokens ?? 1024;
+      document.getElementById('sample-rate').value = prompt.sample_rate ?? 4096;
+      document.getElementById('packet-interval').value = prompt.packet_interval ?? 2000;
       
       // Re-initialize WebSocket with new system prompt
       if (state.ws) {
@@ -780,7 +748,6 @@ document.getElementById('prompt-select').addEventListener('change', async (e) =>
   }
   
   updateCharCount('system-prompt', 'system-char-count');
-  updateCharCount('user-prompt', 'user-char-count');
   updateUI();
 });
 
@@ -789,16 +756,17 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const name = document.getElementById('name').value.trim();
   const slug = document.getElementById('slug').value.trim();
   const systemPrompt = document.getElementById('system-prompt').value.trim();
-  const userPrompt = document.getElementById('user-prompt').value.trim();
   
   // Get generation config values
   const temperature = parseFloat(document.getElementById('temperature').value);
   const topP = parseFloat(document.getElementById('top-p').value);
   const topK = parseInt(document.getElementById('top-k').value);
   const maxOutputTokens = parseInt(document.getElementById('max-tokens').value);
+  const sampleRate = parseInt(document.getElementById('sample-rate').value);
+  const packetInterval = parseInt(document.getElementById('packet-interval').value);
   
-  if (!name || !slug || !systemPrompt || !userPrompt) {
-    showError('All fields are required');
+  if (!name || !slug || !systemPrompt) {
+    showError('Name, slug, and system prompt are required');
     return;
   }
   
@@ -815,12 +783,13 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         name,
         slug,
         systemPrompt,
-        userPrompt,
         generationConfig: {
           temperature,
           topP,
           topK,
-          maxOutputTokens
+          maxOutputTokens,
+          sampleRate,
+          packetInterval
         }
       })
     });
@@ -912,10 +881,6 @@ document.getElementById('delete-btn').addEventListener('click', async () => {
 // Character counters
 document.getElementById('system-prompt').addEventListener('input', () => {
   updateCharCount('system-prompt', 'system-char-count');
-});
-
-document.getElementById('user-prompt').addEventListener('input', () => {
-  updateCharCount('user-prompt', 'user-char-count');
 });
 
 // Name input - auto slug

@@ -37,21 +37,22 @@ export async function getActiveAudioPrompt() {
 /**
  * Create a new audio prompt
  */
-export async function createAudioPrompt(name, slug, systemPrompt, userPrompt, generationConfig = {}) {
+export async function createAudioPrompt(name, slug, systemPrompt, generationConfig = {}) {
   const pool = getPool();
   const result = await pool.query(
-    `INSERT INTO audio_prompts (name, slug, system_prompt, user_prompt, temperature, top_p, top_k, max_output_tokens)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO audio_prompts (name, slug, system_prompt, temperature, top_p, top_k, max_output_tokens, sample_rate, packet_interval)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING *`,
     [
       name, 
       slug, 
-      systemPrompt, 
-      userPrompt,
+      systemPrompt,
       generationConfig.temperature ?? 0.8,
       generationConfig.topP ?? 0.9,
       generationConfig.topK ?? 40,
-      generationConfig.maxOutputTokens ?? 1024
+      generationConfig.maxOutputTokens ?? 1024,
+      generationConfig.sampleRate ?? 4096,
+      generationConfig.packetInterval ?? 2000
     ]
   );
   return result.rows[0];
@@ -60,12 +61,12 @@ export async function createAudioPrompt(name, slug, systemPrompt, userPrompt, ge
 /**
  * Update an existing audio prompt
  */
-export async function updateAudioPrompt(id, name, slug, systemPrompt, userPrompt, generationConfig = {}) {
+export async function updateAudioPrompt(id, name, slug, systemPrompt, generationConfig = {}) {
   const pool = getPool();
   const result = await pool.query(
     `UPDATE audio_prompts 
-     SET name = $2, slug = $3, system_prompt = $4, user_prompt = $5, 
-         temperature = $6, top_p = $7, top_k = $8, max_output_tokens = $9,
+     SET name = $2, slug = $3, system_prompt = $4,
+         temperature = $5, top_p = $6, top_k = $7, max_output_tokens = $8, sample_rate = $9, packet_interval = $10,
          updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
@@ -73,12 +74,13 @@ export async function updateAudioPrompt(id, name, slug, systemPrompt, userPrompt
       id, 
       name, 
       slug, 
-      systemPrompt, 
-      userPrompt,
+      systemPrompt,
       generationConfig.temperature ?? 0.8,
       generationConfig.topP ?? 0.9,
       generationConfig.topK ?? 40,
-      generationConfig.maxOutputTokens ?? 1024
+      generationConfig.maxOutputTokens ?? 1024,
+      generationConfig.sampleRate ?? 4096,
+      generationConfig.packetInterval ?? 2000
     ]
   );
   return result.rows[0];

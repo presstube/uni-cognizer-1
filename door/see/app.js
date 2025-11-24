@@ -1,4 +1,5 @@
 import { SigilAndPhrase } from '../../shared/sigil-and-phrase.js';
+import { createGeminiLiveHandler } from '../../shared/gemini-live-handler.js';
 
 // ============================================
 // State Management (functional with closure)
@@ -14,10 +15,11 @@ let state = {
   isListening: false,
   setupComplete: false,
   pcmBuffer: [],
-  responseBuffer: '',
   systemPrompt: '',
+  generationConfig: null,
+  sampleRate: 4096,
+  packetInterval: 2000,
   sigil: null,
-  packetInterval: 500,
   currentAmplitude: 0,
   smoothedAmplitude: 0,
   rafId: null
@@ -61,7 +63,12 @@ async function initAudioProcessing(stream) {
     }
     
     const source = audioContext.createMediaStreamSource(stream);
-    const processor = audioContext.createScriptProcessor(512, 1, 1);
+    
+    // Create script processor for PCM conversion
+    // Buffer size from database (controls update frequency vs CPU)
+    // Note: ScriptProcessorNode is deprecated but works everywhere
+    // For production, consider using AudioWorklet (more complex setup)
+    const processor = audioContext.createScriptProcessor(state.sampleRate, 1, 1);
     
     processor.onaudioprocess = (event) => {
       if (!state.isListening) return;
@@ -198,6 +205,32 @@ function stopListening() {
 }
 
 // ============================================
+// WebSocket Response Handler
+// ============================================
+
+const handleResponse = createGeminiLiveHandler({
+  onSetupComplete: () => {
+    state = { ...state, isConnected: true, setupComplete: true };
+  },
+  
+  onValidJSON: (json) => {
+    if (json.sigilPhrase && json.sigilDrawCalls) {
+      state.sigil.render({
+        phrase: json.sigilPhrase,
+        drawCalls: json.sigilDrawCalls
+      });
+    } else {
+      console.warn('⚠️ JSON missing sigilPhrase or sigilDrawCalls:', json);
+    }
+  },
+  
+  onInvalidJSON: (error, rawText) => {
+    showError('Invalid response from Gemini');
+    // Buffer automatically cleared by handler - system recovers on next turn
+  }
+});
+
+// ============================================
 // WebSocket Connection (copied from audio-percept/editor.js)
 // ============================================
 
@@ -235,13 +268,24 @@ async function startSession() {
     ws.onopen = () => {
       console.log('✅ WebSocket connection opened');
       
+      // Build generation config from stored settings
+      const generationConfig = {
+        responseModalities: ['TEXT'],
+        responseMimeType: 'application/json'
+      };
+      
+      // Add generation config from database if available
+      if (state.generationConfig) {
+        generationConfig.temperature = state.generationConfig.temperature;
+        generationConfig.topP = state.generationConfig.topP;
+        generationConfig.topK = state.generationConfig.topK;
+        generationConfig.maxOutputTokens = state.generationConfig.maxOutputTokens;
+      }
+      
       const setupMessage = {
         setup: {
           model: 'models/gemini-2.0-flash-exp',
-          generationConfig: {
-            responseModalities: ['TEXT'],
-            responseMimeType: 'application/json'
-          },
+          generationConfig,
           systemInstruction: {
             parts: [{
               text: state.systemPrompt || 'You are analyzing audio percepts.'
@@ -250,7 +294,7 @@ async function startSession() {
         }
       };
       
-      console.log('📤 Sending setup message');
+      console.log('📤 Sending setup message with generationConfig:', generationConfig);
       ws.send(JSON.stringify(setupMessage));
     };
     
@@ -347,58 +391,6 @@ function sendAudioPacket(base64PCM) {
   }
 }
 
-function handleResponse(message) {
-  console.log('📥 Message received:', message);
-  
-  if (message.setupComplete) {
-    console.log('Setup complete, ready to stream audio');
-    state = { ...state, isConnected: true, setupComplete: true };
-    return;
-  }
-  
-  if (message.serverContent) {
-    const content = message.serverContent;
-    
-    if (content.modelTurn && content.modelTurn.parts) {
-      for (const part of content.modelTurn.parts) {
-        if (part.text) {
-          state.responseBuffer += part.text;
-        }
-      }
-    }
-    
-    if (content.turnComplete) {
-      console.log('✅ Turn complete');
-      
-      try {
-        let jsonText = state.responseBuffer.trim();
-        
-        if (jsonText.startsWith('```')) {
-          jsonText = jsonText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-        }
-        
-        const json = JSON.parse(jsonText);
-        console.log('✅ Parsed JSON response:', json);
-        
-        if (json.sigilPhrase && json.sigilDrawCalls) {
-          state.sigil.render({
-            phrase: json.sigilPhrase,
-            drawCalls: json.sigilDrawCalls
-          });
-        } else {
-          console.warn('⚠️ JSON missing sigilPhrase or sigilDrawCalls:', json);
-        }
-        
-        state.responseBuffer = '';
-      } catch (error) {
-        console.error('❌ Failed to parse response as JSON:', error);
-        console.log('Raw response:', state.responseBuffer);
-        console.log('This likely means the audio prompt needs to be configured to return sigil data.');
-      }
-    }
-  }
-}
-
 // ============================================
 // Smooth Glow Animation (60fps via RAF)
 // ============================================
@@ -487,14 +479,25 @@ async function init() {
       backgroundColor: 'transparent'
     });
     
-    // Store in state
+    // Store in state (including generation config from database)
     state = {
       ...state,
       systemPrompt: prompt.system_prompt,
+      sampleRate: prompt.sample_rate ?? 4096,
+      packetInterval: prompt.packet_interval ?? 2000,
+      generationConfig: {
+        temperature: prompt.temperature ?? 0.8,
+        topP: prompt.top_p ?? 0.9,
+        topK: prompt.top_k ?? 40,
+        maxOutputTokens: prompt.max_output_tokens ?? 1024
+      },
       sigil: sigil
     };
     
     console.log('✅ Initialized with prompt:', prompt.name);
+    console.log('📊 Generation config:', state.generationConfig);
+    console.log('🎚️ Sample rate:', state.sampleRate);
+    console.log('⏱️ Packet interval:', state.packetInterval, 'ms');
     
     // Start on click
     document.body.addEventListener('click', async () => {

@@ -40,15 +40,12 @@
 
     <label>System Prompt <span id="system-char-count">0 chars</span></label>
     <textarea id="system-prompt" placeholder="You are analyzing audio percepts..."></textarea>
-
-    <label>User Prompt <span id="user-char-count">0 chars</span></label>
-    <textarea id="user-prompt" placeholder="What do you hear?"></textarea>
     
-    <!-- Generation Config (Experimental) -->
+    <!-- Generation Config -->
     <div style="margin-top: 1rem; padding: 1rem; background: #1a1a1a; border-radius: 4px; border: 1px solid #333;">
-      <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">⚙️ Generation Config (Experimental)</label>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">⚙️ Generation Config</label>
       <div style="font-size: 11px; color: #666; margin-bottom: 0.75rem;">
-        Testing if Gemini Live API supports these parameters. Check console for errors.
+        Controls how Gemini Live API generates responses.
       </div>
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
@@ -67,6 +64,25 @@
         <div>
           <label style="font-size: 12px;">Max Tokens</label>
           <input type="number" id="max-tokens" min="128" max="8192" step="128" value="1024" style="width: 100%; padding: 0.25rem;">
+        </div>
+        <div>
+          <label style="font-size: 12px;">Sample Rate</label>
+          <select id="sample-rate" style="width: 100%; padding: 0.25rem;">
+            <option value="512">512 (smoother, more CPU)</option>
+            <option value="1024">1024</option>
+            <option value="2048">2048</option>
+            <option value="4096" selected>4096 (default)</option>
+            <option value="8192">8192 (less CPU)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px;">Packet Interval (ms)</label>
+          <select id="packet-interval" style="width: 100%; padding: 0.25rem;">
+            <option value="500">500 (fastest response)</option>
+            <option value="1000">1000</option>
+            <option value="2000" selected>2000 (default)</option>
+            <option value="3000">3000 (fewer API calls)</option>
+          </select>
         </div>
       </div>
     </div>
