@@ -52,16 +52,88 @@ const state = {
   sigilCarousel: null,
   sigilCarouselCanvas: null,
   sigilCarouselIndex: 0,
-  sigilCarouselInterval: null
+  sigilCarouselInterval: null,
+  
+  // API Key management
+  apiKey: null,
+  useHouseKey: false
 };
 
 // ============================================
 // SECTION 2: Initialization
 // ============================================
 
+// API Key Management
+function loadApiKey() {
+  const stored = localStorage.getItem('geminiApiKey');
+  const input = document.getElementById('api-key-input');
+  
+  if (stored) {
+    input.value = stored;
+    state.apiKey = stored;
+    state.useHouseKey = stored === 'onthehouse';
+    
+    // Bold console logging
+    if (state.useHouseKey) {
+      console.log('%c🏠 RUNNING ON THE HOUSE 🏠', 'font-weight: bold; font-size: 14px; color: #00ff00; background: #000; padding: 4px 8px;');
+    } else {
+      console.log('%c🔑 RUNNING WITH USER KEY 🔑', 'font-weight: bold; font-size: 14px; color: #00d4ff; background: #000; padding: 4px 8px;');
+    }
+  } else {
+    // No default - leave empty
+    state.apiKey = null;
+    state.useHouseKey = false;
+  }
+}
+
+function saveApiKey() {
+  const input = document.getElementById('api-key-input');
+  const value = input.value.trim();
+  
+  if (value) {
+    localStorage.setItem('geminiApiKey', value);
+    state.apiKey = value;
+    state.useHouseKey = value === 'onthehouse';
+    
+    // Bold console logging
+    if (state.useHouseKey) {
+      console.log('%c💾 Saved: ON THE HOUSE', 'font-weight: bold; font-size: 12px; color: #00ff00;');
+    } else {
+      console.log('%c💾 Saved: USER KEY', 'font-weight: bold; font-size: 12px; color: #00d4ff;');
+    }
+  }
+}
+
+function setupApiKeyInput() {
+  const input = document.getElementById('api-key-input');
+  
+  // Save on blur
+  input.addEventListener('blur', saveApiKey);
+  
+  // Save on Enter
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveApiKey();
+      input.blur();
+    }
+  });
+  
+  // Disable input while streaming
+  input.addEventListener('focus', () => {
+    if (state.isStreaming) {
+      input.blur();
+      console.warn('⚠️ Cannot change API key while streaming');
+    }
+  });
+}
+
 async function init() {
   try {
     console.log('🚀 Initializing Perceptor Remote...');
+    
+    // 0. Load API key from localStorage
+    loadApiKey();
+    setupApiKeyInput();
     
     // 1. Load active prompts from DB
     const [audioRes, visualRes] = await Promise.all([
@@ -286,9 +358,24 @@ async function startAudioSession() {
   try {
     console.log('🔌 Connecting to Gemini Live API (Audio)...');
     
-    const tokenRes = await fetch('/api/gemini/token');
-    if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`);
-    const { token } = await tokenRes.json();
+    if (!state.apiKey) {
+      throw new Error('No API key provided. Enter a Gemini API key or "onthehouse"');
+    }
+    
+    let token;
+    
+    if (state.useHouseKey) {
+      // Use ephemeral token endpoint
+      console.log('🏠 Using house key for audio...');
+      const tokenRes = await fetch('/api/gemini/token');
+      if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`);
+      const data = await tokenRes.json();
+      token = data.token;
+    } else {
+      // Use user's API key directly
+      console.log('🔑 Using user key for audio...');
+      token = state.apiKey;
+    }
     
     const url = createWebSocketUrl(token);
     state.audioWs = new WebSocket(url);
@@ -348,9 +435,24 @@ async function startVisualSession() {
   try {
     console.log('🔌 Connecting to Gemini Live API (Visual)...');
     
-    const tokenRes = await fetch('/api/gemini/token');
-    if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`);
-    const { token } = await tokenRes.json();
+    if (!state.apiKey) {
+      throw new Error('No API key provided. Enter a Gemini API key or "onthehouse"');
+    }
+    
+    let token;
+    
+    if (state.useHouseKey) {
+      // Use ephemeral token endpoint
+      console.log('🏠 Using house key for visual...');
+      const tokenRes = await fetch('/api/gemini/token');
+      if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`);
+      const data = await tokenRes.json();
+      token = data.token;
+    } else {
+      // Use user's API key directly
+      console.log('🔑 Using user key for visual...');
+      token = state.apiKey;
+    }
     
     const url = createWebSocketUrl(token);
     state.visualWs = new WebSocket(url);
@@ -630,6 +732,9 @@ async function start() {
   try {
     console.log('▶️ Starting dual-WebSocket mode...');
     
+    // Disable input while streaming
+    document.getElementById('api-key-input').disabled = true;
+    
     await Promise.all([
       startAudioSession(),
       startVisualSession()
@@ -680,6 +785,9 @@ function stop() {
   state.audioSetupComplete = false;
   state.visualConnected = false;
   state.visualSetupComplete = false;
+  
+  // Re-enable input
+  document.getElementById('api-key-input').disabled = false;
   
   updateUI();
   console.log('⏹️ Stopped');
