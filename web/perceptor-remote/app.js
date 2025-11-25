@@ -56,7 +56,13 @@ const state = {
   
   // API Key management
   apiKey: null,
-  useHouseKey: false
+  useHouseKey: false,
+  
+  // Face tracking
+  faceMesh: null,
+  thirdEyePosition: null,  // { x, y, z } - normalized coords (0-1), landmark #10
+  thirdEyeCanvas: null,
+  thirdEyeCtx: null
 };
 
 // ============================================
@@ -196,6 +202,9 @@ async function init() {
     // 6. Initialize sigil carousel
     initSigilCarousel();
     
+    // 7. Initialize face tracking
+    await initFaceTracking();
+    
     console.log('✅ Microphone initialized');
     console.log('✅ Ready to start');
     
@@ -216,7 +225,7 @@ function initSigilCarousel() {
   if (state.sigilCarouselCanvas) {
     state.sigilCarousel = new Sigil({
       canvas: state.sigilCarouselCanvas,
-      canvasSize: 100,
+      canvasSize: 50,
       scale: 1.0,
       sigilAlphaCoordSize: 100,
       lineColor: '#ffffff',
@@ -279,6 +288,173 @@ function drawCurrentSigil() {
     const calls = state.sigilDrawCallsHistory[state.sigilCarouselIndex];
 //   console.log(`🎨 Drawing sigil ${state.sigilCarouselIndex + 1}/${state.sigilDrawCallsHistory.length}:`, drawCalls);
   state.sigilCarousel.drawSigil({ calls });
+}
+
+// ============================================
+// Face Tracking (MediaPipe Face Mesh)
+// ============================================
+
+async function initFaceTracking() {
+  try {
+    console.log('👁️ Initializing face tracking...');
+    
+    // Setup third eye canvas
+    state.thirdEyeCanvas = document.getElementById('third-eye-canvas');
+    state.thirdEyeCanvas.width = window.innerWidth;
+    state.thirdEyeCanvas.height = window.innerHeight;
+    state.thirdEyeCtx = state.thirdEyeCanvas.getContext('2d');
+    
+    // Resize canvas on window resize
+    window.addEventListener('resize', () => {
+      state.thirdEyeCanvas.width = window.innerWidth;
+      state.thirdEyeCanvas.height = window.innerHeight;
+    });
+    
+    // Wait for MediaPipe libraries to load from CDN
+    await waitForMediaPipe();
+    
+    state.faceMesh = new window.FaceMesh({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+      }
+    });
+    
+    state.faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+    
+    state.faceMesh.onResults(onFaceMeshResults);
+    
+    // Use requestAnimationFrame to send frames from our existing video element
+    // Don't use MediaPipe's Camera utility - it conflicts with our webcam
+    const sendFrame = async () => {
+      if (state.videoElement && state.videoElement.readyState >= 2) {
+        await state.faceMesh.send({ image: state.videoElement });
+      }
+      requestAnimationFrame(sendFrame);
+    };
+    
+    sendFrame();
+    console.log('✅ Face tracking initialized');
+    
+  } catch (error) {
+    console.error('❌ Failed to initialize face tracking:', error);
+    // Non-fatal - continue without face tracking
+  }
+}
+
+function waitForMediaPipe() {
+  return new Promise((resolve) => {
+    if (window.FaceMesh) {
+      resolve();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (window.FaceMesh) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+    }
+  });
+}
+
+function onFaceMeshResults(results) {
+  // Clear canvas
+  if (state.thirdEyeCtx) {
+    state.thirdEyeCtx.clearRect(0, 0, state.thirdEyeCanvas.width, state.thirdEyeCanvas.height);
+  }
+  
+  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+    const landmarks = results.multiFaceLandmarks[0];
+    
+    // Get glabella (landmark 10) and eyebrow tops (70, 300)
+    const glabella = landmarks[10];
+    const leftEyebrowTop = landmarks[70];
+    const rightEyebrowTop = landmarks[300];
+    
+    // Calculate midpoint between eyebrows
+    const eyebrowMidpoint = {
+      x: (leftEyebrowTop.x + rightEyebrowTop.x) / 2,
+      y: (leftEyebrowTop.y + rightEyebrowTop.y) / 2,
+      z: (leftEyebrowTop.z + rightEyebrowTop.z) / 2
+    };
+    
+    // Calculate midpoint between glabella and eyebrow midpoint (third eye)
+    const thirdEye = {
+      x: (glabella.x + eyebrowMidpoint.x) / 2,
+      y: (glabella.y + eyebrowMidpoint.y) / 2,
+      z: (glabella.z + eyebrowMidpoint.z) / 2
+    };
+    
+    state.thirdEyePosition = thirdEye;
+    
+    // Calculate head rotation (roll) using left and right eye outer corners
+    // Landmark 33 = left eye outer corner, 263 = right eye outer corner
+    const leftEyeOuter = landmarks[33];
+    const rightEyeOuter = landmarks[263];
+    
+    // Calculate angle in radians (roll/tilt)
+    const headRotation = Math.atan2(
+      rightEyeOuter.y - leftEyeOuter.y,
+      rightEyeOuter.x - leftEyeOuter.x
+    );
+    
+    // Convert to degrees for CSS transform
+    const headRotationDeg = headRotation * (180 / Math.PI);
+    
+    // Calculate face size/distance using distance between eyes
+    // Normalize based on screen size - larger distance = closer face = larger scale
+    const eyeDistance = Math.sqrt(
+      Math.pow((rightEyeOuter.x - leftEyeOuter.x) * window.innerWidth, 2) +
+      Math.pow((rightEyeOuter.y - leftEyeOuter.y) * window.innerHeight, 2)
+    );
+    
+    // Normalize scale: typical eye distance is ~60-120px at normal distance
+    // Scale factor: 0.5x to 2.0x range
+    const baseEyeDistance = 80; // Reference distance in pixels
+    const scaleFactor = Math.max(0.5, Math.min(2.0, eyeDistance / baseEyeDistance));
+    
+    // Position and rotate sigil carousel at third eye with scale
+    const sigilCarousel = document.getElementById('sigil-carousel');
+    if (sigilCarousel) {
+      const screenX = thirdEye.x * window.innerWidth;
+      const screenY = thirdEye.y * window.innerHeight;
+      sigilCarousel.style.left = `${screenX}px`;
+      sigilCarousel.style.top = `${screenY}px`;
+      sigilCarousel.style.transform = `translate(-50%, -50%) rotate(${headRotationDeg}deg) scale(${scaleFactor})`;
+    }
+    
+    // Draw rotated and scaled white diamond on third eye
+    if (state.thirdEyeCtx) {
+      const canvasX = thirdEye.x * state.thirdEyeCanvas.width;
+      const canvasY = thirdEye.y * state.thirdEyeCanvas.height;
+      const baseSize = 4;
+      const size = baseSize * scaleFactor;
+      
+      state.thirdEyeCtx.save();
+      state.thirdEyeCtx.translate(canvasX, canvasY);
+      state.thirdEyeCtx.rotate(headRotation);
+      state.thirdEyeCtx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      state.thirdEyeCtx.beginPath();
+      state.thirdEyeCtx.moveTo(0, -size);      // Top
+      state.thirdEyeCtx.lineTo(size, 0);      // Right
+      state.thirdEyeCtx.lineTo(0, size);      // Bottom
+      state.thirdEyeCtx.lineTo(-size, 0);     // Left
+      state.thirdEyeCtx.closePath();
+      state.thirdEyeCtx.fill();
+      state.thirdEyeCtx.restore();
+    }
+    
+    // Log occasionally for debugging
+    if (Math.random() < 0.01) { // ~1% of frames
+      console.log('🧿 Third eye:', state.thirdEyePosition, 'rotation:', headRotationDeg.toFixed(1) + '°', 'scale:', scaleFactor.toFixed(2) + 'x');
+    }
+  } else {
+    state.thirdEyePosition = null;
+  }
 }
 
 // Update audio overlay opacity based on amplitude

@@ -59,6 +59,9 @@ app.use('/prompt-editor/audio-percept', express.static('web/prompt-editor/audio-
 // Serve Perceptor Remote (user-facing sensing station)
 app.use('/perceptor-remote', express.static('web/perceptor-remote'));
 
+// Serve node_modules for client-side imports
+app.use('/node_modules', express.static('node_modules'));
+
 // Serve shared assets (now under /web)
 // Note: Need both /shared and /web/shared for different relative import contexts
 app.use('/shared', express.static('web/shared'));          // For /see app (../shared/ resolves to /shared/)

@@ -175,23 +175,32 @@
       transition: opacity 0.05s ease-out;
     }
     
-    /* Sigil carousel - bottom-left */
+    /* Sigil carousel - follows third eye */
     #sigil-carousel {
       position: fixed;
-      bottom: 16px;
-      left: 16px;
       z-index: 100;
-      width: 100px;
-      height: 100px;
-      /* background: rgba(0, 0, 0, 0.75); */
-      /* border-radius: 8px; */
-      /* border: 1px solid rgba(255, 255, 255, 0.2); */
+      width: 50px;
+      height: 50px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: left 0.1s ease-out, top 0.1s ease-out;
     }
     
     #sigil-carousel canvas {
       width: 100%;
       height: 100%;
       display: block;
+    }
+    
+    /* Third eye marker canvas */
+    #third-eye-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 60;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -203,6 +212,9 @@
   
   <!-- Audio-reactive gradient overlay -->
   <div id="audio-overlay"></div>
+  
+  <!-- Third eye marker canvas -->
+  <canvas id="third-eye-canvas"></canvas>
   
   <!-- Control panel - top-left -->
   <div id="control-panel">
@@ -229,6 +241,9 @@
   <div id="sigil-carousel">
     <canvas id="sigil-carousel-canvas"></canvas>
   </div>
+  
+  <!-- MediaPipe Face Mesh - CDN (only need face_mesh, not camera_utils) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   
   <script type="module" src="app.js"></script>
 </body>
