@@ -1097,16 +1097,18 @@ function weighted(choices, weights, rand) {
 }
 
 // src/composer.js
-function compose(ctx, seed = Date.now()) {
+function compose(ctx, seed = Date.now(), coordSize = 200) {
   const rand = createRandom(seed);
-  const centerX = 100;
-  const centerY = 100;
+  const center = coordSize / 2;
+  const centerX = center;
+  const centerY = center;
+  const scale = coordSize / 200;
   ctx.strokeStyle = "#fff";
   ctx.fillStyle = "#fff";
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 6 * scale;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  const grid = createGrid(centerX, centerY, 40);
+  const grid = createGrid(centerX, centerY, 40 * scale);
   const useTemplate = rand.bool(0.6);
   const TEMPLATES = {
     vertical_stack: {
@@ -1236,16 +1238,16 @@ function compose(ctx, seed = Date.now()) {
     spineAngle = weighted([0, 45, 90, 135], [0.4, 0.2, 0.1, 0.2], rand);
   }
   if (hasSpine && symmetryType !== "radial") {
-    const spineLength = rand.float(60, 100);
+    const spineLength = rand.float(60 * scale, 100 * scale);
     const halfLength = spineLength / 2;
     const spineType = weighted(["line", "meander", "ribbon"], [0.7, 0.2, 0.1], rand);
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(spineAngle * Math.PI / 180);
     if (spineType === "meander") {
-      meander(ctx, -halfLength, 0, spineLength, 15, 3, 0);
+      meander(ctx, -halfLength, 0, spineLength, 15 * scale, 3, 0);
     } else if (spineType === "ribbon") {
-      ribbon(ctx, 0, 0, spineLength, 12, 2, 3);
+      ribbon(ctx, 0, 0, spineLength, 12 * scale, 2, 3);
     } else {
       line(ctx, 0, -halfLength, 0, halfLength);
     }
@@ -1412,7 +1414,7 @@ function compose(ctx, seed = Date.now()) {
     const pathType = weighted(["arc", "sCurve", "line"], [0.4, 0.3, 0.3], rand);
     const pathPoints = [];
     if (pathType === "arc") {
-      const radius = 50;
+      const radius = 50 * scale;
       const startAngle = -Math.PI / 3;
       const endAngle = Math.PI / 3;
       for (let i = 0; i < elementCount; i++) {
@@ -1425,8 +1427,8 @@ function compose(ctx, seed = Date.now()) {
         });
       }
     } else if (pathType === "sCurve") {
-      const width = 60;
-      const height = 40;
+      const width = 60 * scale;
+      const height = 40 * scale;
       for (let i = 0; i < elementCount; i++) {
         const t = i / (elementCount - 1 || 1);
         const x = centerX - width / 2 + t * width;
@@ -1435,7 +1437,7 @@ function compose(ctx, seed = Date.now()) {
       }
     } else {
       const angle = rand.float(0, Math.PI * 2);
-      const length = 60;
+      const length = 60 * scale;
       for (let i = 0; i < elementCount; i++) {
         const t = i / (elementCount - 1 || 1) - 0.5;
         const x = centerX + Math.cos(angle) * t * length;
@@ -1562,7 +1564,7 @@ function compose(ctx, seed = Date.now()) {
     const connections = [];
     for (let i = 0; i < positions.length && connectionsDrawn < maxConnections; i++) {
       for (let j = i + 1; j < positions.length && connectionsDrawn < maxConnections; j++) {
-        if (shouldConnect(positions[i], positions[j], 60)) {
+        if (shouldConnect(positions[i], positions[j], 60 * scale)) {
           connections.push({ from: positions[i], to: positions[j] });
           connectionsDrawn++;
         }
@@ -1626,17 +1628,17 @@ function compose(ctx, seed = Date.now()) {
     if (rotation !== 0) {
       ctx.rotate(rotation * Math.PI / 180);
     }
-    const size = 25 * sizeMultiplier;
+    const size = 25 * scale * sizeMultiplier;
     element(0, 0, size);
     ctx.restore();
   };
   if (hasSecondaryAxis && secondaryAxisType) {
     ctx.save();
     if (secondaryAxisType === "horizontal") {
-      line(ctx, centerX - 40, centerY, centerX + 40, centerY);
+      line(ctx, centerX - 40 * scale, centerY, centerX + 40 * scale, centerY);
     } else if (secondaryAxisType === "diagonal") {
       const angle = rand.bool() ? 45 : 135;
-      const len = 60;
+      const len = 60 * scale;
       ctx.translate(centerX, centerY);
       ctx.rotate(angle * Math.PI / 180);
       line(ctx, -len / 2, 0, len / 2, 0);
@@ -1692,8 +1694,8 @@ function compose(ctx, seed = Date.now()) {
     const element = selectedElements[0];
     if (centerPos && element) {
       radial(ctx, centerX, centerY, radialCount, () => {
-        const offsetY = -30;
-        element(centerX, centerY + offsetY, 20);
+        const offsetY = -30 * scale;
+        element(centerX, centerY + offsetY, 20 * scale);
       });
     }
     if (hasElementRotation && elementRotation !== 0) {
@@ -1735,7 +1737,7 @@ function compose(ctx, seed = Date.now()) {
       }
     }
   }
-  const hasDepthLayers = rand.bool(0.5);
+  const hasDepthLayers = false;
   if (hasDepthLayers && positions.length > 1) {
     const bgIndex = rand.int(0, Math.min(2, positions.length));
     if (positions[bgIndex] && selectedElements[bgIndex]) {
@@ -1744,7 +1746,7 @@ function compose(ctx, seed = Date.now()) {
       ctx.strokeStyle = "#fff";
       const bgPos = positions[bgIndex];
       ctx.translate(bgPos.x, bgPos.y);
-      const bgSize = 30;
+      const bgSize = 30 * scale;
       circle(ctx, 0, 0, bgSize * 0.6, true);
       ctx.restore();
     }
@@ -1936,6 +1938,7 @@ var Sigil = class {
    * @param {number} [config.scale=0.25] - Scale factor (0.25 = quarter size)
    * @param {string} [config.lineColor='#fff'] - Color for lines
    * @param {number} [config.lineWeight=1.2] - Base line weight for glyphgen (SigilAlpha uses 2x)
+   * @param {number} [config.sigilAlphaCoordSize=200] - SigilAlpha coordinate system size
    */
   constructor(config) {
     if (!config || !config.canvas) {
@@ -1956,6 +1959,7 @@ var Sigil = class {
     this.scale = config.scale ?? 0.25;
     this.lineColor = config.lineColor ?? "#fff";
     this.lineWeight = config.lineWeight ?? 1.2;
+    this.sigilAlphaCoordSize = config.sigilAlphaCoordSize ?? 200;
     if (this.drawDuration < 0) throw new Error("Sigil: drawDuration must be >= 0");
     if (this.undrawDuration < 0) throw new Error("Sigil: undrawDuration must be >= 0");
     if (this.thinkingShiftInterval < 0) throw new Error("Sigil: thinkingShiftInterval must be >= 0");
@@ -2024,20 +2028,21 @@ var Sigil = class {
     this.ctx.restore();
   }
   /**
-   * Setup context for SigilAlpha mode (200x200 coordinate system)
+   * Setup context for SigilAlpha mode (configurable coordinate system)
    * @private
    */
   _setupSigilAlphaContext() {
     this.ctx.save();
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const glyphgenScale = this.drawingSize / 100 * this.scale;
-    const scale = glyphgenScale * 0.5;
+    const scale = glyphgenScale * (100 / this.sigilAlphaCoordSize);
     const offsetX = (this.logicalWidth - this.drawingSize) / 2;
     const offsetY = (this.logicalHeight - this.drawingSize) / 2;
     this.ctx.translate(offsetX, offsetY);
     this.ctx.translate(this.drawingSize / 2, this.drawingSize / 2);
     this.ctx.scale(scale, scale);
-    this.ctx.translate(-100, -100);
+    const center = this.sigilAlphaCoordSize / 2;
+    this.ctx.translate(-center, -center);
   }
   /**
    * Setup context for Glyphgen mode (100x100 coordinate system)
@@ -2123,15 +2128,7 @@ var Sigil = class {
   _generateSigilAlpha(seed) {
     this._setupSigilAlphaContext();
     const player = createPlayer(this.ctx);
-    compose(player.ctx, seed);
-    const targetLineWeight = this.lineWeight * 2;
-    player.shapes.forEach((shape) => {
-      shape.forEach((call) => {
-        if (call.property === "lineWidth" && call.value === 6) {
-          call.value = targetLineWeight;
-        }
-      });
-    });
+    compose(player.ctx, seed, this.sigilAlphaCoordSize);
     const originalDrawWindow = player.drawWindow;
     const self = this;
     player.drawWindow = function(targetCtx, start, end) {
@@ -2141,7 +2138,7 @@ var Sigil = class {
       targetCtx.restore();
       targetCtx.strokeStyle = self.lineColor;
       targetCtx.fillStyle = self.lineColor;
-      targetCtx.lineWidth = self.lineWeight * 2;
+      targetCtx.lineWidth = self.lineWeight;
       targetCtx.lineCap = "round";
       targetCtx.lineJoin = "round";
       for (let i = start; i < end && i < this.shapes.length; i++) {
@@ -2150,8 +2147,8 @@ var Sigil = class {
           if (call.method) {
             targetCtx[call.method](...call.args);
           } else if (call.property) {
-            if (call.property === "lineWidth" && call.value === 6) {
-              targetCtx.lineWidth = self.lineWeight * 2;
+            if (call.property === "lineWidth") {
+              targetCtx.lineWidth = self.lineWeight;
             } else if (call.property === "strokeStyle" || call.property === "fillStyle") {
               targetCtx[call.property] = self.lineColor;
             } else {

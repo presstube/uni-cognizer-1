@@ -733,6 +733,7 @@ document.getElementById('prompt-select').addEventListener('change', async (e) =>
       document.getElementById('top-p').value = prompt.top_p ?? 0.9;
       document.getElementById('top-k').value = prompt.top_k ?? 40;
       document.getElementById('max-tokens').value = prompt.max_output_tokens ?? 1024;
+      // Note: sample_rate is actually the ScriptProcessor buffer size, not AudioContext sample rate
       document.getElementById('sample-rate').value = prompt.sample_rate ?? 4096;
       document.getElementById('packet-interval').value = prompt.packet_interval ?? 2000;
       
@@ -762,6 +763,8 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const topP = parseFloat(document.getElementById('top-p').value);
   const topK = parseInt(document.getElementById('top-k').value);
   const maxOutputTokens = parseInt(document.getElementById('max-tokens').value);
+  // Note: Despite field name "sample_rate", this is the ScriptProcessor buffer size (samples)
+  // AudioContext always uses 16kHz (required by Gemini Live API)
   const sampleRate = parseInt(document.getElementById('sample-rate').value);
   const packetInterval = parseInt(document.getElementById('packet-interval').value);
   
