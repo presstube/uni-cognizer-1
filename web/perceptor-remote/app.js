@@ -3,6 +3,7 @@
 // ============================================
 
 import { PerceptToast, injectPerceptToastStyles } from '../shared/percept-toast.js';
+import { Sigil } from '../shared/sigil.standalone.js';
 
 // Inject toast styles on load
 injectPerceptToastStyles();
@@ -44,7 +45,14 @@ const state = {
   
   // Audio amplitude tracking
   currentAmplitude: 0,
-  audioOverlay: null
+  audioOverlay: null,
+  
+  // Sigil carousel
+  sigilDrawCallsHistory: [],
+  sigilCarousel: null,
+  sigilCarouselCanvas: null,
+  sigilCarouselIndex: 0,
+  sigilCarouselInterval: null
 };
 
 // ============================================
@@ -113,6 +121,9 @@ async function init() {
     // 5. Get reference to audio overlay
     state.audioOverlay = document.getElementById('audio-overlay');
     
+    // 6. Initialize sigil carousel
+    initSigilCarousel();
+    
     console.log('✅ Microphone initialized');
     console.log('✅ Ready to start');
     
@@ -125,6 +136,78 @@ async function init() {
 // ============================================
 // SECTION 3: Audio Processing
 // ============================================
+
+// Initialize sigil carousel
+function initSigilCarousel() {
+  state.sigilCarouselCanvas = document.getElementById('sigil-carousel-canvas');
+  
+  if (state.sigilCarouselCanvas) {
+    state.sigilCarousel = new Sigil({
+      canvas: state.sigilCarouselCanvas,
+      canvasSize: 100,
+      scale: 1.0,
+      sigilAlphaCoordSize: 100,
+      lineColor: '#ffffff',
+      lineWeight: 2.0, // Fatter lines
+      drawDuration: 0, // Animate transitions between sigils
+      undrawDuration: 0 // Quick undraw before next sigil
+    });
+    
+    console.log('✅ Sigil carousel initialized');
+  }
+}
+
+// Add sigil to history and start carousel if needed
+function addSigilToCarousel(drawCalls) {
+  if (!drawCalls) return;
+  
+  state.sigilDrawCallsHistory.push(drawCalls);
+  console.log(`📦 Sigil added to carousel (${state.sigilDrawCallsHistory.length} total)`);
+  
+  // Start carousel if not already running
+  if (!state.sigilCarouselInterval && state.sigilDrawCallsHistory.length > 0) {
+    startSigilCarousel();
+  }
+}
+
+// Start cycling through sigils
+function startSigilCarousel() {
+  if (state.sigilCarouselInterval) return;
+  
+  // Draw first sigil immediately
+  drawCurrentSigil();
+  
+  // Cycle every 100ms
+  state.sigilCarouselInterval = setInterval(() => {
+    if (state.sigilDrawCallsHistory.length === 0) {
+      stopSigilCarousel();
+      return;
+    }
+    
+    state.sigilCarouselIndex = (state.sigilCarouselIndex + 1) % state.sigilDrawCallsHistory.length;
+    drawCurrentSigil();
+  }, 100);
+  
+  console.log('🔄 Sigil carousel started');
+}
+
+// Stop carousel
+function stopSigilCarousel() {
+  if (state.sigilCarouselInterval) {
+    clearInterval(state.sigilCarouselInterval);
+    state.sigilCarouselInterval = null;
+    console.log('⏸️ Sigil carousel stopped');
+  }
+}
+
+// Draw the current sigil in carousel
+function drawCurrentSigil() {
+  if (!state.sigilCarousel || state.sigilDrawCallsHistory.length === 0) return;
+  
+    const calls = state.sigilDrawCallsHistory[state.sigilCarouselIndex];
+//   console.log(`🎨 Drawing sigil ${state.sigilCarouselIndex + 1}/${state.sigilDrawCallsHistory.length}:`, drawCalls);
+  state.sigilCarousel.drawSigil({ calls });
+}
 
 // Update audio overlay opacity based on amplitude
 function updateAudioOverlay(amplitude) {
@@ -361,6 +444,12 @@ function handleAudioResponse(message) {
         } else {
           console.log('🎤 Audio Percept:', json);
           createPerceptToast(json, 'audio');
+          
+          // Add sigil to carousel
+          const drawCalls = json.sigilDrawCalls || json.drawCalls;
+          if (drawCalls) {
+            addSigilToCarousel(drawCalls);
+          }
         }
         
       } catch (error) {
@@ -404,6 +493,12 @@ function handleVisualResponse(message) {
         
         console.log('👁️ Visual Percept:', json);
         createPerceptToast(json, 'visual');
+        
+        // Add sigil to carousel
+        const drawCalls = json.drawCalls || json.sigilDrawCalls;
+        if (drawCalls) {
+          addSigilToCarousel(drawCalls);
+        }
         
       } catch (error) {
         // Silently skip parse errors - they're rare and non-critical
@@ -477,8 +572,14 @@ function startVisualStreaming() {
   
   console.log('👁️ Starting visual streaming (4000ms intervals)');
   
-  state.visualInterval = setInterval(() => {
+  state.visualInterval = setInterval(async () => {
     if (!state.visualSetupComplete) return;
+    
+    // Flash to color with brightness boost (like camera flash)
+    state.videoElement.classList.add('flash-color');
+    
+    // Hold for 100ms
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const canvas = document.createElement('canvas');
     canvas.width = state.videoElement.videoWidth;
@@ -489,6 +590,9 @@ function startVisualStreaming() {
     
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
     const base64Frame = dataUrl.split(',')[1];
+    
+    // Remove flash - will fade back to grayscale (300ms transition)
+    state.videoElement.classList.remove('flash-color');
     
     if (state.visualWs && state.visualWs.readyState === WebSocket.OPEN) {
       state.visualWs.send(JSON.stringify({
@@ -510,6 +614,8 @@ function startVisualStreaming() {
           turnComplete: true
         }
       }));
+      
+      console.log('📸 Frame captured (with camera flash)');
     }
   }, interval);
 }

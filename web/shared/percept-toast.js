@@ -41,12 +41,24 @@ export class PerceptToast {
     iconContainer.className = 'toast-icon-container';
     iconContainer.innerHTML = iconSvg;
     
-    // Description text
+    // Description text (left side of center pane)
     const description = document.createElement('div');
     description.className = 'toast-description';
     description.textContent = this.type === 'audio' 
       ? (this.percept.transcript || this.percept.analysis || 'No content')
       : this.percept.description;
+    
+    // Sigil phrase (right side of center pane)
+    const sigilPhrase = document.createElement('div');
+    sigilPhrase.className = 'toast-sigil-phrase';
+    const phraseText = this.percept.sigilPhrase || '';
+    sigilPhrase.textContent = phraseText.replace(/\s+/g, '\n'); // Line break between words
+    
+    // Center pane container (holds description and sigil phrase)
+    const centerPane = document.createElement('div');
+    centerPane.className = 'toast-center-pane';
+    centerPane.appendChild(description);
+    centerPane.appendChild(sigilPhrase);
     
     // Sigil canvas (larger: 80x80)
     const sigilContainer = document.createElement('div');
@@ -61,7 +73,7 @@ export class PerceptToast {
     
     // Assemble
     toast.appendChild(iconContainer);
-    toast.appendChild(description);
+    toast.appendChild(centerPane);
     toast.appendChild(sigilContainer);
     
     // Store reference
@@ -168,10 +180,19 @@ export function injectPerceptToastStyles() {
       height: 100%;
     }
     
+    .toast-center-pane {
+      flex: 1;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      overflow: hidden;
+    }
+    
     .toast-description {
       flex: 1;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      font-size: 9px;
+      min-width: 0;
+      font-family: monospace;
+      font-size: 10px;
       font-weight: 500;
       line-height: 1.3;
       color: rgba(255, 255, 255, 0.9);
@@ -182,6 +203,20 @@ export function injectPerceptToastStyles() {
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
+    }
+    
+    .toast-sigil-phrase {
+      flex: 1;
+      min-width: 0;
+      font-family: monospace;;
+      font-size: 12px;
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: pre-line;
+      text-align: right;
+      overflow: hidden;
     }
     
     .toast-sigil-container {
