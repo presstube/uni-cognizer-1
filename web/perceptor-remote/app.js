@@ -359,7 +359,7 @@ async function startAudioSession() {
     console.log('🔌 Connecting to Gemini Live API (Audio)...');
     
     if (!state.apiKey) {
-      throw new Error('No API key provided. Enter a Gemini API key or "onthehouse"');
+      throw new Error('No API key provided. Please enter a Gemini API key.');
     }
     
     let token;
@@ -436,7 +436,7 @@ async function startVisualSession() {
     console.log('🔌 Connecting to Gemini Live API (Visual)...');
     
     if (!state.apiKey) {
-      throw new Error('No API key provided. Enter a Gemini API key or "onthehouse"');
+      throw new Error('No API key provided. Please enter a Gemini API key.');
     }
     
     let token;
@@ -731,6 +731,12 @@ async function start() {
   
   try {
     console.log('▶️ Starting dual-WebSocket mode...');
+    
+    // Check if API key is provided
+    if (!state.apiKey) {
+      alert('Please enter a Gemini API key to start.');
+      return;
+    }
     
     // Disable input while streaming
     document.getElementById('api-key-input').disabled = true;
