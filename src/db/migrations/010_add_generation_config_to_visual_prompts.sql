@@ -23,3 +23,4 @@ SET
 WHERE temperature IS NULL;
 
 
+
