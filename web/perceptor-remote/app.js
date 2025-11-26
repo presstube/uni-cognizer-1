@@ -62,7 +62,12 @@ const state = {
   faceMesh: null,
   thirdEyePosition: null,  // { x, y, z } - normalized coords (0-1), landmark #10
   thirdEyeCanvas: null,
-  thirdEyeCtx: null
+  thirdEyeCtx: null,
+  
+  // Cognizer integration
+  cognizerSocket: null,
+  cognizerConnected: false,
+  sessionId: null
 };
 
 // ============================================
@@ -204,6 +209,9 @@ async function init() {
     
     // 7. Initialize face tracking
     await initFaceTracking();
+    
+    // 8. Connect to Cognizer
+    await connectToCognizer();
     
     console.log('✅ Microphone initialized');
     console.log('✅ Ready to start');
@@ -722,6 +730,7 @@ function handleAudioResponse(message) {
         } else {
           console.log('🎤 Audio Percept:', json);
           createPerceptToast(json, 'audio');
+          forwardPercept(json, 'audio');
           
           // Add sigil to carousel
           const drawCalls = json.sigilDrawCalls || json.drawCalls;
@@ -771,6 +780,7 @@ function handleVisualResponse(message) {
         
         console.log('👁️ Visual Percept:', json);
         createPerceptToast(json, 'visual');
+        forwardPercept(json, 'visual');
         
         // Add sigil to carousel
         const drawCalls = json.drawCalls || json.sigilDrawCalls;
@@ -800,6 +810,66 @@ function createPerceptToast(percept, type) {
   
   // Prepend (new toasts push down old ones)
   container.prepend(element);
+}
+
+// ============================================
+// SECTION 6.5: Cognizer Integration
+// ============================================
+
+async function connectToCognizer() {
+  const url = window.location.origin;
+  
+  console.log('🔌 Connecting to Cognizer...', url);
+  
+  state.cognizerSocket = io(url, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000
+  });
+  
+  state.cognizerSocket.on('connect', () => {
+    console.log('✅ Cognizer socket connected (session not started yet)');
+    // Session will be started when user clicks START
+  });
+  
+  state.cognizerSocket.on('sessionStarted', () => {
+    console.log('✅ Cognizer session started:', state.sessionId);
+    state.cognizerConnected = true;
+  });
+  
+  state.cognizerSocket.on('disconnect', () => {
+    console.log('⚫ Cognizer disconnected');
+    state.cognizerConnected = false;
+  });
+  
+  state.cognizerSocket.on('connect_error', (error) => {
+    console.error('❌ Cognizer connection error:', error.message);
+  });
+}
+
+function startCognizerSession() {
+  if (!state.cognizerSocket || !state.cognizerSocket.connected) {
+    console.error('❌ Cannot start session: Cognizer not connected');
+    return;
+  }
+  
+  state.sessionId = `perceptor-${Date.now()}`;
+  state.cognizerSocket.emit('startSession', { sessionId: state.sessionId });
+  console.log('📤 Starting Cognizer session:', state.sessionId);
+}
+
+function forwardPercept(percept, type) {
+  if (!state.cognizerConnected || !state.cognizerSocket) return;
+  
+  state.cognizerSocket.emit('percept', {
+    sessionId: state.sessionId,
+    type,
+    data: percept,
+    timestamp: new Date().toISOString()
+  });
+  
+  console.log(`→ Forwarded ${type} percept to Cognizer`);
 }
 
 // ============================================
@@ -917,6 +987,9 @@ async function start() {
     // Disable input while streaming
     document.getElementById('api-key-input').disabled = true;
     
+    // Start Cognizer session (triggers cognitive loop)
+    startCognizerSession();
+    
     await Promise.all([
       startAudioSession(),
       startVisualSession()
@@ -943,6 +1016,14 @@ function stop() {
   console.log('⏹️ Stopping both channels...');
   
   state.isStreaming = false;
+  
+  // End Cognizer session
+  if (state.cognizerSocket && state.sessionId) {
+    state.cognizerSocket.emit('endSession', { sessionId: state.sessionId });
+    console.log('📤 Ended Cognizer session:', state.sessionId);
+    state.cognizerConnected = false;
+    state.sessionId = null;
+  }
   
   if (state.audioInterval) {
     clearInterval(state.audioInterval);

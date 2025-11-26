@@ -59,6 +59,9 @@ app.use('/prompt-editor/audio-percept', express.static('web/prompt-editor/audio-
 // Serve Perceptor Remote (user-facing sensing station)
 app.use('/perceptor-remote', express.static('web/perceptor-remote'));
 
+// Serve Dashboard (read-only cognizer monitor)
+app.use('/dashboard', express.static('web/dashboard'));
+
 // Serve node_modules for client-side imports
 app.use('/node_modules', express.static('node_modules'));
 
