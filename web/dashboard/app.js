@@ -64,7 +64,26 @@ function connect() {
     $connection.textContent = 'Connected';
     $connection.className = 'value connection connected';
     // NO startSession - dashboard is 100% read-only
-    // Just listen for broadcast events
+    // Request current cycle status to sync countdown
+    socket.emit('getCycleStatus');
+  });
+  
+  // Cycle status response - sync our countdown and state
+  socket.on('cycleStatus', ({ isRunning, intervalMs, nextCycleAt, msUntilNextCycle, state }) => {
+    console.log('📊 Cycle status:', { isRunning, intervalMs, msUntilNextCycle, state });
+    cycleMs = intervalMs;
+    
+    // Update state display
+    $state.textContent = state;
+    $state.className = `value state ${state.toLowerCase()}`;
+    
+    if (isRunning && nextCycleAt) {
+      nextCycleTime = nextCycleAt;
+      startCountdown();
+    } else {
+      nextCycleTime = null;
+      $countdown.textContent = '—';
+    }
   });
   
   socket.on('disconnect', () => {

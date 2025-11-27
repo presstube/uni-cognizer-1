@@ -10,6 +10,13 @@ import {
   deleteSigilPrompt
 } from '../db/sigil-prompts.js';
 import { generateSigilWithCustomPrompt } from '../sigil/generator.js';
+import { randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * GET /api/sigil-prompts
@@ -68,7 +75,7 @@ export async function getSigilPromptAPI(req, res) {
  */
 export async function saveSigilPrompt(req, res) {
   try {
-    const { id, name, slug, prompt, llmSettings } = req.body;
+    const { id, name, slug, prompt, llmSettings, includeImage, referenceImagePath } = req.body;
     
     if (!name || !slug || !prompt) {
       return res.status(400).json({ error: 'Name, slug, and prompt are required' });
@@ -100,13 +107,27 @@ export async function saveSigilPrompt(req, res) {
     
     if (id) {
       // Update existing
-      savedPrompt = await updateSigilPrompt(id, name, slug, prompt, llmSettings);
+      savedPrompt = await updateSigilPrompt(id, {
+        name,
+        slug,
+        prompt,
+        llmSettings,
+        includeImage: includeImage !== undefined ? includeImage : undefined,
+        referenceImagePath: referenceImagePath !== undefined ? referenceImagePath : undefined
+      });
       if (!savedPrompt) {
         return res.status(404).json({ error: 'Prompt not found' });
       }
     } else {
       // Create new
-      savedPrompt = await createSigilPrompt(name, slug, prompt, llmSettings);
+      savedPrompt = await createSigilPrompt(
+        name, 
+        slug, 
+        prompt, 
+        llmSettings,
+        includeImage !== false,
+        referenceImagePath || null
+      );
     }
     
     res.json({ prompt: savedPrompt });
@@ -251,6 +272,51 @@ export async function deleteSigilPromptAPI(req, res) {
   } catch (error) {
     console.error('[API] Error deleting sigil prompt:', error);
     res.status(500).json({ error: 'Failed to delete prompt' });
+  }
+}
+
+/**
+ * POST /api/sigil-prompts/upload-reference-image
+ * Upload a custom reference image for sigil prompts
+ * Accepts base64-encoded image in request body
+ */
+export async function uploadReferenceImage(req, res) {
+  try {
+    const { image } = req.body;
+    
+    if (!image) {
+      return res.status(400).json({ error: 'Image data is required' });
+    }
+    
+    // Parse base64 data URL
+    const matches = image.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid image format. Expected PNG or JPEG.' });
+    }
+    
+    const extension = matches[1] === 'jpeg' || matches[1] === 'jpg' ? 'jpg' : 'png';
+    const base64Data = matches[2];
+    
+    // Generate unique filename
+    const filename = `${randomUUID()}.${extension}`;
+    const relativePath = `sigil-references/${filename}`;
+    const absolutePath = path.join(__dirname, '../../assets/', relativePath);
+    
+    // Ensure directory exists
+    const dirPath = path.dirname(absolutePath);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    
+    // Write file
+    fs.writeFileSync(absolutePath, Buffer.from(base64Data, 'base64'));
+    
+    console.log(`[Sigil] Saved reference image: ${relativePath}`);
+    
+    res.json({ path: relativePath });
+  } catch (error) {
+    console.error('[API] Error uploading reference image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
   }
 }
 

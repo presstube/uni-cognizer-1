@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import express from 'express';
-import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory } from './src/main.js';
+import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory, getCycleStatus } from './src/main.js';
 import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
 import { CognitiveState } from './src/cognitive-states.js';
@@ -108,6 +108,7 @@ app.get('/api/sigil-prompts', editorAuth, sigilPrompts.listSigilPrompts);
 app.get('/api/sigil-prompts/active', editorAuth, sigilPrompts.getActiveSigilPromptAPI);
 app.get('/api/sigil-prompts/:id', editorAuth, sigilPrompts.getSigilPromptAPI);
 app.post('/api/sigil-prompts', editorAuth, sigilPrompts.saveSigilPrompt);
+app.post('/api/sigil-prompts/upload-reference-image', editorAuth, sigilPrompts.uploadReferenceImage);
 app.post('/api/sigil-prompts/test-current', editorAuth, sigilPrompts.testCurrentPrompt);
 app.post('/api/sigil-prompts/:id/activate', editorAuth, sigilPrompts.activateSigilPromptAPI);
 app.post('/api/sigil-prompts/:id/test', editorAuth, sigilPrompts.testSigilPrompt);
@@ -185,6 +186,12 @@ let socketToSession = new Map(); // Track socket.id -> sessionId mapping
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
 
+  // Cycle status - available to any client, no session required
+  socket.on('getCycleStatus', () => {
+    const status = getCycleStatus();
+    socket.emit('cycleStatus', status);
+  });
+
   socket.on('startSession', async ({ sessionId }) => {
     console.log(`▶️  Starting session: ${sessionId} (socket: ${socket.id})`);
     process.stdout.write(`▶️  CLIENT SESSION STARTED: ${sessionId}\n`);
@@ -253,6 +260,10 @@ io.on('connection', (socket) => {
             io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
             // Detailed cycle event
             io.emit('cycleFailed', data);
+          } else if (eventType === 'transitionToIdle') {
+            // Loop stopped, in-flight operations complete
+            io.emit('cognitiveState', { state: CognitiveState.IDLE });
+            console.log('💤 Transitioned to IDLE after in-flight operations');
           } else if (eventType === 'sigilFailed') {
             // Sigil generation failed (optional notification)
             io.emit('sigilFailed', data);

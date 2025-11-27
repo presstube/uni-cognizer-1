@@ -7,7 +7,9 @@ let prompts = [];
 let currentPrompt = null;
 let currentId = null;
 let sigil = null;
-let customImageData = null;
+let customImageData = null;      // Base64 for local preview (testing)
+let referenceImagePath = null;   // Server-side path for saved prompts
+let hasUnsavedImage = false;     // Track if image needs uploading
 let llmSettings = {
   provider: 'anthropic',
   model: 'claude-sonnet-4-5-20250929',
@@ -176,6 +178,7 @@ async function handlePromptChange() {
   if (value === 'new') {
     clearForm();
     resetLLMSettings();
+    resetImageState();
     currentId = null;
     currentPrompt = null;
     activateBtn.disabled = true;
@@ -198,6 +201,20 @@ async function handlePromptChange() {
         updateLLMControls();
       } else {
         resetLLMSettings();
+      }
+      
+      // Load image settings from prompt
+      includeImageCheckbox.checked = currentPrompt.include_image !== false;
+      
+      if (currentPrompt.reference_image_path) {
+        referenceImagePath = currentPrompt.reference_image_path;
+        refImage.src = `/assets/${referenceImagePath}`;
+        resetImageBtn.classList.remove('hidden');
+        customImageData = null;
+        hasUnsavedImage = false;
+        console.log(`📷 Loaded saved reference image: ${referenceImagePath}`);
+      } else {
+        resetImageState();
       }
       
       activateBtn.disabled = currentPrompt.active;
@@ -388,12 +405,14 @@ async function handleImageUpload(e) {
     // Convert to base64
     const base64 = await fileToBase64(file);
     customImageData = base64;
+    hasUnsavedImage = true;
+    referenceImagePath = null; // Clear server path since we have new image
     
     // Preview it
     refImage.src = base64;
     resetImageBtn.classList.remove('hidden');
     
-    console.log('✅ Custom image loaded:', file.name, `(${(file.size / 1024).toFixed(1)}KB)`);
+    console.log('✅ Custom image loaded (unsaved):', file.name, `(${(file.size / 1024).toFixed(1)}KB)`);
   } catch (error) {
     console.error('Failed to load image:', error);
     alert('Failed to load image');
@@ -401,13 +420,43 @@ async function handleImageUpload(e) {
   }
 }
 
+// Reset image state to defaults
+function resetImageState() {
+  customImageData = null;
+  referenceImagePath = null;
+  hasUnsavedImage = false;
+  refImage.src = '/assets/sigil-grid-original.png';
+  resetImageBtn.classList.add('hidden');
+  imageFileInput.value = '';
+  includeImageCheckbox.checked = true;
+}
+
 // Reset to default image
 function handleResetImage() {
   customImageData = null;
+  referenceImagePath = null;
+  hasUnsavedImage = false;
   refImage.src = '/assets/sigil-grid-original.png';
   resetImageBtn.classList.add('hidden');
   imageFileInput.value = '';
   console.log('↺ Reset to default image');
+}
+
+// Upload custom image to server
+async function uploadImageToServer(base64Data) {
+  const res = await fetch(`${API_BASE}/sigil-prompts/upload-reference-image`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: base64Data })
+  });
+  
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to upload image');
+  }
+  
+  const data = await res.json();
+  return data.path;
 }
 
 // Update slug from name
@@ -436,6 +485,19 @@ async function handleSave() {
     saveBtn.disabled = true;
     saveBtn.classList.add('loading');
     
+    // Upload image to server if we have unsaved custom image
+    let imagePath = referenceImagePath;
+    if (hasUnsavedImage && customImageData) {
+      console.log('📤 Uploading custom image to server...');
+      imagePath = await uploadImageToServer(customImageData);
+      console.log('✅ Image uploaded:', imagePath);
+      referenceImagePath = imagePath;
+      hasUnsavedImage = false;
+    }
+    
+    // Get include_image setting
+    const includeImage = includeImageCheckbox.checked;
+    
     const res = await fetch(`${API_BASE}/sigil-prompts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -444,7 +506,9 @@ async function handleSave() {
         name,
         slug,
         prompt,
-        llmSettings
+        llmSettings,
+        includeImage,
+        referenceImagePath: imagePath
       })
     });
     
@@ -499,7 +563,7 @@ async function handleActivate() {
     
     activateBtn.disabled = true;
     
-    alert('✅ Prompt activated!\n\nRestart the server to load the new prompt.');
+    alert('✅ Prompt activated!\n\nNew settings will be used on the next cognitive cycle.');
     
   } catch (error) {
     console.error('Activation failed:', error);

@@ -5,8 +5,10 @@
  */
 
 export const CognitiveState = {
-  AGGREGATING: 'AGGREGATING',  // Waiting for next cycle, aggregating percepts
-  COGNIZING: 'COGNIZING',      // LLM call in flight, processing
-  VISUALIZING: 'VISUALIZING'   // Generating sigil visualization
+  IDLE: 'IDLE',                    // Cognitive loop not running
+  AGGREGATING: 'AGGREGATING',      // Waiting for next cycle, aggregating percepts
+  COGNIZING: 'COGNIZING',          // LLM call in flight, processing
+  VISUALIZING: 'VISUALIZING'       // Generating sigil visualization
 };
+
 

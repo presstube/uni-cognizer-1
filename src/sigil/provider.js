@@ -54,6 +54,7 @@ async function generateWithAnthropic(options) {
     promptTemplate,
     includeImage = true,
     customImageBase64 = null,
+    referenceImagePath = null,
     model = 'claude-sonnet-4-5-20250929',
     temperature = 0.7,
     top_p = 0.9,
@@ -70,6 +71,7 @@ async function generateWithAnthropic(options) {
     let imageContent = null;
     
     if (customImageBase64) {
+      // Custom base64 image (from editor testing)
       const base64Data = customImageBase64.includes(',') 
         ? customImageBase64.split(',')[1] 
         : customImageBase64;
@@ -90,9 +92,10 @@ async function generateWithAnthropic(options) {
       
       console.log('[Sigil] Using custom uploaded image (Anthropic)');
     } else {
-      imageContent = getImageContent();
+      // Use server-side image (custom path or default)
+      imageContent = getImageContent(referenceImagePath);
       if (imageContent) {
-        console.log('[Sigil] Using default reference image (Anthropic)');
+        console.log(`[Sigil] Using ${referenceImagePath ? 'custom' : 'default'} reference image (Anthropic)`);
       }
     }
     
@@ -149,6 +152,7 @@ async function generateWithGemini(options) {
     promptTemplate,
     includeImage = true,
     customImageBase64 = null,
+    referenceImagePath = null,
     model = 'models/gemini-3-pro-preview',
     temperature = 0.7,
     top_p = 0.9,
@@ -168,26 +172,32 @@ async function generateWithGemini(options) {
   
   if (includeImage) {
     let imageData = null;
+    let mimeType = 'image/png';
     
     if (customImageBase64) {
+      // Custom base64 image (from editor testing)
       const base64Data = customImageBase64.includes(',') 
         ? customImageBase64.split(',')[1] 
         : customImageBase64;
       imageData = base64Data;
+      if (customImageBase64.includes('image/jpeg') || customImageBase64.includes('image/jpg')) {
+        mimeType = 'image/jpeg';
+      }
       console.log('[Sigil] Using custom uploaded image (Gemini)');
     } else {
-      // Get default image and convert to base64
-      const defaultImage = getImageContent();
-      if (defaultImage && defaultImage.source && defaultImage.source.data) {
-        imageData = defaultImage.source.data;
-        console.log('[Sigil] Using default reference image (Gemini)');
+      // Get server-side image (custom path or default)
+      const serverImage = getImageContent(referenceImagePath);
+      if (serverImage && serverImage.source && serverImage.source.data) {
+        imageData = serverImage.source.data;
+        mimeType = serverImage.source.media_type || 'image/png';
+        console.log(`[Sigil] Using ${referenceImagePath ? 'custom' : 'default'} reference image (Gemini)`);
       }
     }
     
     if (imageData) {
       parts.push({
         inlineData: {
-          mimeType: 'image/png',
+          mimeType,
           data: imageData
         }
       });

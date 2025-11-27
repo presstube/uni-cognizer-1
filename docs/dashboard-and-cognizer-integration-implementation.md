@@ -157,4 +157,87 @@ socket.emit('sessionStarted', {
 
 But this adds complexity for marginal UX gain. The current "wait for cycleStarted" approach is fine.
 
+---
+
+## Post-Launch Refinements
+
+### Fix 3 (2025-11-27) - Cycle Status on Connect
+**Problem**: Dashboard didn't immediately show cycle time/countdown on connect.
+
+**Solution**: Implemented `getCycleStatus` mechanism
+- Added `getCycleStatus()` function to `src/main.js` (returns current state, interval, nextCycleAt)
+- Added `socket.on('getCycleStatus')` handler in `server.js`
+- Dashboard emits `getCycleStatus` on connect and receives `cycleStatus` response
+- Dashboard now syncs immediately with cycle timing
+
+**Files Changed**:
+- `src/main.js` - Added `lastCycleStartTime`, `currentCognitiveState`, `getCycleStatus()`
+- `src/cognitive-states.js` - Added `IDLE` state
+- `server.js` - Added `getCycleStatus` handler
+- `web/dashboard/app.js` - Added `getCycleStatus` emit + `cycleStatus` handler
+
+### Fix 4 (2025-11-27) - Sigil Prompt Database Integration
+**Problem**: Live cognizer wasn't using active sigil prompt from database. Hardcoded prompt, no LLM settings, no reference image support.
+
+**Solution**: Full DB integration for sigil generation
+- Added `include_image` and `reference_image_path` columns to `sigil_prompts` table
+- Created migration `011_add_image_settings_to_sigil_prompts.sql`
+- Modified `generateSigil()` to fetch active prompt + all LLM settings from DB
+- Added image upload endpoint `/api/sigil-prompts/upload-reference-image`
+- Updated prompt editor UI to support image upload and preview
+- Removed "restart server" alert (now uses DB settings on-the-fly)
+
+**Files Changed**:
+- `src/db/migrations/011_add_image_settings_to_sigil_prompts.sql` - New migration
+- `src/db/migrate.js` - Added migration to hard-coded list
+- `src/sigil/generator.js` - Fetches active prompt from DB with full config
+- `src/sigil/image.js` - Supports custom reference image paths
+- `src/db/sigil-prompts.js` - Updated CRUD for new columns
+- `src/api/sigil-prompts.js` - Added image upload endpoint
+- `web/prompt-editor/sigil/editor.js` - Added image upload UI + removed alert
+
+**LLM Settings Now Used**:
+- Provider (OpenAI/Anthropic/Gemini)
+- Model (gpt-4o, claude-3-5-sonnet-20241022, etc.)
+- Temperature
+- Top P, Top K (Gemini)
+- Max Tokens
+- Reference Image (optional custom upload)
+
+### Fix 5 (2025-11-27) - State Synchronization After Loop Stops
+**Problem**: If session ended during VISUALIZING state, dashboard never received IDLE state because listeners were cleared immediately.
+
+**Solution**: Restructured listener lifecycle to allow in-flight operations to complete
+- Moved `clearListeners()` from `stopCognitiveLoop()` → `startCognitiveLoop()`
+- Added checks in callback wrappers: if loop stopped after operation completes, emit `transitionToIdle`
+- Server now broadcasts IDLE state even after loop stops
+- Dashboard correctly shows IDLE after session ends, regardless of when it happens
+
+**Files Changed**:
+- `src/main.js` - Restructured listener management + IDLE transition logic
+- `server.js` - Added `transitionToIdle` event handler
+
+**Flow**:
+```
+Perceptor ends session during VISUALIZING
+  ↓
+stopCognitiveLoop() → stops interval, sets IDLE internally
+  ↓
+Sigil LLM call still in flight (listeners still active)
+  ↓
+Sigil completes → callback fires
+  ↓
+Detects loop stopped → emits 'transitionToIdle'
+  ↓
+Server broadcasts 'cognitiveState: IDLE' to ALL clients
+  ↓
+Dashboard updates to IDLE ✅
+```
+
+**Benefits**:
+- ✅ Dashboard stays in sync even when session ends mid-cycle
+- ✅ In-flight operations complete gracefully
+- ✅ No listener accumulation (cleaned up on next session start)
+- ✅ Works for both sigil completion and cycle failure paths
+
 

@@ -7,8 +7,18 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
 
+// Default LLM settings (fallback when no DB prompt)
+const DEFAULT_LLM_SETTINGS = {
+  provider: 'anthropic',
+  model: 'claude-sonnet-4-20250514',
+  temperature: 0.7,
+  top_p: 0.9,
+  max_tokens: 1024,
+  top_k: null
+};
+
 /**
- * Generates sigil code using Anthropic Claude API
+ * Generates sigil code using the active prompt from DB (or fallback defaults)
  * @param {string} concept - The concept to generate a sigil for
  * @returns {Promise<string>} Generated canvas drawing code
  */
@@ -17,6 +27,46 @@ export async function generateSigil(concept) {
     throw new Error('Concept is required for sigil generation');
   }
   
+  // Try to load active prompt from DB
+  let activePrompt = null;
+  if (process.env.DATABASE_ENABLED === 'true') {
+    try {
+      const { getActiveSigilPrompt } = await import('../db/sigil-prompts.js');
+      activePrompt = await getActiveSigilPrompt();
+    } catch (error) {
+      console.warn('[Sigil] Failed to load active prompt from DB, using defaults:', error.message);
+    }
+  }
+  
+  // Extract settings from active prompt or use defaults
+  const promptTemplate = activePrompt?.prompt || null;
+  const includeImage = activePrompt?.include_image ?? true;
+  const referenceImagePath = activePrompt?.reference_image_path || null;
+  const llmSettings = activePrompt?.llm_settings || DEFAULT_LLM_SETTINGS;
+  
+  // Log which prompt is being used
+  if (activePrompt) {
+    console.log(`[Sigil] Using DB prompt: "${activePrompt.name}" (${llmSettings.provider}/${llmSettings.model})`);
+    if (referenceImagePath) {
+      console.log(`[Sigil] Using custom reference image: ${referenceImagePath}`);
+    }
+  } else {
+    console.log('[Sigil] Using hardcoded fallback prompt');
+  }
+  
+  // If we have a DB prompt, use the custom prompt path
+  if (promptTemplate) {
+    return await generateSigilWithCustomPrompt(
+      concept,
+      promptTemplate,
+      includeImage,
+      null, // No base64 custom image from live cognition
+      llmSettings,
+      referenceImagePath // Pass the file path for custom image
+    );
+  }
+  
+  // Fallback: Use original hardcoded behavior
   const imageContent = getImageContent();
   
   const userContent = [];
@@ -73,8 +123,9 @@ export async function generateSigil(concept) {
  * @param {string} concept - The concept phrase
  * @param {string} promptTemplate - Custom prompt with ${concept} placeholder
  * @param {boolean} includeImage - Whether to include reference image (default: true)
- * @param {string|null} customImageBase64 - Custom image as base64 data URL (optional)
+ * @param {string|null} customImageBase64 - Custom image as base64 data URL (optional, for editor testing)
  * @param {Object|null} llmSettings - LLM configuration (provider, model, temperature, etc.)
+ * @param {string|null} referenceImagePath - Path to custom reference image (optional, for production)
  * @returns {Promise<string>} Generated canvas drawing code
  */
 export async function generateSigilWithCustomPrompt(
@@ -82,7 +133,8 @@ export async function generateSigilWithCustomPrompt(
   promptTemplate, 
   includeImage = true, 
   customImageBase64 = null,
-  llmSettings = null
+  llmSettings = null,
+  referenceImagePath = null
 ) {
   if (!concept || !concept.trim()) {
     throw new Error('Concept is required for sigil generation');
@@ -111,6 +163,7 @@ export async function generateSigilWithCustomPrompt(
     promptTemplate,
     includeImage,
     customImageBase64,
+    referenceImagePath, // Pass file path for custom server-side image
     model: settings.model,
     temperature: settings.temperature,
     top_p: settings.top_p,

@@ -28,7 +28,8 @@ export async function runMigrations() {
     '007_add_generation_config_to_audio_prompts.sql',
     '008_add_sample_rate_to_audio_prompts.sql',
     '009_add_packet_interval_to_audio_prompts.sql',
-    '010_add_generation_config_to_visual_prompts.sql'
+    '010_add_generation_config_to_visual_prompts.sql',
+    '011_add_image_settings_to_sigil_prompts.sql'
   ];
   
   try {

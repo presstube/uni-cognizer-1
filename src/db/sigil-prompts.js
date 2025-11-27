@@ -46,9 +46,18 @@ export async function getSigilPromptById(id) {
  * @param {string} slug - URL-safe slug
  * @param {string} prompt - Prompt template text
  * @param {Object|null} llmSettings - LLM configuration (optional)
+ * @param {boolean} includeImage - Whether to include reference image (default: true)
+ * @param {string|null} referenceImagePath - Custom reference image path (optional)
  * @returns {Promise<Object>} Created prompt
  */
-export async function createSigilPrompt(name, slug, prompt, llmSettings = null) {
+export async function createSigilPrompt(
+  name, 
+  slug, 
+  prompt, 
+  llmSettings = null, 
+  includeImage = true, 
+  referenceImagePath = null
+) {
   const pool = getPool();
   
   // Default LLM settings if not provided
@@ -64,10 +73,10 @@ export async function createSigilPrompt(name, slug, prompt, llmSettings = null) 
   const settings = llmSettings || defaultSettings;
   
   const result = await pool.query(
-    `INSERT INTO sigil_prompts (name, slug, prompt, llm_settings, active) 
-     VALUES ($1, $2, $3, $4, false) 
+    `INSERT INTO sigil_prompts (name, slug, prompt, llm_settings, active, include_image, reference_image_path) 
+     VALUES ($1, $2, $3, $4, false, $5, $6) 
      RETURNING *`,
-    [name, slug, prompt, JSON.stringify(settings)]
+    [name, slug, prompt, JSON.stringify(settings), includeImage, referenceImagePath]
   );
   return result.rows[0];
 }
@@ -75,29 +84,68 @@ export async function createSigilPrompt(name, slug, prompt, llmSettings = null) 
 /**
  * Update existing sigil prompt
  * @param {string} id - Prompt UUID
- * @param {string} name - Prompt name
- * @param {string} slug - URL-safe slug
- * @param {string} prompt - Prompt template text
- * @param {Object|null} llmSettings - LLM configuration (null = keep existing)
+ * @param {Object} updates - Fields to update
+ * @param {string} [updates.name] - Prompt name
+ * @param {string} [updates.slug] - URL-safe slug
+ * @param {string} [updates.prompt] - Prompt template text
+ * @param {Object} [updates.llmSettings] - LLM configuration
+ * @param {boolean} [updates.includeImage] - Whether to include reference image
+ * @param {string|null} [updates.referenceImagePath] - Custom reference image path
  * @returns {Promise<Object>} Updated prompt
  */
-export async function updateSigilPrompt(id, name, slug, prompt, llmSettings = null) {
+export async function updateSigilPrompt(id, updates) {
   const pool = getPool();
   
-  // If llmSettings provided, update it; otherwise keep existing
-  const updates = [name, slug, prompt];
-  let query = `UPDATE sigil_prompts 
-     SET name = $1, slug = $2, prompt = $3`;
+  const { name, slug, prompt, llmSettings, includeImage, referenceImagePath } = updates;
   
-  if (llmSettings !== null) {
-    updates.push(JSON.stringify(llmSettings));
-    query += `, llm_settings = $4`;
+  const setClauses = [];
+  const values = [];
+  let paramIndex = 1;
+  
+  if (name !== undefined) {
+    setClauses.push(`name = $${paramIndex++}`);
+    values.push(name);
   }
   
-  updates.push(id);
-  query += `, updated_at = NOW() WHERE id = $${updates.length} RETURNING *`;
+  if (slug !== undefined) {
+    setClauses.push(`slug = $${paramIndex++}`);
+    values.push(slug);
+  }
   
-  const result = await pool.query(query, updates);
+  if (prompt !== undefined) {
+    setClauses.push(`prompt = $${paramIndex++}`);
+    values.push(prompt);
+  }
+  
+  if (llmSettings !== undefined) {
+    setClauses.push(`llm_settings = $${paramIndex++}`);
+    values.push(JSON.stringify(llmSettings));
+  }
+  
+  if (includeImage !== undefined) {
+    setClauses.push(`include_image = $${paramIndex++}`);
+    values.push(includeImage);
+  }
+  
+  if (referenceImagePath !== undefined) {
+    setClauses.push(`reference_image_path = $${paramIndex++}`);
+    values.push(referenceImagePath);
+  }
+  
+  if (setClauses.length === 0) {
+    // No updates, just return current
+    return getSigilPromptById(id);
+  }
+  
+  setClauses.push('updated_at = NOW()');
+  values.push(id);
+  
+  const query = `UPDATE sigil_prompts 
+     SET ${setClauses.join(', ')} 
+     WHERE id = $${paramIndex} 
+     RETURNING *`;
+  
+  const result = await pool.query(query, values);
   return result.rows[0];
 }
 
