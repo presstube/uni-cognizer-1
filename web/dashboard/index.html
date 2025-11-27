@@ -86,6 +86,18 @@
     .connection.connected { color: rgba(0, 255, 136, 0.9); }
     .connection.disconnected { color: rgba(255, 68, 68, 0.9); }
     
+    .session-list {
+      margin-top: 8px;
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.5);
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .session-item {
+      padding: 2px 0;
+    }
+    
     .empty {
       color: rgba(255, 255, 255, 0.3);
       padding: 40px 0;
@@ -103,6 +115,12 @@
     <div>
       <div class="label">Connection</div>
       <div class="value connection disconnected" id="connection">Disconnected</div>
+    </div>
+    
+    <div>
+      <div class="label">Active Sessions</div>
+      <div class="value" id="sessions">0</div>
+      <div class="session-list" id="session-list"></div>
     </div>
     
     <div>

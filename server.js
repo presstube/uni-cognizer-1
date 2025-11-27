@@ -191,6 +191,14 @@ io.on('connection', (socket) => {
     const status = getCycleStatus();
     socket.emit('cycleStatus', status);
   });
+  
+  // Session status - available to any client, no session required
+  socket.on('getSessionStatus', () => {
+    socket.emit('sessionsUpdate', {
+      count: activeSessions.size,
+      sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+    });
+  });
 
   socket.on('startSession', async ({ sessionId }) => {
     console.log(`▶️  Starting session: ${sessionId} (socket: ${socket.id})`);
@@ -208,6 +216,12 @@ io.on('connection', (socket) => {
         console.error('Failed to create session in database:', error.message);
       }
     }
+    
+    // Broadcast updated session count to all clients
+    io.emit('sessionsUpdate', {
+      count: activeSessions.size,
+      sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+    });
     
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
@@ -330,6 +344,12 @@ io.on('connection', (socket) => {
       stopCognitiveLoop();
     }
     
+    // Broadcast updated session count to all clients
+    io.emit('sessionsUpdate', {
+      count: activeSessions.size,
+      sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+    });
+    
     socket.emit('sessionEnded', { 
       sessionId, 
       duration: session ? Date.now() - session.startTime : 0,
@@ -367,6 +387,12 @@ io.on('connection', (socket) => {
       if (activeSessions.size === 0) {
         stopCognitiveLoop();
       }
+      
+      // Broadcast updated session count to all clients
+      io.emit('sessionsUpdate', {
+        count: activeSessions.size,
+        sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+      });
     } else {
       console.log(`🔌 Client disconnected: ${socket.id} (no active session)`);
     }

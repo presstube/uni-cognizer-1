@@ -23,6 +23,8 @@ let sigil = null;
 // ============================================
 
 const $connection = document.getElementById('connection');
+const $sessions = document.getElementById('sessions');
+const $sessionList = document.getElementById('session-list');
 const $state = document.getElementById('state');
 const $countdown = document.getElementById('countdown');
 const $mindMoment = document.getElementById('mind-moment');
@@ -64,8 +66,9 @@ function connect() {
     $connection.textContent = 'Connected';
     $connection.className = 'value connection connected';
     // NO startSession - dashboard is 100% read-only
-    // Request current cycle status to sync countdown
+    // Request current cycle status and session status to sync UI
     socket.emit('getCycleStatus');
+    socket.emit('getSessionStatus');
   });
   
   // Cycle status response - sync our countdown and state
@@ -98,6 +101,30 @@ function connect() {
     $state.className = `value state ${state.toLowerCase()}`;
   });
   
+  socket.on('sessionsUpdate', ({ count, sessions }) => {
+    console.log('📊 Sessions:', { count, sessions });
+    $sessions.textContent = count;
+    
+    if (count === 0) {
+      // No active sessions - clear countdown
+      $sessionList.innerHTML = '<div class="session-item">No active sessions</div>';
+      nextCycleTime = null;
+      $countdown.textContent = '—';
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    } else {
+      // Sessions active - update list and refresh cycle status
+      $sessionList.innerHTML = sessions
+        .map(s => `<div class="session-item">• ${s.id}</div>`)
+        .join('');
+      
+      // Request cycle status to sync countdown
+      socket.emit('getCycleStatus');
+    }
+  });
+  
   socket.on('cycleStarted', ({ cycle, cognitiveCycleMs }) => {
     console.log('🔄 Cycle started:', cycle);
     // Update cycle time if provided
@@ -118,6 +145,9 @@ function connect() {
     console.log('🧠 Mind moment:', data.mindMoment?.substring(0, 50) + '...');
     $mindMoment.textContent = data.mindMoment || '—';
     $sigilPhrase.textContent = data.sigilPhrase || '—';
+    
+    // Clear old sigil (new one will arrive via 'sigil' event)
+    sigil.clear(true);  // Instant clear, no animation
   });
   
   socket.on('sigil', (data) => {
