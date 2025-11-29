@@ -1,0 +1,56 @@
+/* ============================================
+   HISTORY GRID COMPONENT STYLES
+   ============================================ */
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  padding: var(--space-md);
+  overflow-y: auto;
+  height: 100%;
+}
+
+.sigil-cell {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.sigil-cell:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.sigil-cell.selected {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+.sigil-cell canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.history-empty,
+.history-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: var(--space-lg);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+.history-error {
+  color: rgba(255, 100, 100, 0.6);
+}
+

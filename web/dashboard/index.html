@@ -15,39 +15,48 @@
   <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-  <!-- Left: Percepts -->
-  <div class="left" id="percepts">
-    <div class="empty">Waiting for percepts...</div>
+  <!-- Left: System Status + Percepts -->
+  <div class="left">
+    <!-- System Status Section -->
+    <div class="system-status">
+      <div>
+        <div class="label">Connection</div>
+        <div class="value connection disconnected" id="connection">Disconnected</div>
+      </div>
+      
+      <div>
+        <div class="label">Active Sessions</div>
+        <div class="value" id="sessions">0</div>
+        <div class="session-list" id="session-list"></div>
+      </div>
+      
+      <div>
+        <div class="label">State</div>
+        <div class="value state aggregating" id="state">AGGREGATING</div>
+      </div>
+      
+      <div>
+        <div class="label">Next Cycle</div>
+        <div class="countdown" id="countdown">—</div>
+      </div>
+      
+      <div>
+        <div class="label">Cycle</div>
+        <div class="value" id="cycle">—</div>
+      </div>
+    </div>
+    
+    <!-- Divider -->
+    <div class="pane-divider"></div>
+    
+    <!-- Percepts Section -->
+    <div class="percepts-stream" id="percepts">
+      <div class="empty">Waiting for percepts...</div>
+    </div>
   </div>
   
-  <!-- Right: Cognizer State -->
-  <div class="right">
-    <div>
-      <div class="label">Connection</div>
-      <div class="value connection disconnected" id="connection">Disconnected</div>
-    </div>
-    
-    <div>
-      <div class="label">Active Sessions</div>
-      <div class="value" id="sessions">0</div>
-      <div class="session-list" id="session-list"></div>
-    </div>
-    
-    <div>
-      <div class="label">State</div>
-      <div class="value state aggregating" id="state">AGGREGATING</div>
-    </div>
-    
-    <div>
-      <div class="label">Next Cycle</div>
-      <div class="countdown" id="countdown">—</div>
-    </div>
-    
-    <div>
-      <div class="label">Cycle</div>
-      <div class="value" id="cycle">—</div>
-    </div>
-    
+  <!-- Center: Mind Moment Details -->
+  <div class="center">
     <div class="moment-section">
       <div class="label">Mind Moment</div>
       <div id="moment-card-container"></div>
@@ -65,11 +74,6 @@
       <div class="prior-moments-list" id="prior-moments-list">
         <div class="empty-prior">No prior moments</div>
       </div>
-    </div>
-    
-    <div>
-      <div class="label">Kinetic</div>
-      <div class="value" id="kinetic">—</div>
     </div>
     
     <div>

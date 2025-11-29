@@ -9,30 +9,54 @@ body {
   height: 100vh;
 }
 
-/* Left pane - percepts */
+/* Left pane - system status + percepts */
 .left {
-  width: 400px;
+  flex: 1;
   height: 100vh;
-  overflow-y: auto;
-  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--color-border);
+  overflow: hidden;
 }
 
-/* Right pane - cognizer state */
-.right {
+/* System Status Section */
+.system-status {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+/* Subtle divider between system status and percepts */
+.pane-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* Percepts Stream */
+.percepts-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+/* Center pane - mind moment details */
+.center {
   flex: 1;
   padding: var(--space-md) var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: 20px;
-  overflow-y: auto; /* Make scrollable */
+  overflow-y: auto;
   overflow-x: hidden;
   border-right: 1px solid var(--color-border);
 }
 
 /* Far right pane - history grid */
 .far-right {
-  width: 300px;
+  flex: 1;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -41,7 +65,6 @@ body {
 
 .far-right .label {
   padding: var(--space-md) var(--space-md) var(--space-sm);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .far-right .history-grid {

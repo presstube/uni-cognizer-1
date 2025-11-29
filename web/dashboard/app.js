@@ -44,7 +44,6 @@ const $cycle = document.getElementById('cycle');
 const $momentCardContainer = document.getElementById('moment-card-container');
 const $perceptsList = document.getElementById('percepts-list');
 const $priorMomentsList = document.getElementById('prior-moments-list');
-const $kinetic = document.getElementById('kinetic');
 const $lighting = document.getElementById('lighting');
 const $timestamp = document.getElementById('timestamp');
 const $percepts = document.getElementById('percepts');
@@ -70,24 +69,30 @@ function onHistoryMomentClick(moment) {
     sigilCode: moment.sigil_code
   });
   
+  // Parse percepts (JSONB comes back as objects, not strings)
+  const visualPercepts = Array.isArray(moment.visual_percepts) 
+    ? moment.visual_percepts 
+    : [];
+  const audioPercepts = Array.isArray(moment.audio_percepts) 
+    ? moment.audio_percepts 
+    : [];
+  
+  console.log('Visual percepts:', visualPercepts.length);
+  console.log('Audio percepts:', audioPercepts.length);
+  
   // Display percepts
-  displayPercepts(
-    moment.visual_percepts ? JSON.parse(moment.visual_percepts) : [],
-    moment.audio_percepts ? JSON.parse(moment.audio_percepts) : []
-  );
+  displayPercepts(visualPercepts, audioPercepts);
   
-  // Clear prior moments (historical view doesn't show prior context)
-  $priorMomentsList.innerHTML = '<div class="empty-prior">Historical moment</div>';
-  
-  // Kinetic pattern
-  if (moment.kinetic) {
-    const kinetic = typeof moment.kinetic === 'string' ? JSON.parse(moment.kinetic) : moment.kinetic;
-    $kinetic.textContent = kinetic?.pattern || '—';
+  // Fetch and display prior moments if they exist
+  if (moment.prior_moment_ids && moment.prior_moment_ids.length > 0) {
+    fetchAndDisplayPriorMoments(moment.prior_moment_ids);
+  } else {
+    $priorMomentsList.innerHTML = '<div class="empty-prior">No prior moments</div>';
   }
   
   // Lighting
   if (moment.lighting) {
-    const lighting = typeof moment.lighting === 'string' ? JSON.parse(moment.lighting) : moment.lighting;
+    const lighting = typeof moment.lighting === 'object' ? moment.lighting : JSON.parse(moment.lighting);
     updateLightingDisplay(lighting);
   }
   
@@ -100,6 +105,38 @@ function onHistoryMomentClick(moment) {
       second: '2-digit',
       hour12: true 
     });
+  }
+}
+
+/**
+ * Fetch and display prior moments by IDs
+ */
+async function fetchAndDisplayPriorMoments(priorMomentIds) {
+  $priorMomentsList.innerHTML = '<div class="empty-prior">Loading...</div>';
+  
+  try {
+    // Fetch each prior moment by ID
+    const promises = priorMomentIds.map(id => 
+      fetch(`/api/mind-moments/${id}`).then(r => r.json())
+    );
+    
+    const results = await Promise.all(promises);
+    const priorMoments = results.map(r => r.moment).filter(Boolean);
+    
+    if (priorMoments.length === 0) {
+      $priorMomentsList.innerHTML = '<div class="empty-prior">No prior moments</div>';
+      return;
+    }
+    
+    // Display as moment cards
+    displayPriorMoments(priorMoments.map(m => ({
+      mindMoment: m.mind_moment,
+      sigilPhrase: m.sigil_phrase,
+      sigilCode: m.sigil_code
+    })));
+  } catch (error) {
+    console.error('Failed to fetch prior moments:', error);
+    $priorMomentsList.innerHTML = '<div class="empty-prior">Failed to load</div>';
   }
 }
 
@@ -253,9 +290,6 @@ function connect() {
     
     // Display prior mind moments
     displayPriorMoments(data.priorMoments);
-    
-    // Kinetic pattern
-    $kinetic.textContent = data.kinetic?.pattern || '—';
     
     // Lighting
     updateLightingDisplay(data.lighting);
