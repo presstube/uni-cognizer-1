@@ -199,3 +199,104 @@ body.active-session .far-right {
   padding: 2px 0;
 }
 
+/* Sigil Formats Section */
+.sigil-formats-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sigil-formats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.format-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.format-label {
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 40px;
+  font-weight: 500;
+}
+
+.format-value {
+  color: var(--color-text-bright);
+  font-size: var(--font-size-sm);
+}
+
+.format-value a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.format-value a:hover {
+  color: var(--color-accent-bright);
+  text-decoration: underline;
+}
+
+/* SVG Preview (commented out - keeping SDF only) */
+/*
+.svg-preview {
+  margin-top: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.svg-preview svg {
+  max-width: 100%;
+  max-height: 120px;
+  height: auto;
+  width: auto;
+}
+
+.svg-preview svg path {
+  stroke: white !important;
+}
+
+.svg-preview.has-svg {
+  display: flex;
+}
+*/
+
+/* SDF Preview (centered in pane) */
+.sdf-preview {
+  margin-top: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.sdf-preview img {
+  max-width: 100%;
+  max-height: 256px;
+  height: auto;
+  width: auto;
+  image-rendering: pixelated; /* Keep crisp edges for distance field */
+  image-rendering: crisp-edges;
+}
+
+.sdf-preview.has-sdf {
+  display: flex;
+}
+

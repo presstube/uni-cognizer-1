@@ -48,6 +48,10 @@ const $lighting = document.getElementById('lighting');
 const $timestamp = document.getElementById('timestamp');
 const $personalityName = document.getElementById('personality-name');
 const $sigilPromptName = document.getElementById('sigil-prompt-name');
+// const $svgStatus = document.getElementById('svg-status'); // Commented out - keeping SDF only
+const $sdfStatus = document.getElementById('sdf-status');
+// const $svgPreview = document.getElementById('svg-preview'); // Commented out - keeping SDF only
+const $sdfPreview = document.getElementById('sdf-preview');
 const $percepts = document.getElementById('percepts');
 const $historyGrid = document.getElementById('history-grid');
 
@@ -114,6 +118,9 @@ function onHistoryMomentClick(moment) {
   
   // Sigil Prompt
   $sigilPromptName.textContent = moment.sigil_prompt_name || '—';
+  
+  // Update sigil formats (SVG/SDF)
+  updateSigilFormats(moment.id);
 }
 
 /**
@@ -328,10 +335,20 @@ function connect() {
     // Metadata - not available on live events, only from DB
     $personalityName.textContent = '—';
     $sigilPromptName.textContent = '—';
+    
+    // Clear sigil formats (will be populated after sigil generation)
+    // $svgStatus.textContent = 'Generating...'; // Commented out - keeping SDF only
+    $sdfStatus.textContent = 'Generating...';
+    // $svgPreview.innerHTML = ''; // Commented out - keeping SDF only
+    // $svgPreview.classList.remove('has-svg'); // Commented out - keeping SDF only
+    if ($sdfPreview) {
+      $sdfPreview.innerHTML = '';
+      $sdfPreview.classList.remove('has-sdf');
+    }
   });
   
   // Sigil received - update moment card with sigil
-  socket.on('sigil', (data) => {
+  socket.on('sigil', async (data) => {
     console.log('🎨 Sigil received');
     if (data.sigilCode) {
       currentSigilCode = data.sigilCode;
@@ -344,8 +361,20 @@ function connect() {
         });
       }
       
-      // Add to history grid (this will be the latest moment)
-      // We'll need to get the full moment data, but for now just note it exists
+      // Fetch the full moment from DB to get ID and formats
+      // Give database a moment to save, then fetch
+      setTimeout(async () => {
+        try {
+          const response = await fetch('/api/mind-moments/recent?limit=1');
+          const result = await response.json();
+          if (result.moments && result.moments.length > 0) {
+            const latestMoment = result.moments[0];
+            updateSigilFormats(latestMoment.id);
+          }
+        } catch (error) {
+          console.error('Failed to fetch moment for sigil formats:', error);
+        }
+      }, 500); // Wait 500ms for DB save
     }
   });
 }
@@ -481,6 +510,72 @@ function updateLightingDisplay(lighting) {
     <span class="color-swatch" style="background-color: ${cssColor};"></span>
     <span class="lighting-text">${pattern} <span class="lighting-speed">(${speed.toFixed(1)})</span></span>
   `;
+}
+
+/**
+ * Update sigil formats display (SDF status and preview)
+ * @param {string} momentId - UUID of the mind moment
+ */
+async function updateSigilFormats(momentId) {
+  if (!momentId) {
+    // $svgStatus.textContent = '—'; // Commented out - keeping SDF only
+    $sdfStatus.textContent = '—';
+    // $svgPreview.innerHTML = ''; // Commented out - keeping SDF only
+    // $svgPreview.classList.remove('has-svg'); // Commented out - keeping SDF only
+    if ($sdfPreview) {
+      $sdfPreview.innerHTML = '';
+      $sdfPreview.classList.remove('has-sdf');
+    }
+    return;
+  }
+  
+  try {
+    // Fetch sigil formats info
+    const response = await fetch(`/api/sigils/${momentId}/all`);
+    const data = await response.json();
+    
+    // SVG status and preview (commented out - keeping SDF only)
+    /*
+    if (data.sigilSVG) {
+      $svgStatus.innerHTML = `<a href="/api/sigils/${momentId}/svg" download="sigil-${data.cycle}.svg" target="_blank">Download</a>`;
+      
+      // Show SVG preview inline
+      $svgPreview.innerHTML = data.sigilSVG;
+      $svgPreview.classList.add('has-svg');
+    } else {
+      $svgStatus.textContent = 'Not available';
+      $svgPreview.innerHTML = '';
+      $svgPreview.classList.remove('has-svg');
+    }
+    */
+    
+    // Update SDF status and preview
+    if (data.sdf && data.sdf.available) {
+      $sdfStatus.innerHTML = `${data.sdf.width}×${data.sdf.height} · <a href="/api/sigils/${momentId}/sdf/raw" download="sigil-${data.cycle}.png" target="_blank">Download PNG</a>`;
+      
+      // Show SDF preview as image
+      if ($sdfPreview) {
+        $sdfPreview.innerHTML = `<img src="/api/sigils/${momentId}/sdf/raw" alt="SDF Preview" />`;
+        $sdfPreview.classList.add('has-sdf');
+      }
+    } else {
+      $sdfStatus.textContent = 'Not generated';
+      if ($sdfPreview) {
+        $sdfPreview.innerHTML = '';
+        $sdfPreview.classList.remove('has-sdf');
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch sigil formats:', error);
+    // $svgStatus.textContent = 'Error loading'; // Commented out - keeping SDF only
+    $sdfStatus.textContent = 'Error loading';
+    // $svgPreview.innerHTML = ''; // Commented out - keeping SDF only
+    // $svgPreview.classList.remove('has-svg'); // Commented out - keeping SDF only
+    if ($sdfPreview) {
+      $sdfPreview.innerHTML = '';
+      $sdfPreview.classList.remove('has-sdf');
+    }
+  }
 }
 
 // ============================================

@@ -320,27 +320,95 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         
         try {
           const { sigilCode, sigilPromptId } = await generateSigil(result.sigilPhrase);
+          
+          // Generate SVG from canvas code (commented out - not used, keeping SDF only)
+          /*
+          let sigilSVG = null;
+          try {
+            const { canvasToSVG } = await import('./sigil/canvas-to-svg.js');
+            sigilSVG = canvasToSVG(sigilCode, 100, 100);
+          } catch (svgError) {
+            console.warn('⚠️  SVG generation failed:', svgError.message);
+          }
+          */
+          let sigilSVG = null; // Defined as null since SVG generation is disabled
+          
+          // Generate SDF directly from canvas code (simpler and more accurate than SVG→SDF)
+          let sigilSDF = null;
+          try {
+            const { canvasToSDF } = await import('./sigil/canvas-to-sdf.js');
+            sigilSDF = await canvasToSDF(sigilCode, { 
+              width: 256, 
+              height: 256,
+              canvasWidth: 100,
+              canvasHeight: 100,
+              strokeWidth: 2
+            });
+          } catch (sdfError) {
+            console.warn('⚠️  SDF generation failed:', sdfError.message);
+          }
+          
           const sigilDuration = Date.now() - sigilStartTime;
           
-          // Update history with sigil code
+          // Update history with sigil formats
           cognitiveHistory[thisCycle].sigilCode = sigilCode;
+          // cognitiveHistory[thisCycle].sigilSVG = sigilSVG; // Commented out - not generating SVG
+          if (sigilSDF) {
+            cognitiveHistory[thisCycle].sigilSDF = sigilSDF;
+          }
           
-          // Update sigil code and sigil_prompt_id in database
+          // Update sigil data in database (with SVG and SDF if available)
           if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
             try {
               const { getPool } = await import('./db/index.js');
               const pool = getPool();
-              await pool.query(
-                'UPDATE mind_moments SET sigil_code = $1, sigil_prompt_id = $2 WHERE id = $3',
-                [sigilCode, sigilPromptId, cognitiveHistory[thisCycle].id]
-              );
+              
+              console.log(`💾 Updating sigil in database (ID: ${cognitiveHistory[thisCycle].id.substring(0, 8)}...)`);
+              
+              // Check if sigil_svg and sigil_sdf columns exist
+              if (sigilSDF) {
+                try {
+                  await pool.query(
+                    `UPDATE mind_moments 
+                     SET sigil_code = $1,
+                         sigil_sdf_data = $2,
+                         sigil_sdf_width = $3,
+                         sigil_sdf_height = $4,
+                         sigil_prompt_id = $5
+                     WHERE id = $6`,
+                    [sigilCode, sigilSDF.data, sigilSDF.width, sigilSDF.height, sigilPromptId, cognitiveHistory[thisCycle].id]
+                  );
+                  console.log(`✓ Sigil saved to database (code + SDF)`);
+                } catch (columnError) {
+                  // Columns might not exist yet - fall back to just code
+                  console.warn('⚠️  SDF columns not available, saving code only');
+                  await pool.query(
+                    'UPDATE mind_moments SET sigil_code = $1, sigil_prompt_id = $2 WHERE id = $3',
+                    [sigilCode, sigilPromptId, cognitiveHistory[thisCycle].id]
+                  );
+                  console.log('✓ Sigil saved to database (code only)');
+                }
+              } else {
+                // No SDF generated, just update sigil_code
+                await pool.query(
+                  'UPDATE mind_moments SET sigil_code = $1, sigil_prompt_id = $2 WHERE id = $3',
+                  [sigilCode, sigilPromptId, cognitiveHistory[thisCycle].id]
+                );
+                console.log(`✓ Sigil saved to database (code only, no SVG/SDF)`);
+              }
             } catch (dbError) {
-              console.error('Failed to update sigil in database:', dbError.message);
+              console.error('❌ Failed to update sigil in database:', dbError.message);
             }
+          } else if (process.env.DATABASE_ENABLED === 'true') {
+            console.warn('⚠️  Cannot save sigil to database: No moment ID (initial save may have failed)');
           }
           
           console.log(`✓ Sigil generated (${sigilDuration}ms)`);
-          console.log(`  Code length: ${sigilCode.length} chars`);
+          console.log(`  Code: ${sigilCode.length} chars`);
+          // console.log(`  SVG: ${sigilSVG.length} chars`); // Commented out - not generating SVG
+          if (sigilSDF) {
+            console.log(`  SDF: ${sigilSDF.width}×${sigilSDF.height} (${sigilSDF.data.length} bytes)`);
+          }
           console.log('');
           
           // Emit sigil event
@@ -349,6 +417,8 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         } catch (sigilError) {
           console.error(`❌ Sigil generation failed:`, sigilError.message);
           cognitiveHistory[thisCycle].sigilCode = null;
+          // cognitiveHistory[thisCycle].sigilSVG = null; // Commented out - not generating SVG
+          cognitiveHistory[thisCycle].sigilSDF = null;
           
           // Emit sigil failed event
           dispatchStateEvent('sigilFailed', {
@@ -359,6 +429,8 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         }
       } else {
         cognitiveHistory[thisCycle].sigilCode = null;
+        // cognitiveHistory[thisCycle].sigilSVG = null; // Commented out - not generating SVG
+        cognitiveHistory[thisCycle].sigilSDF = null;
       }
       
       const totalDuration = Date.now() - startTime;

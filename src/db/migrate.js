@@ -31,7 +31,8 @@ export async function runMigrations() {
     '010_add_generation_config_to_visual_prompts.sql',
     '011_add_image_settings_to_sigil_prompts.sql',
     '012_add_generation_config_to_personalities.sql',
-    '013_add_sigil_prompt_tracking.sql'
+    '013_add_sigil_prompt_tracking.sql',
+    '014_add_sigil_svg_sdf.sql'
   ];
   
   try {
