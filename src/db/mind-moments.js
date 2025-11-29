@@ -12,6 +12,7 @@ export async function saveMindMoment({
   audioPercepts,
   priorMomentIds = [],
   cognizerVersion,
+  personalityId,
   llmProvider,
   processingDuration
 }) {
@@ -22,15 +23,15 @@ export async function saveMindMoment({
       INSERT INTO mind_moments (
         cycle, session_id, mind_moment, sigil_phrase, sigil_code,
         kinetic, lighting, visual_percepts, audio_percepts, prior_moment_ids,
-        cognizer_version, llm_provider, processing_duration_ms
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        cognizer_version, personality_id, llm_provider, processing_duration_ms
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, created_at
     `, [
       cycle, sessionId, mindMoment, sigilPhrase, sigilCode,
       JSON.stringify(kinetic), JSON.stringify(lighting),
       JSON.stringify(visualPercepts), JSON.stringify(audioPercepts),
       priorMomentIds,
-      cognizerVersion, llmProvider, processingDuration
+      cognizerVersion, personalityId, llmProvider, processingDuration
     ]);
     
     return result.rows[0];
@@ -45,7 +46,7 @@ export async function getPriorMindMoments(sessionId, limit = 3) {
   
   try {
     const result = await pool.query(`
-      SELECT id, cycle, mind_moment, created_at
+      SELECT id, cycle, mind_moment, sigil_phrase, sigil_code, created_at
       FROM mind_moments
       WHERE session_id = $1
       ORDER BY cycle DESC

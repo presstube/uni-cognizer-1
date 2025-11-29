@@ -1,7 +1,7 @@
 import { callLLM, providerName } from './providers/index.js';
 import { ROBOT_PERSONALITY } from './personality-uni-v2.js';
 import { generateSigil } from './sigil/generator.js';
-import { saveMindMoment as dbSaveMindMoment } from './db/mind-moments.js';
+import { saveMindMoment as dbSaveMindMoment, getPriorMindMoments as dbGetPriorMindMoments } from './db/mind-moments.js';
 import { getActivePersonality } from './db/personalities.js';
 import { COGNIZER_VERSION } from './version.js';
 
@@ -128,15 +128,38 @@ function timestamp() {
 }
 
 function getPriorMindMoments(depth) {
+  // Fallback to in-memory if database not enabled
   return Object.keys(cognitiveHistory)
     .map(Number)
     .sort((a, b) => b - a)
     .map(c => ({
+      id: cognitiveHistory[c].id,
       cycle: c,
-      mindMoment: cognitiveHistory[c].mindMoment
+      mindMoment: cognitiveHistory[c].mindMoment,
+      sigilPhrase: cognitiveHistory[c].sigilPhrase,
+      sigilCode: cognitiveHistory[c].sigilCode
     }))
     .filter(m => m.mindMoment !== "awaiting")
     .slice(0, depth);
+}
+
+async function getPriorMindMomentsWithDB(depth) {
+  if (process.env.DATABASE_ENABLED === 'true') {
+    try {
+      const dbPriors = await dbGetPriorMindMoments('uni', depth);
+      return dbPriors.map(row => ({
+        id: row.id,
+        cycle: row.cycle,
+        mindMoment: row.mind_moment,
+        sigilPhrase: row.sigil_phrase,
+        sigilCode: row.sigil_code
+      }));
+    } catch (error) {
+      console.error('Failed to fetch prior moments from DB:', error.message);
+      return getPriorMindMoments(depth); // Fallback to in-memory
+    }
+  }
+  return getPriorMindMoments(depth);
 }
 
 function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) {
@@ -175,7 +198,7 @@ export function clearListeners() {
   stateListeners = [];
 }
 
-export function cognize(visualPercepts, audioPercepts, depth = 3) {
+export async function cognize(visualPercepts, audioPercepts, depth = 3) {
   const thisCycle = ++cycleIndex;
   const startTime = Date.now();
   
@@ -189,7 +212,7 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
     sigilCode: "awaiting"
   };
   
-  const priorMoments = getPriorMindMoments(depth);
+  const priorMoments = await getPriorMindMomentsWithDB(depth);
   
   const activeVisual = visualPercepts.filter(p => p.action !== "NOPE");
   const activeAudio = audioPercepts.filter(p => p.transcript || (p.analysis !== "Silence" && p.analysis !== "Silence - visitor observing quietly"));

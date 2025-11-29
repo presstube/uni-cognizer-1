@@ -9,6 +9,7 @@
   padding: 10px 14px;
   background: rgba(0, 0, 0, 0.75);
   border-radius: var(--border-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: var(--space-sm);
   min-height: 50px;
   backdrop-filter: blur(8px);
@@ -49,27 +50,28 @@
 }
 
 .toast-description {
-  flex: 1;
+  flex: 2;
   min-width: 0;
   font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
+  font-size: 9px;
   font-weight: 500;
   line-height: 1.3;
   color: var(--color-text-bright);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
 }
 
 .toast-sigil-phrase {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
+  max-width: 120px;
   font-family: var(--font-mono);
-  font-size: var(--font-size-md);
+  font-size: 10px;
   font-weight: 400;
   font-style: italic;
   line-height: 1.4;

@@ -42,10 +42,10 @@ export function startCognitiveLoop(callback, sigilCallback, stateCallback) {
   lastCycleStartTime = Date.now();
   currentState = CognitiveState.AGGREGATING;
   
-  cognitiveIntervalId = setInterval(() => {
+  cognitiveIntervalId = setInterval(async () => {
     lastCycleStartTime = Date.now();  // Update on each cycle
     const { visualPercepts, audioPercepts } = dumpPercepts();
-    cognize(visualPercepts, audioPercepts, DEPTH);
+    await cognize(visualPercepts, audioPercepts, DEPTH);
   }, COGNITIVE_CYCLE_MS);
   
   if (callback) {

@@ -3,6 +3,7 @@
 // ============================================
 
 import { PerceptToast } from '../shared/percept-toast.js';
+import { MomentCard } from '../shared/components/moment-card/moment-card.js';
 import { Sigil } from '../shared/sigil.standalone.js';
 
 // ============================================
@@ -25,7 +26,8 @@ let socket = null;
 let cycleMs = CONFIG.DEFAULT_CYCLE_MS;
 let nextCycleTime = null;
 let countdownInterval = null;
-let sigil = null;
+let currentMomentCard = null;
+let currentSigilCode = null;
 
 // ============================================
 // DOM Elements
@@ -36,23 +38,14 @@ const $sessions = document.getElementById('sessions');
 const $sessionList = document.getElementById('session-list');
 const $state = document.getElementById('state');
 const $countdown = document.getElementById('countdown');
-const $mindMoment = document.getElementById('mind-moment');
-const $sigilPhrase = document.getElementById('sigil-phrase');
+const $cycle = document.getElementById('cycle');
+const $momentCardContainer = document.getElementById('moment-card-container');
+const $perceptsList = document.getElementById('percepts-list');
+const $priorMomentsList = document.getElementById('prior-moments-list');
+const $kinetic = document.getElementById('kinetic');
+const $lighting = document.getElementById('lighting');
+const $timestamp = document.getElementById('timestamp');
 const $percepts = document.getElementById('percepts');
-const $sigilCanvas = document.getElementById('sigil-canvas');
-
-// ============================================
-// Sigil Renderer
-// ============================================
-
-sigil = new Sigil({
-  canvas: $sigilCanvas,
-  canvasSize: 120,
-  scale: 1.0,
-  lineColor: '#ffffff',
-  lineWeight: 2.0,
-  drawDuration: 0
-});
 
 // ============================================
 // Socket.io Connection (READ-ONLY - no session)
@@ -179,21 +172,59 @@ function connect() {
     addPercept(data);
   });
   
-  // Mind moment received - update text and clear old sigil
+  // Mind moment received - update all fields and create moment card
   socket.on('mindMoment', (data) => {
     console.log('🧠 Mind moment:', data.mindMoment?.substring(0, 50) + '...');
-    $mindMoment.textContent = data.mindMoment || '—';
-    $sigilPhrase.textContent = data.sigilPhrase || '—';
     
-    // Clear old sigil instantly (new one will arrive via 'sigil' event)
-    sigil.clear(true);
+    // Update cycle
+    $cycle.textContent = data.cycle ? `#${data.cycle}` : '—';
+    
+    // Create/update moment card (will get sigil later)
+    updateMomentCard({
+      mindMoment: data.mindMoment,
+      sigilPhrase: data.sigilPhrase,
+      sigilCode: null // Wait for sigil event
+    });
+    
+    // Display percepts
+    displayPercepts(data.visualPercepts, data.audioPercepts);
+    
+    // Display prior mind moments
+    displayPriorMoments(data.priorMoments);
+    
+    // Kinetic pattern
+    $kinetic.textContent = data.kinetic?.pattern || '—';
+    
+    // Lighting
+    updateLightingDisplay(data.lighting);
+    
+    // Timestamp
+    if (data.timestamp) {
+      const time = new Date(data.timestamp);
+      $timestamp.textContent = time.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: true 
+      });
+    } else {
+      $timestamp.textContent = '—';
+    }
   });
   
-  // Sigil received - render on canvas
+  // Sigil received - update moment card with sigil
   socket.on('sigil', (data) => {
     console.log('🎨 Sigil received');
     if (data.sigilCode) {
-      sigil.drawSigil({ calls: data.sigilCode });
+      currentSigilCode = data.sigilCode;
+      // Update moment card with sigil if it exists
+      if (currentMomentCard) {
+        updateMomentCard({
+          mindMoment: currentMomentCard.data.mindMoment,
+          sigilPhrase: currentMomentCard.data.sigilPhrase,
+          sigilCode: data.sigilCode
+        });
+      }
     }
   });
 }
@@ -222,6 +253,113 @@ function startCountdown() {
       $countdown.textContent = '...';
     }
   }, CONFIG.COUNTDOWN_INTERVAL_MS);
+}
+
+// ============================================
+// Mind Moment Display Helpers
+// ============================================
+
+/**
+ * Update or create moment card
+ */
+function updateMomentCard(data) {
+  // Remove old card
+  if (currentMomentCard) {
+    currentMomentCard.remove();
+  }
+  
+  // Create new card
+  currentMomentCard = new MomentCard(data);
+  const cardElement = currentMomentCard.create();
+  $momentCardContainer.innerHTML = '';
+  $momentCardContainer.appendChild(cardElement);
+}
+
+/**
+ * Display percepts from mind moment (in chronological order)
+ */
+function displayPercepts(visualPercepts, audioPercepts) {
+  $perceptsList.innerHTML = '';
+  
+  const hasPercepts = (visualPercepts && visualPercepts.length > 0) || 
+                      (audioPercepts && audioPercepts.length > 0);
+  
+  if (!hasPercepts) {
+    $perceptsList.innerHTML = '<div class="empty-percepts">No percepts</div>';
+    return;
+  }
+  
+  // Combine and sort by timestamp (oldest first - chronological order)
+  const allPercepts = [];
+  
+  if (visualPercepts && visualPercepts.length > 0) {
+    visualPercepts.forEach(percept => {
+      allPercepts.push({ percept, type: 'visual' });
+    });
+  }
+  
+  if (audioPercepts && audioPercepts.length > 0) {
+    audioPercepts.forEach(percept => {
+      allPercepts.push({ percept, type: 'audio' });
+    });
+  }
+  
+  // Sort by timestamp (oldest first)
+  allPercepts.sort((a, b) => {
+    const timeA = new Date(a.percept.timestamp || 0).getTime();
+    const timeB = new Date(b.percept.timestamp || 0).getTime();
+    return timeA - timeB;
+  });
+  
+  // Display in chronological order
+  allPercepts.forEach(({ percept, type }) => {
+    const toast = new PerceptToast(percept, type);
+    $perceptsList.appendChild(toast.create());
+  });
+}
+
+/**
+ * Display prior mind moments as cards
+ */
+function displayPriorMoments(priorMoments) {
+  $priorMomentsList.innerHTML = '';
+  
+  if (!priorMoments || priorMoments.length === 0) {
+    $priorMomentsList.innerHTML = '<div class="empty-prior">No prior moments</div>';
+    return;
+  }
+  
+  // Display each prior moment as a mini moment card
+  priorMoments.forEach(moment => {
+    const card = new MomentCard({
+      mindMoment: moment.mindMoment,
+      sigilPhrase: moment.sigilPhrase || '—',
+      sigilCode: moment.sigilCode || null
+    });
+    $priorMomentsList.appendChild(card.create());
+  });
+}
+
+/**
+ * Update lighting display with color swatch and pattern info
+ */
+function updateLightingDisplay(lighting) {
+  if (!lighting) {
+    $lighting.innerHTML = '<span class="lighting-text">—</span>';
+    return;
+  }
+  
+  const color = lighting.color || '0xffffff';
+  const pattern = lighting.pattern || 'IDLE';
+  const speed = lighting.speed !== undefined ? lighting.speed : 0;
+  
+  // Convert hex color (0xffffff) to CSS hex (#ffffff)
+  const cssColor = color.replace('0x', '#');
+  
+  $lighting.innerHTML = `
+    <span class="color-swatch" style="background-color: ${cssColor};"></span>
+    <span class="lighting-text">${pattern} <span class="lighting-speed">(${speed.toFixed(1)})</span></span>
+  `;
 }
 
 // ============================================

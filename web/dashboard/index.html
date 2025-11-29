@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../shared/styles/base.css">
   <link rel="stylesheet" href="../shared/styles/components.css">
   <link rel="stylesheet" href="../shared/components/percept-toast/percept-toast.css">
+  <link rel="stylesheet" href="../shared/components/moment-card/moment-card.css">
   <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
@@ -42,18 +43,45 @@
     </div>
     
     <div>
+      <div class="label">Cycle</div>
+      <div class="value" id="cycle">—</div>
+    </div>
+    
+    <div class="moment-section">
       <div class="label">Mind Moment</div>
-      <div class="mind-moment" id="mind-moment">—</div>
+      <div id="moment-card-container"></div>
+    </div>
+    
+    <div class="percepts-section">
+      <div class="label">Percepts</div>
+      <div class="percepts-list" id="percepts-list">
+        <div class="empty-percepts">No percepts yet</div>
+      </div>
+    </div>
+    
+    <div class="prior-moments-section">
+      <div class="label">Prior Mind Moments</div>
+      <div class="prior-moments-list" id="prior-moments-list">
+        <div class="empty-prior">No prior moments</div>
+      </div>
     </div>
     
     <div>
-      <div class="label">Sigil Phrase</div>
-      <div class="sigil-phrase" id="sigil-phrase">—</div>
+      <div class="label">Kinetic</div>
+      <div class="value" id="kinetic">—</div>
     </div>
     
     <div>
-      <div class="label">Sigil</div>
-      <canvas id="sigil-canvas"></canvas>
+      <div class="label">Lighting</div>
+      <div class="lighting-display" id="lighting">
+        <span class="color-swatch"></span>
+        <span class="lighting-text">—</span>
+      </div>
+    </div>
+    
+    <div>
+      <div class="label">Generated</div>
+      <div class="value" id="timestamp">—</div>
     </div>
   </div>
   

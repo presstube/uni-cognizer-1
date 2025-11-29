@@ -25,6 +25,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto; /* Make scrollable */
+  overflow-x: hidden;
 }
 
 /* Countdown */
@@ -34,25 +36,90 @@ body {
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* Mind Moment Display */
-.mind-moment {
-  font-size: var(--font-size-lg);
-  line-height: 1.6;
-  color: var(--color-text-bright);
-  max-width: 600px;
+/* Moment Section */
+.moment-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
-/* Sigil Phrase Display */
-.sigil-phrase {
-  font-size: var(--font-size-md);
+#moment-card-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Percepts Section */
+.percepts-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.percepts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.empty-percepts {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.4);
   font-style: italic;
-  color: rgba(255, 255, 255, 0.6);
+  padding: var(--space-sm) 0;
 }
 
-/* Sigil Canvas */
-#sigil-canvas {
-  width: 120px;
-  height: 120px;
+/* Prior Moments Section */
+.prior-moments-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.prior-moments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.empty-prior {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  padding: var(--space-sm) 0;
+}
+
+/* Lighting Display */
+.lighting-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.lighting-text {
+  font-size: var(--font-size-md);
+  color: var(--color-text-bright);
+}
+
+.lighting-speed {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--font-size-sm);
+}
+
+/* Context Stats */
+.context-stats {
+  font-size: var(--font-size-md);
+  color: var(--color-text-bright);
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
 }
 
 /* Session List */
