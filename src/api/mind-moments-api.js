@@ -18,20 +18,24 @@ router.get('/mind-moments/recent', async (req, res) => {
     const pool = getPool();
     const result = await pool.query(`
       SELECT 
-        id,
-        cycle,
-        mind_moment,
-        sigil_phrase,
-        sigil_code,
-        kinetic,
-        lighting,
-        visual_percepts,
-        audio_percepts,
-        prior_moment_ids,
-        created_at
-      FROM mind_moments
-      WHERE session_id = 'uni'
-      ORDER BY cycle DESC
+        mm.id,
+        mm.cycle,
+        mm.mind_moment,
+        mm.sigil_phrase,
+        mm.sigil_code,
+        mm.kinetic,
+        mm.lighting,
+        mm.visual_percepts,
+        mm.audio_percepts,
+        mm.prior_moment_ids,
+        mm.created_at,
+        p.name AS personality_name,
+        sp.name AS sigil_prompt_name
+      FROM mind_moments mm
+      LEFT JOIN personalities p ON mm.personality_id = p.id
+      LEFT JOIN sigil_prompts sp ON mm.sigil_prompt_id = sp.id
+      WHERE mm.session_id = 'uni'
+      ORDER BY mm.cycle DESC
       LIMIT $1
     `, [limit]);
     
@@ -57,19 +61,23 @@ router.get('/mind-moments/:id', async (req, res) => {
     const pool = getPool();
     const result = await pool.query(`
       SELECT 
-        id,
-        cycle,
-        mind_moment,
-        sigil_phrase,
-        sigil_code,
-        kinetic,
-        lighting,
-        visual_percepts,
-        audio_percepts,
-        prior_moment_ids,
-        created_at
-      FROM mind_moments
-      WHERE id = $1
+        mm.id,
+        mm.cycle,
+        mm.mind_moment,
+        mm.sigil_phrase,
+        mm.sigil_code,
+        mm.kinetic,
+        mm.lighting,
+        mm.visual_percepts,
+        mm.audio_percepts,
+        mm.prior_moment_ids,
+        mm.created_at,
+        p.name AS personality_name,
+        sp.name AS sigil_prompt_name
+      FROM mind_moments mm
+      LEFT JOIN personalities p ON mm.personality_id = p.id
+      LEFT JOIN sigil_prompts sp ON mm.sigil_prompt_id = sp.id
+      WHERE mm.id = $1
     `, [id]);
     
     if (result.rows.length === 0) {

@@ -319,20 +319,20 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         const sigilStartTime = Date.now();
         
         try {
-          const sigilCode = await generateSigil(result.sigilPhrase);
+          const { sigilCode, sigilPromptId } = await generateSigil(result.sigilPhrase);
           const sigilDuration = Date.now() - sigilStartTime;
           
           // Update history with sigil code
           cognitiveHistory[thisCycle].sigilCode = sigilCode;
           
-          // Update sigil code in database
+          // Update sigil code and sigil_prompt_id in database
           if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
             try {
               const { getPool } = await import('./db/index.js');
               const pool = getPool();
               await pool.query(
-                'UPDATE mind_moments SET sigil_code = $1 WHERE id = $2',
-                [sigilCode, cognitiveHistory[thisCycle].id]
+                'UPDATE mind_moments SET sigil_code = $1, sigil_prompt_id = $2 WHERE id = $3',
+                [sigilCode, sigilPromptId, cognitiveHistory[thisCycle].id]
               );
             } catch (dbError) {
               console.error('Failed to update sigil in database:', dbError.message);

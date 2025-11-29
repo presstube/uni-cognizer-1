@@ -46,6 +46,8 @@ const $perceptsList = document.getElementById('percepts-list');
 const $priorMomentsList = document.getElementById('prior-moments-list');
 const $lighting = document.getElementById('lighting');
 const $timestamp = document.getElementById('timestamp');
+const $personalityName = document.getElementById('personality-name');
+const $sigilPromptName = document.getElementById('sigil-prompt-name');
 const $percepts = document.getElementById('percepts');
 const $historyGrid = document.getElementById('history-grid');
 
@@ -106,6 +108,12 @@ function onHistoryMomentClick(moment) {
       hour12: true 
     });
   }
+  
+  // Personality
+  $personalityName.textContent = moment.personality_name || '—';
+  
+  // Sigil Prompt
+  $sigilPromptName.textContent = moment.sigil_prompt_name || '—';
 }
 
 /**
@@ -175,6 +183,10 @@ function clearCountdown() {
 function handleNoActiveSessions() {
   $sessionList.innerHTML = '<div class="session-item">No active sessions</div>';
   clearCountdown();
+  
+  // Show history when no active session
+  document.body.classList.remove('active-session');
+  document.body.classList.add('no-session');
 }
 
 /**
@@ -186,6 +198,10 @@ function handleActiveSessions(sessions) {
     .join('');
   // Request fresh cycle status to sync countdown
   socket.emit('getCycleStatus');
+  
+  // Hide history when active session
+  document.body.classList.add('active-session');
+  document.body.classList.remove('no-session');
 }
 
 function connect() {
@@ -308,6 +324,10 @@ function connect() {
     } else {
       $timestamp.textContent = '—';
     }
+    
+    // Metadata - not available on live events, only from DB
+    $personalityName.textContent = '—';
+    $sigilPromptName.textContent = '—';
   });
   
   // Sigil received - update moment card with sigil
@@ -506,5 +526,9 @@ function addPercept(data) {
 // ============================================
 
 console.log('🚀 Dashboard initializing...');
+
+// Set initial state - no session, show history
+document.body.classList.add('no-session');
+
 connect();
 

@@ -63,6 +63,27 @@ body {
   border-left: 1px solid var(--color-border);
 }
 
+/* NO SESSION state: 33/33/33, show history (default above) */
+body.no-session .left,
+body.no-session .center,
+body.no-session .far-right {
+  flex: 1;
+}
+
+body.no-session .far-right {
+  display: flex;
+}
+
+/* ACTIVE SESSION state: 50/50, hide history */
+body.active-session .left,
+body.active-session .center {
+  flex: 1;
+}
+
+body.active-session .far-right {
+  display: none;
+}
+
 .far-right .label {
   padding: var(--space-md) var(--space-md) var(--space-sm);
 }

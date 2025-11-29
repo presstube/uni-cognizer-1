@@ -20,7 +20,7 @@ const DEFAULT_LLM_SETTINGS = {
 /**
  * Generates sigil code using the active prompt from DB (or fallback defaults)
  * @param {string} concept - The concept to generate a sigil for
- * @returns {Promise<string>} Generated canvas drawing code
+ * @returns {Promise<{sigilCode: string, sigilPromptId: string|null}>} Generated code and prompt ID
  */
 export async function generateSigil(concept) {
   if (!concept || !concept.trim()) {
@@ -43,6 +43,7 @@ export async function generateSigil(concept) {
   const includeImage = activePrompt?.include_image ?? true;
   const referenceImagePath = activePrompt?.reference_image_path || null;
   const llmSettings = activePrompt?.llm_settings || DEFAULT_LLM_SETTINGS;
+  const sigilPromptId = activePrompt?.id || null;
   
   // Log which prompt is being used
   if (activePrompt) {
@@ -56,7 +57,7 @@ export async function generateSigil(concept) {
   
   // If we have a DB prompt, use the custom prompt path
   if (promptTemplate) {
-    return await generateSigilWithCustomPrompt(
+    const sigilCode = await generateSigilWithCustomPrompt(
       concept,
       promptTemplate,
       includeImage,
@@ -64,6 +65,7 @@ export async function generateSigil(concept) {
       llmSettings,
       referenceImagePath // Pass the file path for custom image
     );
+    return { sigilCode, sigilPromptId };
   }
   
   // Fallback: Use original hardcoded behavior
@@ -114,7 +116,7 @@ export async function generateSigil(concept) {
     throw new Error('Generated code does not contain valid canvas operations');
   }
   
-  return cleanCode;
+  return { sigilCode: cleanCode, sigilPromptId };
 }
 
 /**
