@@ -253,14 +253,25 @@ io.on('connection', (socket) => {
           io.emit('cognitiveState', { state: CognitiveState.VISUALIZING });
         },
         // Sigil callback
-        (cycle, sigilCode, sigilPhrase) => {
+        (cycle, sigilCode, sigilPhrase, sigilSDF) => {
           // Broadcast sigil once to all connected clients
-          io.emit('sigil', {
+          const sigilData = {
             cycle,
             sigilCode,
             sigilPhrase,
             timestamp: new Date().toISOString()
-          });
+          };
+          
+          // Include SDF if available (as base64 for transport)
+          if (sigilSDF && sigilSDF.data) {
+            sigilData.sdf = {
+              width: sigilSDF.width,
+              height: sigilSDF.height,
+              data: Buffer.from(sigilSDF.data).toString('base64')
+            };
+          }
+          
+          io.emit('sigil', sigilData);
         },
         // State event callback
         (eventType, data) => {

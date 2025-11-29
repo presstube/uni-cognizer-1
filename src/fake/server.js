@@ -106,13 +106,24 @@ io.on('connection', (socket) => {
           
           io.emit('cognitiveState', { state: CognitiveState.VISUALIZING });
         },
-        (cycle, sigilCode, sigilPhrase) => {
-          io.emit('sigil', {
+        (cycle, sigilCode, sigilPhrase, sigilSDF) => {
+          const sigilData = {
             cycle,
             sigilCode,
             sigilPhrase,
             timestamp: new Date().toISOString()
-          });
+          };
+          
+          // Include SDF if available (as base64 for transport)
+          if (sigilSDF && sigilSDF.data) {
+            sigilData.sdf = {
+              width: sigilSDF.width,
+              height: sigilSDF.height,
+              data: Buffer.from(sigilSDF.data).toString('base64')
+            };
+          }
+          
+          io.emit('sigil', sigilData);
         },
         (eventType, data) => {
           if (eventType === 'cycleStarted') {

@@ -90,9 +90,9 @@ function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, pr
   });
 }
 
-function dispatchSigil(cycle, sigilCode, sigilPhrase) {
+function dispatchSigil(cycle, sigilCode, sigilPhrase, sigilSDF) {
   sigilListeners.forEach(listener => {
-    listener(cycle, sigilCode, sigilPhrase);
+    listener(cycle, sigilCode, sigilPhrase, sigilSDF);
   });
 }
 
@@ -235,15 +235,53 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       const sigilCode = await mockSigilGeneration();
       cognitiveHistory[thisCycle].sigilCode = sigilCode;
       
-      // Update sigil code in database
+      // Generate SDF from mock sigil code
+      let sigilSDF = null;
+      try {
+        const { canvasToSDF } = await import('../sigil/canvas-to-sdf.js');
+        sigilSDF = await canvasToSDF(sigilCode, { 
+          width: 256, 
+          height: 256,
+          canvasWidth: 100,
+          canvasHeight: 100,
+          strokeWidth: 2,
+          scale: 0.75  // Scale down to prevent gradient cutoff
+        });
+        cognitiveHistory[thisCycle].sigilSDF = sigilSDF;
+      } catch (sdfError) {
+        console.warn('⚠️  Mock SDF generation failed:', sdfError.message);
+      }
+      
+      // Update sigil code and SDF in database
       if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
         try {
           const { getPool } = await import('../db/index.js');
           const pool = getPool();
-          await pool.query(
-            'UPDATE mind_moments SET sigil_code = $1 WHERE id = $2',
-            [sigilCode, cognitiveHistory[thisCycle].id]
-          );
+          
+          if (sigilSDF) {
+            try {
+              await pool.query(
+                `UPDATE mind_moments 
+                 SET sigil_code = $1,
+                     sigil_sdf_data = $2,
+                     sigil_sdf_width = $3,
+                     sigil_sdf_height = $4
+                 WHERE id = $5`,
+                [sigilCode, sigilSDF.data, sigilSDF.width, sigilSDF.height, cognitiveHistory[thisCycle].id]
+              );
+            } catch (columnError) {
+              // Columns might not exist yet - fall back to just code
+              await pool.query(
+                'UPDATE mind_moments SET sigil_code = $1 WHERE id = $2',
+                [sigilCode, cognitiveHistory[thisCycle].id]
+              );
+            }
+          } else {
+            await pool.query(
+              'UPDATE mind_moments SET sigil_code = $1 WHERE id = $2',
+              [sigilCode, cognitiveHistory[thisCycle].id]
+            );
+          }
         } catch (dbError) {
           console.error('Failed to update sigil in database:', dbError.message);
         }
@@ -251,12 +289,16 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       
       console.log(`✓ Mock sigil generated`);
       console.log(`  Code length: ${sigilCode.length} chars`);
+      if (sigilSDF) {
+        console.log(`  SDF: ${sigilSDF.width}×${sigilSDF.height} (${sigilSDF.data.length} bytes)`);
+      }
       console.log('');
       
-      // Emit sigil event
-      dispatchSigil(thisCycle, sigilCode, result.sigilPhrase);
+      // Emit sigil event (include SDF if available)
+      dispatchSigil(thisCycle, sigilCode, result.sigilPhrase, sigilSDF);
     } else {
       cognitiveHistory[thisCycle].sigilCode = null;
+      cognitiveHistory[thisCycle].sigilSDF = null;
     }
     
     const totalDuration = Date.now() - cycleStartTime;

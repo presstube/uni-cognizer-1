@@ -186,9 +186,9 @@ export function onSigil(listener) {
   sigilListeners.push(listener);
 }
 
-function dispatchSigil(cycle, sigilCode, sigilPhrase) {
+function dispatchSigil(cycle, sigilCode, sigilPhrase, sigilSDF) {
   sigilListeners.forEach(listener => {
-    listener(cycle, sigilCode, sigilPhrase);
+    listener(cycle, sigilCode, sigilPhrase, sigilSDF);
   });
 }
 
@@ -342,7 +342,8 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
               height: 256,
               canvasWidth: 100,
               canvasHeight: 100,
-              strokeWidth: 2
+              strokeWidth: 2,
+              scale: 0.75  // Scale down to prevent gradient cutoff
             });
           } catch (sdfError) {
             console.warn('⚠️  SDF generation failed:', sdfError.message);
@@ -411,8 +412,8 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
           }
           console.log('');
           
-          // Emit sigil event
-          dispatchSigil(thisCycle, sigilCode, result.sigilPhrase);
+          // Emit sigil event (include SDF if available)
+          dispatchSigil(thisCycle, sigilCode, result.sigilPhrase, sigilSDF);
           
         } catch (sigilError) {
           console.error(`❌ Sigil generation failed:`, sigilError.message);
