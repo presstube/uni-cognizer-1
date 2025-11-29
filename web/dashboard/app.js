@@ -361,20 +361,36 @@ function connect() {
         });
       }
       
-      // Fetch the full moment from DB to get ID and formats
-      // Give database a moment to save, then fetch
-      setTimeout(async () => {
-        try {
-          const response = await fetch('/api/mind-moments/recent?limit=1');
-          const result = await response.json();
-          if (result.moments && result.moments.length > 0) {
-            const latestMoment = result.moments[0];
-            updateSigilFormats(latestMoment.id);
-          }
-        } catch (error) {
-          console.error('Failed to fetch moment for sigil formats:', error);
+      // Check if SDF is included in the live event
+      if (data.sdf && data.sdf.data) {
+        console.log('📦 SDF received via WebSocket:', data.sdf.width, '×', data.sdf.height);
+        
+        // Decode base64 to create a data URL for preview
+        const sdfDataUrl = `data:image/png;base64,${data.sdf.data}`;
+        
+        // Update SDF status and preview immediately (no API call needed!)
+        $sdfStatus.innerHTML = `${data.sdf.width}×${data.sdf.height} (live)`;
+        if ($sdfPreview) {
+          $sdfPreview.innerHTML = `<img src="${sdfDataUrl}" alt="SDF Preview" />`;
+          $sdfPreview.classList.add('has-sdf');
         }
-      }, 500); // Wait 500ms for DB save
+      } else {
+        // Fallback: No SDF in event, fetch from API after DB save
+        // This only happens if cognizer doesn't emit SDF (shouldn't happen with updated code)
+        console.log('⚠️  No SDF in event, falling back to API fetch');
+        setTimeout(async () => {
+          try {
+            const response = await fetch('/api/mind-moments/recent?limit=1');
+            const result = await response.json();
+            if (result.moments && result.moments.length > 0) {
+              const latestMoment = result.moments[0];
+              updateSigilFormats(latestMoment.id);
+            }
+          } catch (error) {
+            console.error('Failed to fetch moment for sigil formats:', error);
+          }
+        }, 500); // Wait 500ms for DB save
+      }
     }
   });
 }
