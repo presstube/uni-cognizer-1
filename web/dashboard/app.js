@@ -124,16 +124,18 @@ async function fetchAndDisplayPriorMoments(priorMomentIds) {
     const priorMoments = results.map(r => r.moment).filter(Boolean);
     
     if (priorMoments.length === 0) {
-      $priorMomentsList.innerHTML = '<div class="empty-prior">No prior moments</div>';
+      $priorMomentsList.innerHTML = '<div class="empty-prior">No prior moments found</div>';
       return;
     }
     
     // Display as moment cards
-    displayPriorMoments(priorMoments.map(m => ({
+    const momentData = priorMoments.map(m => ({
       mindMoment: m.mind_moment,
       sigilPhrase: m.sigil_phrase,
       sigilCode: m.sigil_code
-    })));
+    }));
+    
+    displayPriorMoments(momentData);
   } catch (error) {
     console.error('Failed to fetch prior moments:', error);
     $priorMomentsList.innerHTML = '<div class="empty-prior">Failed to load</div>';
