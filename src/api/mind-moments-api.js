@@ -47,6 +47,49 @@ router.get('/mind-moments/recent', async (req, res) => {
 });
 
 /**
+ * Get ALL mind moments (entire history)
+ * GET /api/mind-moments/all
+ */
+router.get('/mind-moments/all', async (req, res) => {
+  if (process.env.DATABASE_ENABLED !== 'true') {
+    return res.json({ moments: [] });
+  }
+  
+  try {
+    const pool = getPool();
+    const result = await pool.query(`
+      SELECT 
+        mm.id,
+        mm.cycle,
+        mm.mind_moment,
+        mm.sigil_phrase,
+        mm.sigil_code,
+        mm.kinetic,
+        mm.lighting,
+        mm.visual_percepts,
+        mm.audio_percepts,
+        mm.prior_moment_ids,
+        mm.created_at,
+        p.name AS personality_name,
+        sp.name AS sigil_prompt_name
+      FROM mind_moments mm
+      LEFT JOIN personalities p ON mm.personality_id = p.id
+      LEFT JOIN sigil_prompts sp ON mm.sigil_prompt_id = sp.id
+      WHERE mm.session_id = 'uni'
+      ORDER BY mm.cycle DESC
+    `);
+    
+    res.json({ 
+      moments: result.rows,
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error fetching all mind moments:', error);
+    res.status(500).json({ error: 'Failed to fetch mind moments' });
+  }
+});
+
+/**
  * Get a specific mind moment by ID
  * GET /api/mind-moments/:id
  */
