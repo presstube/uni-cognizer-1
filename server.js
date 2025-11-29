@@ -16,6 +16,7 @@ import * as sigilPrompts from './src/api/sigil-prompts.js';
 import * as visualPrompts from './src/api/visual-prompts.js';
 import * as audioPrompts from './src/api/audio-prompts.js';
 import geminiTokenAPI from './src/api/gemini-token.js';
+import mindMomentsAPI from './src/api/mind-moments-api.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -100,6 +101,9 @@ app.use('/api', editorAuth, personalitiesAPI);
 
 // Mount Gemini Token API
 app.use('/api', geminiTokenAPI);
+
+// Mount Mind Moments API (read-only, no auth needed)
+app.use('/api', mindMomentsAPI);
 
 // Mount Sigil Prompts API (with editor auth in production)
 app.get('/api/sigil-prompts', editorAuth, sigilPrompts.listSigilPrompts);

@@ -27,6 +27,26 @@ body {
   gap: 20px;
   overflow-y: auto; /* Make scrollable */
   overflow-x: hidden;
+  border-right: 1px solid var(--color-border);
+}
+
+/* Far right pane - history grid */
+.far-right {
+  width: 300px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--color-border);
+}
+
+.far-right .label {
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.far-right .history-grid {
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* Countdown */

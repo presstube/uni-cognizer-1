@@ -4,6 +4,7 @@
 
 import { PerceptToast } from '../shared/percept-toast.js';
 import { MomentCard } from '../shared/components/moment-card/moment-card.js';
+import { HistoryGrid } from '../shared/components/history-grid/history-grid.js';
 import { Sigil } from '../shared/sigil.standalone.js';
 
 // ============================================
@@ -28,6 +29,7 @@ let nextCycleTime = null;
 let countdownInterval = null;
 let currentMomentCard = null;
 let currentSigilCode = null;
+let historyGrid = null;
 
 // ============================================
 // DOM Elements
@@ -46,6 +48,63 @@ const $kinetic = document.getElementById('kinetic');
 const $lighting = document.getElementById('lighting');
 const $timestamp = document.getElementById('timestamp');
 const $percepts = document.getElementById('percepts');
+const $historyGrid = document.getElementById('history-grid');
+
+// ============================================
+// History Grid
+// ============================================
+
+/**
+ * Handle history moment click - populate center pane
+ */
+function onHistoryMomentClick(moment) {
+  console.log('📜 History moment clicked:', moment.cycle);
+  
+  // Update cycle
+  $cycle.textContent = moment.cycle ? `#${moment.cycle}` : '—';
+  
+  // Create moment card
+  updateMomentCard({
+    mindMoment: moment.mind_moment,
+    sigilPhrase: moment.sigil_phrase,
+    sigilCode: moment.sigil_code
+  });
+  
+  // Display percepts
+  displayPercepts(
+    moment.visual_percepts ? JSON.parse(moment.visual_percepts) : [],
+    moment.audio_percepts ? JSON.parse(moment.audio_percepts) : []
+  );
+  
+  // Clear prior moments (historical view doesn't show prior context)
+  $priorMomentsList.innerHTML = '<div class="empty-prior">Historical moment</div>';
+  
+  // Kinetic pattern
+  if (moment.kinetic) {
+    const kinetic = typeof moment.kinetic === 'string' ? JSON.parse(moment.kinetic) : moment.kinetic;
+    $kinetic.textContent = kinetic?.pattern || '—';
+  }
+  
+  // Lighting
+  if (moment.lighting) {
+    const lighting = typeof moment.lighting === 'string' ? JSON.parse(moment.lighting) : moment.lighting;
+    updateLightingDisplay(lighting);
+  }
+  
+  // Timestamp
+  if (moment.created_at) {
+    const time = new Date(moment.created_at);
+    $timestamp.textContent = time.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: true 
+    });
+  }
+}
+
+// Initialize history grid
+historyGrid = new HistoryGrid($historyGrid, onHistoryMomentClick);
 
 // ============================================
 // Socket.io Connection (READ-ONLY - no session)
@@ -111,6 +170,9 @@ function connect() {
     // Request current cycle and session status to sync UI immediately
     socket.emit('getCycleStatus');
     socket.emit('getSessionStatus');
+    
+    // Load history grid
+    historyGrid.loadHistory(100);
   });
   
   // Cycle status response - initial sync of countdown and state
@@ -225,6 +287,9 @@ function connect() {
           sigilCode: data.sigilCode
         });
       }
+      
+      // Add to history grid (this will be the latest moment)
+      // We'll need to get the full moment data, but for now just note it exists
     }
   });
 }
