@@ -6,7 +6,21 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+let genAI = null;
+
+/**
+ * Lazy initialization of Gemini client
+ * Only creates the client when actually needed
+ */
+function getClient() {
+  if (!genAI) {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not found in environment');
+    }
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  }
+  return genAI;
+}
 
 /**
  * Simple string hash function for generating deterministic seeds
@@ -56,7 +70,8 @@ export async function callLLM(prompt, options = {}) {
     // Log for debugging determinism
     console.log(`[Gemini] API call - model: ${model}, temp: ${temperature}, topP: ${generationConfig.topP}, topK: ${topK}, seed: ${generationConfig.seed} (${isDeterministic ? 'deterministic' : 'random'}), maxTokens: ${maxTokens}`);
     
-    const geminiModel = genAI.getGenerativeModel({ 
+    const client = getClient();
+    const geminiModel = client.getGenerativeModel({ 
       model,
       generationConfig
     });

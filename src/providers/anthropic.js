@@ -6,9 +6,23 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
+let anthropic = null;
+
+/**
+ * Lazy initialization of Anthropic client
+ * Only creates the client when actually needed
+ */
+function getClient() {
+  if (!anthropic) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY not found in environment');
+    }
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    });
+  }
+  return anthropic;
+}
 
 /**
  * Call Anthropic's API
@@ -31,7 +45,8 @@ export async function callLLM(systemPrompt, userPrompt, options = {}) {
 CRITICAL: Respond ONLY with valid JSON. Do not include any explanation, markdown formatting, or text outside the JSON object. Your entire response must be parseable JSON.`;
 
   try {
-    const response = await anthropic.messages.create({
+    const client = getClient();
+    const response = await client.messages.create({
       model,
       max_tokens: maxTokens,  // Required by Anthropic
       temperature,

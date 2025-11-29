@@ -6,9 +6,23 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openai = null;
+
+/**
+ * Lazy initialization of OpenAI client
+ * Only creates the client when actually needed
+ */
+function getClient() {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY not found in environment');
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+  return openai;
+}
 
 /**
  * Call OpenAI's API
@@ -25,7 +39,8 @@ export async function callLLM(prompt, options = {}) {
   } = options;
 
   try {
-    const response = await openai.chat.completions.create({
+    const client = getClient();
+    const response = await client.chat.completions.create({
       model,
       messages: [
         { role: 'user', content: prompt }
