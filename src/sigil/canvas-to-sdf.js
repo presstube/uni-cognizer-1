@@ -61,7 +61,8 @@ export async function canvasToSDF(canvasCode, options = {}) {
     height = 256,
     canvasWidth = 100,
     canvasHeight = 100,
-    strokeWidth = 2
+    strokeWidth = 2,
+    scale = 1.0  // Scale factor for the artwork (0.75 = 75% size, centered)
   } = options;
   
   if (!canvasCode || !canvasCode.trim()) {
@@ -87,10 +88,20 @@ export async function canvasToSDF(canvasCode, options = {}) {
     // Scale to fit canvas dimensions to output dimensions
     const scaleX = width / canvasWidth;
     const scaleY = height / canvasHeight;
-    const scale = Math.min(scaleX, scaleY);
+    const baseScale = Math.min(scaleX, scaleY);
+    
+    // Apply the user-specified scale factor
+    const finalScale = baseScale * scale;
+    
+    // Calculate centering offset when scaled down
+    const scaledWidth = canvasWidth * finalScale;
+    const scaledHeight = canvasHeight * finalScale;
+    const offsetX = (width - scaledWidth) / 2;
+    const offsetY = (height - scaledHeight) / 2;
     
     ctx.save();
-    ctx.scale(scale, scale);
+    ctx.translate(offsetX, offsetY);  // Center the scaled artwork
+    ctx.scale(finalScale, finalScale);
     
     // Execute the canvas drawing code
     const executeFn = new Function('ctx', canvasCode);
