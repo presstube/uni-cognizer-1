@@ -42,18 +42,23 @@ export async function callLLM(prompt, options = {}) {
     // Determine if this should be deterministic (low temperature AND explicit intent)
     const isDeterministic = temperature < 0.1;
     
+    const generationConfig = {
+      temperature,
+      maxOutputTokens: maxTokens,
+      // Gemini API requires topP > 0, so use minimal value if 0 is requested
+      topP: topP === 0 ? 0.0001 : topP,
+      topK,
+      // Add deterministic seed only for low-temperature requests
+      // Otherwise use random seed for creative variation
+      seed: isDeterministic ? hashString(prompt) : Math.floor(Math.random() * 2147483647)
+    };
+    
+    // Log for debugging determinism
+    console.log(`[Gemini] API call - model: ${model}, temp: ${temperature}, topP: ${generationConfig.topP}, topK: ${topK}, seed: ${generationConfig.seed} (${isDeterministic ? 'deterministic' : 'random'}), maxTokens: ${maxTokens}`);
+    
     const geminiModel = genAI.getGenerativeModel({ 
       model,
-      generationConfig: {
-        temperature,
-        maxOutputTokens: maxTokens,
-        // Gemini API requires topP > 0, so use minimal value if 0 is requested
-        topP: topP === 0 ? 0.0001 : topP,
-        topK,
-        // Add deterministic seed only for low-temperature requests
-        // Otherwise use random seed for creative variation
-        seed: isDeterministic ? hashString(prompt) : Math.floor(Math.random() * 2147483647)
-      }
+      generationConfig
     });
 
     const result = await geminiModel.generateContent(prompt);

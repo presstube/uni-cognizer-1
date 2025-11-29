@@ -43,6 +43,7 @@ const slugInput = document.getElementById('slug');
 const promptTextarea = document.getElementById('prompt');
 const saveBtn = document.getElementById('save-btn');
 const activateBtn = document.getElementById('activate-btn');
+const deleteBtn = document.getElementById('delete-btn');
 const phraseInput = document.getElementById('phrase');
 const includeImageCheckbox = document.getElementById('include-image');
 const imageFileInput = document.getElementById('image-file');
@@ -68,6 +69,7 @@ async function init() {
   nameInput.addEventListener('input', updateSlug);
   saveBtn.addEventListener('click', handleSave);
   activateBtn.addEventListener('click', handleActivate);
+  deleteBtn.addEventListener('click', handleDelete);
   phraseInput.addEventListener('keydown', handlePhraseSubmit);
   imageFileInput.addEventListener('change', handleImageUpload);
   resetImageBtn.addEventListener('click', handleResetImage);
@@ -96,7 +98,7 @@ async function init() {
 function initSigil() {
   sigil = new Sigil({
     canvas: document.getElementById('sigil-canvas'),
-    canvasSize: 200,
+    canvasSize: 300,
     drawDuration: 200,
     undrawDuration: 300,
     thinkingShiftInterval: 100,
@@ -179,6 +181,7 @@ async function handlePromptChange() {
     currentId = null;
     currentPrompt = null;
     activateBtn.disabled = true;
+    deleteBtn.disabled = true;
   } else {
     try {
       const res = await fetch(`${API_BASE}/sigil-prompts/${value}`);
@@ -215,6 +218,7 @@ async function handlePromptChange() {
       }
       
       activateBtn.disabled = currentPrompt.active;
+      deleteBtn.disabled = false;
       
     } catch (error) {
       console.error('Failed to load prompt:', error);
@@ -559,6 +563,43 @@ async function handleActivate() {
     alert(`Error: ${error.message}`);
   } finally {
     activateBtn.classList.remove('loading');
+  }
+}
+
+// Delete prompt
+async function handleDelete() {
+  if (!currentId) {
+    alert('No prompt selected to delete');
+    return;
+  }
+  
+  if (!confirm('Delete this sigil prompt?\n\nThis action cannot be undone.')) {
+    return;
+  }
+  
+  try {
+    deleteBtn.disabled = true;
+    deleteBtn.classList.add('loading');
+    
+    const res = await fetch(`${API_BASE}/sigil-prompts/${currentId}`, {
+      method: 'DELETE'
+    });
+    
+    if (!res.ok) throw new Error('Delete failed');
+    
+    alert('✅ Prompt deleted');
+    
+    // Reset and reload
+    await loadPrompts();
+    promptSelect.value = 'new';
+    handlePromptChange();
+    
+  } catch (error) {
+    console.error('Delete failed:', error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    deleteBtn.disabled = false;
+    deleteBtn.classList.remove('loading');
   }
 }
 

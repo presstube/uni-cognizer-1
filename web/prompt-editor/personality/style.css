@@ -2,6 +2,11 @@
    Personality Forge - Local Styles Only
    ============================================ */
 
+/* Right Pane Padding */
+.right-pane {
+  padding: var(--space-lg);
+}
+
 /* Results Section */
 #results {
   display: flex;

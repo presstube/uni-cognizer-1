@@ -6,9 +6,7 @@ const API_BASE = '/api';
 const MODEL_LISTS = {
   gemini: [
     { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Experimental)' },
-    { value: 'gemini-1.5-flash-002', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash-8B' },
-    { value: 'gemini-1.5-pro-002', label: 'Gemini 1.5 Pro' }
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }
   ],
   anthropic: [
     { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5' },

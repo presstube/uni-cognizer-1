@@ -64,7 +64,6 @@
   font-style: italic;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--color-border-editor);
   border-radius: 0;
   color: #666;
   padding: var(--space-sm);
@@ -72,7 +71,7 @@
 
 .phrase-input input:focus {
   color: #999;
-  border-bottom-color: #666;
+  outline: none;
   box-shadow: none;
 }
 
