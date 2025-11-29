@@ -15,8 +15,28 @@
   max-height: 200px;
 }
 
-/* Left pane - text content (2/3 width) */
+/* Left pane - sigil (1/3 width) */
 .moment-card-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--space-md);
+}
+
+/* Sigil canvas */
+.moment-card-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 120px;
+  max-height: 120px;
+}
+
+/* Right pane - text content (2/3 width) */
+.moment-card-right {
   flex: 2;
   display: flex;
   flex-direction: column;
@@ -45,25 +65,5 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* Right pane - sigil (1/3 width) */
-.moment-card-right {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  padding: var(--space-md);
-}
-
-/* Sigil canvas */
-.moment-card-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: 120px;
-  max-height: 120px;
 }
 

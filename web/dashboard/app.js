@@ -364,16 +364,16 @@ function startCountdown() {
  * Update or create moment card
  */
 function updateMomentCard(data) {
-  // Remove old card
-  if (currentMomentCard) {
-    currentMomentCard.remove();
+  // If card doesn't exist, create it once
+  if (!currentMomentCard) {
+    currentMomentCard = new MomentCard(data);
+    const cardElement = currentMomentCard.create();
+    $momentCardContainer.innerHTML = '';
+    $momentCardContainer.appendChild(cardElement);
+  } else {
+    // Card exists - just update it (triggers sigil animation)
+    currentMomentCard.update(data);
   }
-  
-  // Create new card
-  currentMomentCard = new MomentCard(data);
-  const cardElement = currentMomentCard.create();
-  $momentCardContainer.innerHTML = '';
-  $momentCardContainer.appendChild(cardElement);
 }
 
 /**
