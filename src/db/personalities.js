@@ -58,26 +58,32 @@ export async function getFullPersonality(id) {
 }
 
 // Save personality (create or update)
-export async function savePersonality({ id, name, slug, prompt }) {
+export async function savePersonality({ 
+  id, name, slug, prompt,
+  provider, model, temperature, top_p, top_k, max_tokens
+}) {
   const pool = getPool();
   
   if (id) {
     // Update existing
     const result = await pool.query(`
       UPDATE personalities 
-      SET name = $2, slug = $3, prompt = $4, updated_at = NOW()
+      SET name = $2, slug = $3, prompt = $4,
+          provider = $5, model = $6, temperature = $7,
+          top_p = $8, top_k = $9, max_tokens = $10,
+          updated_at = NOW()
       WHERE id = $1
       RETURNING *
-    `, [id, name, slug, prompt]);
+    `, [id, name, slug, prompt, provider, model, temperature, top_p, top_k, max_tokens]);
     
     return result.rows[0];
   } else {
     // Create new (inactive by default)
     const result = await pool.query(`
-      INSERT INTO personalities (name, slug, prompt, active)
-      VALUES ($1, $2, $3, false)
+      INSERT INTO personalities (name, slug, prompt, active, provider, model, temperature, top_p, top_k, max_tokens)
+      VALUES ($1, $2, $3, false, $4, $5, $6, $7, $8, $9)
       RETURNING *
-    `, [name, slug, prompt]);
+    `, [name, slug, prompt, provider, model, temperature, top_p, top_k, max_tokens]);
     
     return result.rows[0];
   }

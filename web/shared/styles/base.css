@@ -1,0 +1,95 @@
+/* ============================================
+   BASE CSS - Shared Foundation
+   ============================================ */
+
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* CSS Custom Properties */
+:root {
+  /* Colors - Dark Theme (Monitor Apps) */
+  --color-bg: #000;
+  --color-text: rgba(255, 255, 255, 0.8);
+  --color-text-bright: rgba(255, 255, 255, 0.9);
+  --color-text-dim: rgba(255, 255, 255, 0.4);
+  --color-text-muted: rgba(255, 255, 255, 0.2);
+  --color-text-faint: rgba(255, 255, 255, 0.3);
+  --color-border: rgba(255, 255, 255, 0.1);
+  
+  /* Colors - Editor Theme */
+  --color-bg-editor: #1a1a1a;
+  --color-text-editor: #e0e0e0;
+  --color-border-editor: #3a3a3a;
+  --color-label-editor: #b0b0b0;
+  
+  /* Status Colors (Shared) */
+  --color-connected: rgba(0, 255, 136, 0.9);
+  --color-disconnected: rgba(255, 68, 68, 0.9);
+  --color-cognizing: rgba(0, 128, 255, 0.9);
+  --color-visualizing: rgba(0, 255, 136, 0.9);
+  
+  /* Action Colors (Editors) */
+  --color-primary: #4CAF50;
+  --color-secondary: #2196F3;
+  --color-success: #4CAF50;
+  --color-danger: #f44336;
+  --color-warning: #FFC107;
+  
+  /* Input Colors (Editors) */
+  --color-input-bg: #1a1a1a;
+  --color-input-border: #3a3a3a;
+  --color-input-border-focus: #4CAF50;
+  --color-input-text: #e0e0e0;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  
+  /* Typography */
+  --font-mono: monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 8px;
+  --font-size-sm: 10px;
+  --font-size-md: 12px;
+  --font-size-lg: 14px;
+  --font-size-xl: 48px;
+  
+  /* Borders */
+  --border-radius: 4px;
+  --border-radius-lg: 8px;
+}
+
+/* Base Body Styles */
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+

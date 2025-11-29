@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎭 Personality Forge</title>
+  <link rel="stylesheet" href="/web/shared/styles/base.css">
+  <link rel="stylesheet" href="/web/shared/styles/editor-base.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="editor">
   <!-- Left Pane: Editor -->
   <div class="left-pane">
     <!-- Load Personality -->
@@ -44,6 +46,49 @@
     <!-- Prompt -->
     <label>Personality Prompt <span id="char-count">0 chars</span></label>
     <textarea id="prompt" placeholder="You are UNI - the soul of the Unisphere..."></textarea>
+
+    <!-- Generation Config -->
+    <div class="generation-config">
+      <label class="generation-config-title">⚙️ LLM Settings</label>
+      <div class="generation-config-hint">
+        Controls how the LLM generates personality responses.
+      </div>
+      <div class="generation-config-grid">
+        <div>
+          <label>Provider</label>
+          <select id="llm-provider">
+            <option value="gemini">Gemini</option>
+            <option value="anthropic">Anthropic</option>
+          </select>
+        </div>
+        <div>
+          <label>Model</label>
+          <select id="llm-model"></select>
+        </div>
+        <div>
+          <label>Temperature (0-2)</label>
+          <input type="number" id="llm-temperature" min="0" max="2" step="0.1" value="0.7">
+          <div class="input-hint">Gemini: 0-2, Anthropic: 0-1</div>
+        </div>
+        <div id="top-p-group">
+          <label>Top P (0-1)</label>
+          <input type="number" id="llm-top-p" min="0" max="1" step="0.05" value="0.9">
+        </div>
+        <div id="top-k-group">
+          <label>Top K (1-40)</label>
+          <input type="number" id="llm-top-k" min="1" max="40" step="1" value="40">
+        </div>
+        <div>
+          <label>Max Tokens</label>
+          <input type="number" id="llm-max-tokens" min="100" max="4096" step="100" value="1024">
+        </div>
+      </div>
+      <div class="preset-buttons">
+        <button type="button" class="preset-btn" data-preset="deterministic">Deterministic</button>
+        <button type="button" class="preset-btn" data-preset="balanced">Balanced</button>
+        <button type="button" class="preset-btn" data-preset="creative">Creative</button>
+      </div>
+    </div>
 
     <!-- Mock Percepts -->
     <label>Mock Percepts</label>

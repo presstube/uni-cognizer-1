@@ -18,7 +18,7 @@ export function initDatabase() {
       : false,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
+    connectionTimeoutMillis: 10000  // Increased from 2s to 10s for remote databases
   });
   
   pool.on('error', (err) => {

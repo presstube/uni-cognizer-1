@@ -121,41 +121,14 @@ export class SigilAndPhrase {
   }
   
   /**
-   * INTERNAL: Inject CSS styles (once per page)
+   * NOTE: Styles are now in sigil-and-phrase.css
+   * Include that CSS file in your HTML:
+   * <link rel="stylesheet" href="../shared/components/sigil-and-phrase/sigil-and-phrase.css">
+   * 
+   * @deprecated This method no longer injects styles - kept for backwards compatibility
    */
   _injectStyles() {
-    // Only inject once
-    if (document.getElementById('sigil-and-phrase-styles')) return;
-    
-    const styleSheet = document.createElement('style');
-    styleSheet.id = 'sigil-and-phrase-styles';
-    styleSheet.textContent = `
-      .sigil-and-phrase-wrapper {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        box-sizing: border-box;
-        padding: 1rem;
-      }
-      
-      .sigil-and-phrase-canvas {
-        display: block;
-      }
-      
-      .sigil-and-phrase-text {
-        font-weight: 400;
-        font-style: italic;
-        text-align: center;
-        font-family: 'Monaco', 'Courier New', monospace;
-        letter-spacing: 1px;
-        min-height: 24px;
-      }
-    `;
-    document.head.appendChild(styleSheet);
+    // Styles are now external - no-op for backwards compatibility
   }
   
   /**

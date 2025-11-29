@@ -1,0 +1,178 @@
+/* ============================================
+   PERCEPTOR REMOTE CSS - Component-Specific Styles
+   ============================================ */
+
+/* Body Override */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Full-screen dimmed grayscale video */
+#video-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%);
+  opacity: 0.25;
+  transition: filter 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+video.flash-color {
+  filter: grayscale(0%) brightness(1.2);
+  opacity: 1.0;
+  transition: filter 0.05s ease-in, opacity 0.05s ease-in;
+}
+
+/* Control panel - top-left - vertical stack */
+#control-panel {
+  position: fixed;
+  top: var(--space-md);
+  left: var(--space-md);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-key-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-key-group label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.api-key-group label a {
+  color: rgba(100, 150, 255, 0.9);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.api-key-group label a:hover {
+  color: rgba(150, 200, 255, 1);
+}
+
+#api-key-input {
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  padding: var(--space-sm) 12px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  outline: none;
+  transition: all 0.2s;
+  width: 220px;
+}
+
+#api-key-input:focus {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+#api-key-input::placeholder {
+  color: var(--color-text-dim);
+}
+
+#toggle-btn {
+  background: rgba(0, 0, 0, 0.75);
+  border: none;
+  color: white;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+#toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+#toggle-btn.active {
+  background: rgba(0, 128, 255, 0.75);
+}
+
+#toggle-btn.active:hover {
+  background: rgba(0, 128, 255, 0.9);
+}
+
+#toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Toast container - top-right */
+#toast-container {
+  position: fixed;
+  top: var(--space-md);
+  right: var(--space-md);
+  z-index: 100;
+  width: 400px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Audio-reactive gradient overlay */
+#audio-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 50;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.05s ease-out;
+}
+
+/* Sigil carousel - follows third eye */
+#sigil-carousel {
+  position: fixed;
+  z-index: 100;
+  width: 50px;
+  height: 50px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: left 0.1s ease-out, top 0.1s ease-out;
+}
+
+#sigil-carousel canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Third eye marker canvas */
+#third-eye-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 60;
+  pointer-events: none;
+}
+

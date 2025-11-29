@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as personalities from '../db/personalities.js';
 import { callLLM } from '../providers/index.js';
+import { callLLMDynamic } from '../providers/dynamic.js';
 
 const router = Router();
 
@@ -50,7 +51,10 @@ router.get('/personalities/:id', async (req, res) => {
 // Create or update personality
 router.post('/personalities', async (req, res) => {
   try {
-    const { id, name, slug, prompt } = req.body;
+    const { 
+      id, name, slug, prompt,
+      provider, model, temperature, top_p, top_k, max_tokens
+    } = req.body;
     
     // Validation
     if (!name || !slug || !prompt) {
@@ -68,7 +72,8 @@ router.post('/personalities', async (req, res) => {
     }
     
     const personality = await personalities.savePersonality({
-      id, name, slug, prompt
+      id, name, slug, prompt,
+      provider, model, temperature, top_p, top_k, max_tokens
     });
     
     res.json({ personality });
@@ -115,7 +120,7 @@ router.post('/personalities/:id/test', async (req, res) => {
       return res.status(404).json({ error: 'Personality not found' });
     }
     
-    const { visualPercepts = [], audioPercepts = [] } = req.body;
+    const { visualPercepts = [], audioPercepts = [], llmSettings = null } = req.body;
     
     // Build prompt with personality
     const visualStr = visualPercepts
@@ -141,10 +146,35 @@ Generate a complete cognitive response as JSON. Be specific about what you notic
 
 Respond with ONLY valid JSON, nothing else.`;
     
-    console.log(`🧪 Testing personality: ${personality.name}`);
+    // Use LLM settings from request if provided (UI override), otherwise use saved personality settings
+    const effectiveSettings = llmSettings || {
+      provider: personality.provider || 'gemini',
+      model: personality.model || 'gemini-2.0-flash-exp',
+      temperature: personality.temperature ?? 0.7,
+      maxTokens: personality.max_tokens || 1024,
+      topP: personality.top_p ?? 0.9,
+      topK: personality.top_k ?? 40
+    };
     
-    // Call LLM
-    const response = await callLLM(prompt);
+    // Build config from effective LLM settings
+    const llmConfig = {
+      provider: effectiveSettings.provider,
+      model: effectiveSettings.model,
+      temperature: parseFloat(effectiveSettings.temperature),
+      maxTokens: parseInt(effectiveSettings.maxTokens || effectiveSettings.max_tokens, 10),
+      topP: parseFloat(effectiveSettings.topP || effectiveSettings.top_p),
+      topK: parseInt(effectiveSettings.topK || effectiveSettings.top_k, 10)
+    };
+    
+    console.log(`🧪 Testing personality: ${personality.name}`);
+    console.log(`   LLM: ${llmConfig.provider}/${llmConfig.model} (temp: ${llmConfig.temperature})`);
+    if (llmSettings) {
+      console.log(`   Using UI settings (not saved)`);
+      console.log(`   Full config:`, JSON.stringify(llmConfig, null, 2));
+    }
+    
+    // Call LLM with effective provider and settings
+    const response = await callLLMDynamic(prompt, llmConfig);
     const text = response.trim();
     
     // Parse response

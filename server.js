@@ -67,16 +67,14 @@ app.use('/node_modules', express.static('node_modules'));
 
 // Serve shared assets (now under /web)
 // Note: Need both /shared and /web/shared for different relative import contexts
-app.use('/shared', express.static('web/shared'));          // For /see app (../shared/ resolves to /shared/)
+app.use('/shared', express.static('web/shared'));          // For JS imports (../shared/ resolves to /shared/)
 app.use('/web/shared', express.static('web/shared'));      // For absolute refs in HTML/CSS
 
-// User-facing apps (serve /see from web/see)
-app.use('/see', express.static('web/see'));
-
-// Legacy redirects (permanent 301)
-app.get('/door/see', (req, res) => {
-  res.redirect(301, '/see');
-});
+// DEPRECATED: /see app moved to graveyard
+// app.use('/see', express.static('web/see'));
+// app.get('/door/see', (req, res) => {
+//   res.redirect(301, '/see');
+// });
 
 app.get('/forge', (req, res) => {
   res.redirect(301, '/prompt-editor/personality');

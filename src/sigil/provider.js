@@ -6,6 +6,20 @@
 import { getImageContent } from './image.js';
 
 /**
+ * Simple string hash function for generating deterministic seeds
+ * @private
+ */
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
  * Clean up generated code
  * @private
  */
@@ -214,10 +228,25 @@ async function generateWithGemini(options) {
   // Build generation config
   const generationConfig = {
     temperature,
-    topP: top_p,
+    // Gemini API requires topP > 0, so use minimal value if 0 is requested
+    topP: top_p === 0 ? 0.0001 : top_p,
     topK: top_k,
     maxOutputTokens: max_tokens
   };
+  
+  // Add seed ONLY for deterministic settings (low temp AND low topK)
+  // This ensures creative profiles remain non-deterministic
+  const isDeterministic = temperature <= 0.1 && top_k <= 1;
+  if (isDeterministic) {
+    // Use hash of concept for reproducibility with same input
+    generationConfig.seed = hashString(concept);
+  } else {
+    // Use random seed for creative/non-deterministic generation
+    generationConfig.seed = Math.floor(Math.random() * 2147483647);
+  }
+  
+  // Log for debugging determinism
+  console.log(`[Sigil] Gemini API call - model: ${model}, temp: ${temperature}, topP: ${generationConfig.topP}, topK: ${top_k}, seed: ${generationConfig.seed} (${isDeterministic ? 'deterministic' : 'random'}), max_tokens: ${max_tokens}`);
   
   // Note: thinkingLevel is not supported in generationConfig for Gemini API
   // Gemini 3 Pro will use its default reasoning capabilities

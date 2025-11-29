@@ -1,349 +1,83 @@
-/* Reset & Base */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ============================================
+   Personality Forge - Local Styles Only
+   ============================================ */
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #ddd;
-  background: #0a0a0a;
+/* Results Section */
+#results {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  flex-direction: column;
+  gap: 15px;
 }
 
-/* Layout: Left/Right Split */
-.left-pane,
-.right-pane {
-  height: 100vh;
-  overflow-y: auto;
-  padding: 24px;
+#results.hidden {
+  display: none;
 }
 
-.left-pane {
-  flex: 0 0 50%;
-}
-
-.right-pane {
-  flex: 0 0 50%;
-  background: #050505;
-}
-
-/* Pane Title */
-.pane-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 24px 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* Row Layout for Name/Slug */
-.row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.row + .row {
-  margin-top: 24px;
-}
-
-.col {
-  flex: 1;
-}
-
-/* Inline field (label + input on same row) */
-.inline-field {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.inline-field label {
-  flex: 0 0 auto;
-  margin-top: 0;
-  margin-bottom: 0;
-  white-space: nowrap;
-}
-
-.inline-field input {
-  flex: 1;
-}
-
-/* Inline label (for Load Personality row) */
-.row > label {
-  flex: 0 0 auto;
-  margin-bottom: 0;
-  padding-bottom: 10px;
-  white-space: nowrap;
-}
-
-.row > select {
-  flex: 1;
-}
-
-/* Form Elements */
-label {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #888;
-  margin-top: 24px;
-  margin-bottom: 6px;
-}
-
-label:first-of-type {
-  margin-top: 0;
-}
-
-input[type="text"],
-select,
-textarea {
-  width: 100%;
-  background: #111;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  padding: 10px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: background 0.2s;
-}
-
-input[type="text"]:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  background: #1a1a1a;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 120px;
-  font-family: 'Monaco', 'Courier New', monospace;
+#result-moment,
+#result-sigil,
+#result-lighting {
   font-size: 13px;
   line-height: 1.6;
+  color: var(--color-text-editor);
+  margin-bottom: var(--space-md);
 }
 
+/* Prompt Textarea */
 #prompt {
-  min-height: 240px;
+  flex: 1;
+  min-height: 200px;
+  resize: none;
 }
 
+/* Percepts Textarea */
 #percepts {
-  min-height: 100px;
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* Preset Select */
+#preset-select {
+  margin-bottom: var(--space-sm);
 }
 
 /* Char Count */
 #char-count {
   float: right;
+  font-size: 11px;
   color: #666;
-  font-size: 10px;
-  text-transform: none;
-  letter-spacing: 0;
 }
 
-/* Actions */
-.actions {
+/* Preset buttons for LLM settings */
+.preset-buttons {
   display: flex;
-  gap: 8px;
-  margin-top: 24px;
-  margin-bottom: 24px;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
 }
 
-button {
+.preset-btn {
   flex: 1;
-  padding: 12px;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-md);
+  background: var(--color-input-bg);
+  color: var(--color-text-editor);
+  border-radius: var(--border-radius);
   border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  background: #1a1a1a;
-  color: #ddd;
 }
 
-button:hover {
+.preset-btn:hover {
   background: #252525;
 }
 
-button:active {
+.preset-btn:active {
   transform: translateY(1px);
 }
 
-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+/* Input hints */
+.input-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-dim);
+  margin-top: 2px;
+  font-style: italic;
 }
 
-button:disabled:hover {
-  background: #1a1a1a;
-}
-
-.btn-primary {
-  background: #0080ff;
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: #0066cc;
-}
-
-.btn-secondary {
-  background: #1a1a1a;
-  color: #ddd;
-}
-
-.btn-secondary:hover {
-  background: #252525;
-}
-
-.btn-success {
-  background: #00aa44;
-  color: #fff;
-}
-
-.btn-success:hover {
-  background: #008833;
-}
-
-.btn-danger {
-  background: #aa0000;
-  color: #fff;
-}
-
-.btn-danger:hover {
-  background: #880000;
-}
-
-/* Loading State */
-button.loading {
-  position: relative;
-  color: transparent;
-}
-
-button.loading::after {
-  content: '...';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  color: #fff;
-  letter-spacing: 2px;
-}
-
-/* Status Messages */
-.status {
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin-bottom: 24px;
-  font-size: 13px;
-}
-
-.status.success {
-  background: rgba(0, 170, 68, 0.1);
-  color: #00cc55;
-}
-
-.status.error {
-  background: rgba(170, 0, 0, 0.1);
-  color: #ff4444;
-}
-
-.hidden {
-  display: none;
-}
-
-/* Output */
-.output-text {
-  background: #0a0a0a;
-  border: none;
-  border-radius: 4px;
-  padding: 12px;
-  color: #fff;
-  font-size: 14px;
-  line-height: 1.6;
-  min-height: 40px;
-}
-
-#result-moment {
-  min-height: 80px;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #0a0a0a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* =====================================================
-   Responsive Breakpoints
-   ===================================================== */
-
-/* Tablet and below: Stack panes vertically */
-@media (max-width: 768px) {
-  body {
-    flex-direction: column;
-    height: auto;
-    overflow: visible;
-  }
-  
-  .left-pane,
-  .right-pane {
-    flex: 0 0 auto;
-    width: 100%;
-    height: auto;
-    min-height: auto;
-  }
-  
-  .right-pane {
-    border-top: 2px solid #1a1a1a;
-    min-height: 50vh;
-  }
-}
-
-/* Mobile: Adjust spacing and font sizes */
-@media (max-width: 480px) {
-  .left-pane,
-  .right-pane {
-    padding: 16px;
-  }
-  
-  .actions {
-    flex-wrap: wrap;
-  }
-  
-  button {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 120px;
-  }
-  
-  /* Stack name/slug fields on mobile */
-  .row {
-    flex-direction: column;
-    gap: 0;
-  }
-  
-  .row + .row {
-    margin-top: 16px;
-  }
-}

@@ -2,11 +2,8 @@
 // Perceptor Remote - Minimal Immersive UI
 // ============================================
 
-import { PerceptToast, injectPerceptToastStyles } from '../shared/percept-toast.js';
+import { PerceptToast } from '../shared/percept-toast.js';
 import { Sigil } from '../shared/sigil.standalone.js';
-
-// Inject toast styles on load
-injectPerceptToastStyles();
 
 // ============================================
 // SECTION 1: State Management

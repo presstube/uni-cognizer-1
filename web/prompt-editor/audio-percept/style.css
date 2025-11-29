@@ -1,25 +1,21 @@
-/* Audio Percept Editor Specific Styles */
+/* ============================================
+   Audio Percept Editor - Local Styles Only
+   ============================================ */
 
-/* Minimal overrides/extensions to shared framework */
-
-/* Recording indicator (if needed) */
+/* Recording Indicator */
 .recording-indicator {
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #f44336;
+  background: var(--color-danger);
   border-radius: 50%;
-  margin-right: 8px;
+  margin-right: var(--space-sm);
   animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* Sigil Display Container - Component fills this */
@@ -27,4 +23,3 @@
   margin-top: 2rem;
   min-height: 300px;
 }
-

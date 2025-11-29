@@ -9,6 +9,20 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
+ * Simple string hash function for generating deterministic seeds
+ * @private
+ */
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
  * Call Gemini's API
  * 
  * @param {string} prompt - Complete prompt (personality + percepts + instructions)
@@ -17,17 +31,28 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 export async function callLLM(prompt, options = {}) {
   const {
-    model = 'models/gemini-2.0-flash',
+    model = 'models/gemini-2.0-flash-exp',
     temperature = 0.85,
-    maxTokens = 500
+    maxTokens = 500,
+    topP = 0.95,
+    topK = 40
   } = options;
 
   try {
+    // Determine if this should be deterministic (low temperature AND explicit intent)
+    const isDeterministic = temperature < 0.1;
+    
     const geminiModel = genAI.getGenerativeModel({ 
       model,
       generationConfig: {
         temperature,
-        maxOutputTokens: maxTokens
+        maxOutputTokens: maxTokens,
+        // Gemini API requires topP > 0, so use minimal value if 0 is requested
+        topP: topP === 0 ? 0.0001 : topP,
+        topK,
+        // Add deterministic seed only for low-temperature requests
+        // Otherwise use random seed for creative variation
+        seed: isDeterministic ? hashString(prompt) : Math.floor(Math.random() * 2147483647)
       }
     });
 

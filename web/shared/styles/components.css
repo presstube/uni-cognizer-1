@@ -1,0 +1,58 @@
+/* ============================================
+   COMPONENTS CSS - Reusable Patterns
+   ============================================ */
+
+/* Label-Value Pairs */
+.label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-dim);
+  margin-bottom: var(--space-xs);
+}
+
+.value {
+  font-size: var(--font-size-md);
+  color: var(--color-text-bright);
+}
+
+/* Connection Status */
+.connection {
+  text-transform: uppercase;
+}
+
+.connection.connected {
+  color: var(--color-connected);
+}
+
+.connection.disconnected {
+  color: var(--color-disconnected);
+}
+
+/* Cognitive States */
+.state {
+  text-transform: uppercase;
+}
+
+.state.idle {
+  color: var(--color-text-muted);
+}
+
+.state.aggregating {
+  color: var(--color-text-dim);
+}
+
+.state.cognizing {
+  color: var(--color-cognizing);
+}
+
+.state.visualizing {
+  color: var(--color-visualizing);
+}
+
+/* Empty State */
+.empty {
+  color: var(--color-text-faint);
+  padding: var(--space-xl) 0;
+}
+

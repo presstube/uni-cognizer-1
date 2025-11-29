@@ -1,0 +1,70 @@
+/* ============================================
+   DASHBOARD CSS - Component-Specific Styles
+   ============================================ */
+
+/* Layout */
+body {
+  display: flex;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* Left pane - percepts */
+.left {
+  width: 400px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: var(--space-md);
+  border-right: 1px solid var(--color-border);
+}
+
+/* Right pane - cognizer state */
+.right {
+  flex: 1;
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Countdown */
+.countdown {
+  font-size: var(--font-size-xl);
+  font-weight: 200;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Mind Moment Display */
+.mind-moment {
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+  color: var(--color-text-bright);
+  max-width: 600px;
+}
+
+/* Sigil Phrase Display */
+.sigil-phrase {
+  font-size: var(--font-size-md);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Sigil Canvas */
+#sigil-canvas {
+  width: 120px;
+  height: 120px;
+}
+
+/* Session List */
+.session-list {
+  margin-top: var(--space-sm);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.session-item {
+  padding: 2px 0;
+}
+

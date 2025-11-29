@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎤 Audio Percept Prompt Editor</title>
-  <link rel="stylesheet" href="/web/shared/prompt-editor.css">
+  <link rel="stylesheet" href="/web/shared/styles/base.css">
+  <link rel="stylesheet" href="/web/shared/styles/editor-base.css">
+  <link rel="stylesheet" href="/web/shared/components/sigil-and-phrase/sigil-and-phrase.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="editor">
   <!-- Left Pane: Prompts -->
   <div class="left-pane">
     <div class="row">
@@ -42,32 +44,32 @@
     <textarea id="system-prompt" placeholder="You are analyzing audio percepts..."></textarea>
     
     <!-- Generation Config -->
-    <div style="margin-top: 1rem; padding: 1rem; background: #1a1a1a; border-radius: 4px; border: 1px solid #333;">
-      <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">⚙️ Generation Config</label>
-      <div style="font-size: 11px; color: #666; margin-bottom: 0.75rem;">
+    <div class="generation-config">
+      <label>⚙️ Generation Config</label>
+      <div class="generation-config-hint">
         Controls how Gemini Live API generates responses.
       </div>
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+      <div class="generation-config-grid">
         <div>
-          <label style="font-size: 12px;">Temperature (0-2)</label>
-          <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.8" style="width: 100%; padding: 0.25rem;">
+          <label>Temperature (0-2)</label>
+          <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.8">
         </div>
         <div>
-          <label style="font-size: 12px;">Top P (0-1)</label>
-          <input type="number" id="top-p" min="0" max="1" step="0.1" value="0.9" style="width: 100%; padding: 0.25rem;">
+          <label>Top P (0-1)</label>
+          <input type="number" id="top-p" min="0" max="1" step="0.1" value="0.9">
         </div>
         <div>
-          <label style="font-size: 12px;">Top K</label>
-          <input type="number" id="top-k" min="1" max="100" step="1" value="40" style="width: 100%; padding: 0.25rem;">
+          <label>Top K</label>
+          <input type="number" id="top-k" min="1" max="100" step="1" value="40">
         </div>
         <div>
-          <label style="font-size: 12px;">Max Tokens</label>
-          <input type="number" id="max-tokens" min="128" max="8192" step="128" value="1024" style="width: 100%; padding: 0.25rem;">
+          <label>Max Tokens</label>
+          <input type="number" id="max-tokens" min="128" max="8192" step="128" value="1024">
         </div>
         <div>
-          <label style="font-size: 12px;">Buffer Size (samples)</label>
-          <select id="sample-rate" style="width: 100%; padding: 0.25rem;">
+          <label>Buffer Size (samples)</label>
+          <select id="sample-rate">
             <option value="512">512 (smoother, more CPU)</option>
             <option value="1024">1024</option>
             <option value="2048">2048</option>
@@ -76,8 +78,8 @@
           </select>
         </div>
         <div>
-          <label style="font-size: 12px;">Packet Interval (ms)</label>
-          <select id="packet-interval" style="width: 100%; padding: 0.25rem;">
+          <label>Packet Interval (ms)</label>
+          <select id="packet-interval">
             <option value="500">500 (fastest response)</option>
             <option value="1000">1000</option>
             <option value="2000" selected>2000 (default)</option>

@@ -31,8 +31,8 @@ const MODEL_LISTS = {
     { value: 'models/gemini-3-pro-preview', label: 'Gemini 3 Pro (Preview)' },
     { value: 'models/gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
     { value: 'models/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Exp)' },
-    { value: 'models/gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'models/gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
+    { value: 'models/gemini-1.5-flash-002', label: 'Gemini 1.5 Flash' },
+    { value: 'models/gemini-1.5-pro-002', label: 'Gemini 1.5 Pro' }
   ]
 };
 
@@ -52,13 +52,10 @@ const resetImageBtn = document.getElementById('reset-image');
 // LLM Settings DOM Elements
 const llmProviderSelect = document.getElementById('llm-provider');
 const llmModelSelect = document.getElementById('llm-model');
-const llmTemperatureSlider = document.getElementById('llm-temperature');
-const llmTopPSlider = document.getElementById('llm-top-p');
-const llmTopKSlider = document.getElementById('llm-top-k');
+const llmTemperatureInput = document.getElementById('llm-temperature');
+const llmTopPInput = document.getElementById('llm-top-p');
+const llmTopKInput = document.getElementById('llm-top-k');
 const llmMaxTokensInput = document.getElementById('llm-max-tokens');
-const tempValueSpan = document.getElementById('temp-value');
-const topPValueSpan = document.getElementById('topp-value');
-const topKValueSpan = document.getElementById('topk-value');
 
 // Initialize
 async function init() {
@@ -78,9 +75,9 @@ async function init() {
   // LLM settings listeners
   llmProviderSelect.addEventListener('change', handleProviderChange);
   llmModelSelect.addEventListener('change', handleModelChange);
-  llmTemperatureSlider.addEventListener('input', handleTemperatureChange);
-  llmTopPSlider.addEventListener('input', handleTopPChange);
-  llmTopKSlider.addEventListener('input', handleTopKChange);
+  llmTemperatureInput.addEventListener('input', handleTemperatureChange);
+  llmTopPInput.addEventListener('input', handleTopPChange);
+  llmTopKInput.addEventListener('input', handleTopKChange);
   llmMaxTokensInput.addEventListener('input', handleMaxTokensChange);
   
   // Preset buttons
@@ -254,14 +251,10 @@ function updateLLMControls() {
   // Update model dropdown based on provider
   updateModelList();
   
-  // Update sliders/inputs
-  llmTemperatureSlider.value = llmSettings.temperature;
-  llmTopPSlider.value = llmSettings.top_p;
+  // Update inputs
+  llmTemperatureInput.value = llmSettings.temperature;
+  llmTopPInput.value = llmSettings.top_p;
   llmMaxTokensInput.value = llmSettings.max_tokens;
-  
-  // Update value displays
-  tempValueSpan.textContent = llmSettings.temperature.toFixed(1);
-  topPValueSpan.textContent = llmSettings.top_p.toFixed(2);
   
   // Show/hide controls based on provider
   const topKGroup = document.getElementById('top-k-group');
@@ -271,8 +264,7 @@ function updateLLMControls() {
     // Gemini: Show both top_p and top_k
     topPGroup.style.display = 'block';
     topKGroup.style.display = 'block';
-    llmTopKSlider.value = llmSettings.top_k || 40;
-    topKValueSpan.textContent = llmSettings.top_k || 40;
+    llmTopKInput.value = llmSettings.top_k || 40;
   } else {
     // Anthropic: Hide top_p and top_k (only uses temperature)
     topPGroup.style.display = 'none';
@@ -281,7 +273,7 @@ function updateLLMControls() {
   
   // Update temperature max based on provider
   const maxTemp = llmSettings.provider === 'gemini' ? 2.0 : 1.0;
-  llmTemperatureSlider.max = maxTemp;
+  llmTemperatureInput.max = maxTemp;
 }
 
 // Update model list based on provider
@@ -324,18 +316,15 @@ function handleModelChange() {
 }
 
 function handleTemperatureChange() {
-  llmSettings.temperature = parseFloat(llmTemperatureSlider.value);
-  tempValueSpan.textContent = llmSettings.temperature.toFixed(1);
+  llmSettings.temperature = parseFloat(llmTemperatureInput.value);
 }
 
 function handleTopPChange() {
-  llmSettings.top_p = parseFloat(llmTopPSlider.value);
-  topPValueSpan.textContent = llmSettings.top_p.toFixed(2);
+  llmSettings.top_p = parseFloat(llmTopPInput.value);
 }
 
 function handleTopKChange() {
-  llmSettings.top_k = parseInt(llmTopKSlider.value);
-  topKValueSpan.textContent = llmSettings.top_k;
+  llmSettings.top_k = parseInt(llmTopKInput.value, 10);
 }
 
 function handleMaxTokensChange() {

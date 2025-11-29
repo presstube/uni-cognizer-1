@@ -1,0 +1,29 @@
+/* ============================================
+   SIGIL AND PHRASE COMPONENT STYLES
+   ============================================ */
+
+.sigil-and-phrase-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  box-sizing: border-box;
+  padding: 1rem;
+}
+
+.sigil-and-phrase-canvas {
+  display: block;
+}
+
+.sigil-and-phrase-text {
+  font-weight: 400;
+  font-style: italic;
+  text-align: center;
+  font-family: var(--font-mono, 'Monaco', 'Courier New', monospace);
+  letter-spacing: 1px;
+  min-height: 24px;
+}
+

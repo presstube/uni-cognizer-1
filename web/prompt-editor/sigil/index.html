@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>⬡ Sigil Prompt Editor</title>
+  <link rel="stylesheet" href="/web/shared/styles/base.css">
+  <link rel="stylesheet" href="/web/shared/styles/editor-base.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="editor">
   <!-- Left Pane: Editor -->
   <div class="left-pane">
     <select id="prompt-select">
@@ -26,70 +28,48 @@
     <label>Prompt Template <span class="hint">Use ${concept} for phrase</span></label>
     <textarea id="prompt" placeholder="Generate JavaScript canvas drawing commands for a sigil representing &quot;${concept}&quot;..."></textarea>
     
-    <!-- LLM Settings Panel -->
-    <div class="llm-settings-panel">
-      <details open>
-        <summary>⚙️ LLM Settings</summary>
-        
-        <div class="llm-controls">
-          <!-- Provider Selection -->
-          <div class="control-group">
-            <label>Provider</label>
-            <select id="llm-provider">
-              <option value="anthropic">Anthropic Claude</option>
-              <option value="gemini">Google Gemini</option>
-            </select>
-          </div>
-          
-          <!-- Model Selection -->
-          <div class="control-group">
-            <label>Model</label>
-            <select id="llm-model">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-          
-          <!-- Temperature -->
-          <div class="control-group">
-            <label>
-              Temperature: <span id="temp-value">0.7</span>
-              <span class="hint">Lower = deterministic, Higher = creative</span>
-            </label>
-            <input type="range" id="llm-temperature" min="0" max="1" step="0.1" value="0.7">
-          </div>
-          
-          <!-- Top P (Gemini only, hidden for Anthropic) -->
-          <div class="control-group" id="top-p-group">
-            <label>
-              Top P: <span id="topp-value">0.9</span>
-              <span class="hint">Diversity control (Gemini only)</span>
-            </label>
-            <input type="range" id="llm-top-p" min="0" max="1" step="0.05" value="0.9">
-          </div>
-          
-          <!-- Top K (Gemini only, hidden for Anthropic) -->
-          <div class="control-group" id="top-k-group" style="display: none;">
-            <label>
-              Top K: <span id="topk-value">40</span>
-              <span class="hint">Gemini only: token diversity</span>
-            </label>
-            <input type="range" id="llm-top-k" min="1" max="40" step="1" value="40">
-          </div>
-          
-          <!-- Max Tokens -->
-          <div class="control-group">
-            <label>Max Tokens</label>
-            <input type="number" id="llm-max-tokens" min="100" max="4096" step="100" value="1024">
-          </div>
-          
-          <!-- Presets -->
-          <div class="preset-buttons">
-            <button type="button" class="preset-btn" data-preset="deterministic">Deterministic</button>
-            <button type="button" class="preset-btn" data-preset="balanced">Balanced</button>
-            <button type="button" class="preset-btn" data-preset="creative">Creative</button>
-          </div>
+    <!-- LLM Settings -->
+    <div class="generation-config">
+      <label>⚙️ LLM Settings</label>
+      
+      <div class="generation-config-grid">
+        <div>
+          <label>Provider</label>
+          <select id="llm-provider">
+            <option value="anthropic">Anthropic Claude</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
         </div>
-      </details>
+        <div>
+          <label>Model</label>
+          <select id="llm-model">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div>
+          <label>Temperature (0-1)</label>
+          <input type="number" id="llm-temperature" min="0" max="1" step="0.1" value="0.7">
+        </div>
+        <div id="top-p-group">
+          <label>Top P (0-1)</label>
+          <input type="number" id="llm-top-p" min="0" max="1" step="0.05" value="0.9">
+        </div>
+        <div id="top-k-group" style="display: none;">
+          <label>Top K</label>
+          <input type="number" id="llm-top-k" min="1" max="40" step="1" value="40">
+        </div>
+        <div>
+          <label>Max Tokens</label>
+          <input type="number" id="llm-max-tokens" min="100" max="4096" step="100" value="1024">
+        </div>
+      </div>
+      
+      <!-- Presets -->
+      <div class="preset-buttons">
+        <button type="button" class="preset-btn" data-preset="deterministic">Deterministic</button>
+        <button type="button" class="preset-btn" data-preset="balanced">Balanced</button>
+        <button type="button" class="preset-btn" data-preset="creative">Creative</button>
+      </div>
     </div>
     
     <div class="ref-status">

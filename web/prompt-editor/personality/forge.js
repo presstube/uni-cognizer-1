@@ -2,10 +2,42 @@
 
 const API_BASE = '/api';
 
+// Model lists by provider
+const MODEL_LISTS = {
+  gemini: [
+    { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Experimental)' },
+    { value: 'gemini-1.5-flash-002', label: 'Gemini 1.5 Flash' },
+    { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash-8B' },
+    { value: 'gemini-1.5-pro-002', label: 'Gemini 1.5 Pro' }
+  ],
+  anthropic: [
+    { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5' },
+    { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
+    { value: 'claude-opus-4-20250514', label: 'Claude Opus 4' }
+  ]
+};
+
+// LLM Presets
+const LLM_PRESETS = {
+  deterministic: { temperature: 0.3, top_p: 0.5, top_k: 20 },
+  balanced: { temperature: 0.7, top_p: 0.9, top_k: 40 },
+  creative: { temperature: 1.2, top_p: 0.95, top_k: 40 }
+};
+
 // State
 let personalities = [];
 let currentPersonality = null;
 let currentId = null;
+
+// LLM Settings State
+let llmSettings = {
+  provider: 'gemini',
+  model: 'gemini-2.0-flash-exp',
+  temperature: 0.7,
+  top_p: 0.9,
+  top_k: 40,
+  max_tokens: 1024
+};
 
 // Mock percept presets
 const PRESETS = {
@@ -66,12 +98,23 @@ const resultMoment = document.getElementById('result-moment');
 const resultSigil = document.getElementById('result-sigil');
 const resultLighting = document.getElementById('result-lighting');
 
+// LLM Settings DOM Elements
+const llmProviderSelect = document.getElementById('llm-provider');
+const llmModelSelect = document.getElementById('llm-model');
+const llmTemperatureInput = document.getElementById('llm-temperature');
+const llmTopPInput = document.getElementById('llm-top-p');
+const llmTopKInput = document.getElementById('llm-top-k');
+const llmMaxTokensInput = document.getElementById('llm-max-tokens');
+
 // Initialize
 async function init() {
   await loadPersonalities();
   
   // Set initial preset
   loadPreset('greeting');
+  
+  // Initialize LLM controls
+  initializeLLMControls();
   
   // Event listeners
   personalitySelect.addEventListener('change', handlePersonalityChange);
@@ -82,6 +125,19 @@ async function init() {
   testBtn.addEventListener('click', handleTest);
   saveBtn.addEventListener('click', handleSave);
   activateBtn.addEventListener('click', handleActivate);
+  
+  // LLM settings listeners
+  llmProviderSelect.addEventListener('change', handleProviderChange);
+  llmModelSelect.addEventListener('change', handleModelChange);
+  llmTemperatureInput.addEventListener('input', handleTemperatureChange);
+  llmTopPInput.addEventListener('input', handleTopPChange);
+  llmTopKInput.addEventListener('input', handleTopKChange);
+  llmMaxTokensInput.addEventListener('input', handleMaxTokensChange);
+  
+  // Preset button listeners
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => handlePreset(btn.dataset.preset));
+  });
   
   updateCharCount();
   
@@ -157,11 +213,16 @@ async function activatePersonality(id) {
   return data;
 }
 
-async function testPersonality(id, percepts) {
+async function testPersonality(id, percepts, llmSettingsOverride = null) {
+  const payload = {
+    ...percepts,
+    llmSettings: llmSettingsOverride  // Include LLM settings override if provided
+  };
+  
   const res = await fetch(`${API_BASE}/personalities/${id}/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(percepts)
+    body: JSON.stringify(payload)
   });
   if (!res.ok) {
     const error = await res.json();
@@ -214,6 +275,8 @@ async function handlePersonalityChange() {
     currentPersonality = null;
     deleteBtn.disabled = true;
     activateBtn.disabled = true;
+    // Reset to defaults
+    resetLLMSettings();
   } else {
     try {
       currentPersonality = await fetchPersonality(value);
@@ -223,6 +286,9 @@ async function handlePersonalityChange() {
       slugInput.value = currentPersonality.slug;
       promptTextarea.value = currentPersonality.prompt;
       updateCharCount();
+      
+      // Load LLM settings
+      loadLLMSettings(currentPersonality);
       
       deleteBtn.disabled = currentPersonality.active;
       activateBtn.disabled = currentPersonality.active;
@@ -288,8 +354,8 @@ async function handleTest() {
     // Parse percepts
     const percepts = JSON.parse(perceptsTextarea.value);
     
-    // Test
-    const result = await testPersonality(currentId, percepts);
+    // Test with current UI settings (not saved settings)
+    const result = await testPersonality(currentId, percepts, llmSettings);
     
     // Display results
     resultMoment.textContent = result.mindMoment;
@@ -322,7 +388,8 @@ async function handleSave(silent = false) {
       id: currentId,
       name,
       slug,
-      prompt
+      prompt,
+      ...llmSettings
     };
     
     const saved = await savePersonality(personality);
@@ -436,6 +503,156 @@ function setLoading(button, loading) {
     button.classList.remove('loading');
     button.disabled = false;
   }
+}
+
+// LLM Control Functions
+function initializeLLMControls() {
+  // Populate provider dropdown
+  llmProviderSelect.innerHTML = '';
+  Object.keys(MODEL_LISTS).forEach(provider => {
+    const option = document.createElement('option');
+    option.value = provider;
+    option.textContent = provider.charAt(0).toUpperCase() + provider.slice(1);
+    llmProviderSelect.appendChild(option);
+  });
+  
+  // Set initial values
+  updateLLMControls();
+}
+
+function updateLLMControls() {
+  // Update provider dropdown
+  llmProviderSelect.value = llmSettings.provider;
+  
+  // Update model dropdown based on provider
+  updateModelList();
+  
+  // Update inputs
+  llmTemperatureInput.value = llmSettings.temperature;
+  llmTopPInput.value = llmSettings.top_p;
+  llmTopKInput.value = llmSettings.top_k;
+  llmMaxTokensInput.value = llmSettings.max_tokens;
+  
+  // Show/hide controls based on provider
+  const topKGroup = document.getElementById('top-k-group');
+  const topPGroup = document.getElementById('top-p-group');
+  
+  if (llmSettings.provider === 'gemini') {
+    // Gemini: Show both top_p and top_k
+    topPGroup.style.display = 'flex';
+    topKGroup.style.display = 'flex';
+  } else {
+    // Anthropic: Hide top_p and top_k (only uses temperature)
+    topPGroup.style.display = 'none';
+    topKGroup.style.display = 'none';
+  }
+  
+  // Update temperature max based on provider
+  const maxTemp = llmSettings.provider === 'gemini' ? 2.0 : 1.0;
+  llmTemperatureInput.max = maxTemp;
+}
+
+function updateModelList() {
+  llmModelSelect.innerHTML = '';
+  const models = MODEL_LISTS[llmSettings.provider] || [];
+  models.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model.value;
+    option.textContent = model.label;
+    if (model.value === llmSettings.model) {
+      option.selected = true;
+    }
+    llmModelSelect.appendChild(option);
+  });
+}
+
+function handleProviderChange() {
+  llmSettings.provider = llmProviderSelect.value;
+  
+  // Reset model to first in list for new provider
+  const models = MODEL_LISTS[llmSettings.provider] || [];
+  if (models.length > 0) {
+    llmSettings.model = models[0].value;
+  }
+  
+  // Clamp temperature based on new provider
+  if (llmSettings.provider === 'anthropic' && llmSettings.temperature > 1) {
+    llmSettings.temperature = 1;
+  }
+  
+  // Reset top_k for Gemini
+  if (llmSettings.provider === 'gemini') {
+    llmSettings.top_k = 40;
+  } else {
+    llmSettings.top_k = null;
+  }
+  
+  updateLLMControls();
+}
+
+function handleModelChange() {
+  llmSettings.model = llmModelSelect.value;
+}
+
+function handleTemperatureChange() {
+  let temp = parseFloat(llmTemperatureInput.value);
+  
+  // Clamp temperature based on provider
+  if (llmSettings.provider === 'anthropic') {
+    temp = Math.max(0, Math.min(1, temp)); // Anthropic: 0-1
+  } else if (llmSettings.provider === 'gemini') {
+    temp = Math.max(0, Math.min(2, temp)); // Gemini: 0-2
+  }
+  
+  llmSettings.temperature = temp;
+  llmTemperatureInput.value = temp; // Update UI to show clamped value
+}
+
+function handleTopPChange() {
+  llmSettings.top_p = parseFloat(llmTopPInput.value);
+}
+
+function handleTopKChange() {
+  llmSettings.top_k = parseInt(llmTopKInput.value, 10);
+}
+
+function handleMaxTokensChange() {
+  llmSettings.max_tokens = parseInt(llmMaxTokensInput.value, 10);
+}
+
+function handlePreset(presetName) {
+  const preset = LLM_PRESETS[presetName];
+  if (preset) {
+    llmSettings.temperature = preset.temperature;
+    llmSettings.top_p = preset.top_p;
+    llmSettings.top_k = preset.top_k;
+    updateLLMControls();
+  }
+}
+
+function loadLLMSettings(personality) {
+  // Load LLM settings from personality, with fallback to defaults
+  llmSettings = {
+    provider: personality.provider || 'gemini',
+    model: personality.model || 'gemini-2.0-flash-exp',
+    temperature: personality.temperature || 0.7,
+    top_p: personality.top_p || 0.9,
+    top_k: personality.top_k || 40,
+    max_tokens: personality.max_tokens || 1024
+  };
+  updateLLMControls();
+}
+
+function resetLLMSettings() {
+  llmSettings = {
+    provider: 'gemini',
+    model: 'gemini-2.0-flash-exp',
+    temperature: 0.7,
+    top_p: 0.9,
+    top_k: 40,
+    max_tokens: 1024
+  };
+  updateLLMControls();
 }
 
 // Start
