@@ -116,7 +116,7 @@ export class MomentCard {
         canvasSize: 120,
         scale: 1.0,
         lineColor: '#ffffff',
-        lineWeight: 2.0,
+        lineWeight: 1.0,
         drawDuration: 400, // Enable animation for undraw/redraw
         undrawDuration: 400, // Enable animation for undraw/redraw
       });

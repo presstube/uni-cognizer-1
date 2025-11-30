@@ -4,6 +4,7 @@
 
 import { PerceptToast } from '../shared/percept-toast.js';
 import { MomentCard } from '../shared/components/moment-card/moment-card.js';
+import { MomentCardHero } from '../shared/components/moment-card-hero/moment-card-hero.js';
 import { HistoryGrid } from '../shared/components/history-grid/history-grid.js';
 import { Sigil } from '../shared/sigil.standalone.js';
 
@@ -426,12 +427,12 @@ function startCountdown() {
 // ============================================
 
 /**
- * Update or create moment card
+ * Update or create moment card (uses hero version for main display)
  */
 function updateMomentCard(data) {
   // If card doesn't exist, create it once
   if (!currentMomentCard) {
-    currentMomentCard = new MomentCard(data);
+    currentMomentCard = new MomentCardHero(data);
     const cardElement = currentMomentCard.create();
     $momentCardContainer.innerHTML = '';
     $momentCardContainer.appendChild(cardElement);
