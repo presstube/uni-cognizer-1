@@ -117,8 +117,8 @@ export class MomentCard {
         scale: 1.0,
         lineColor: '#ffffff',
         lineWeight: 1.0,
-        drawDuration: 400, // Enable animation for undraw/redraw
-        undrawDuration: 400, // Enable animation for undraw/redraw
+        drawDuration: 300, // Enable animation for undraw/redraw
+        undrawDuration: 300, // Enable animation for undraw/redraw
       });
     }
     

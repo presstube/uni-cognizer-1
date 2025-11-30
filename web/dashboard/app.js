@@ -162,6 +162,81 @@ async function fetchAndDisplayPriorMoments(priorMomentIds) {
 historyGrid = new HistoryGrid($historyGrid, onHistoryMomentClick);
 
 // ============================================
+// History Grid Keyboard Navigation
+// ============================================
+
+let selectedHistoryIndex = -1; // Track selected moment index
+
+/**
+ * Handle keyboard navigation in history grid
+ * LEFT arrow = previous (newer moment)
+ * RIGHT arrow = next (older moment)
+ */
+function initHistoryKeyboardNav() {
+  document.addEventListener('keydown', (e) => {
+    // Only handle if we have moments loaded
+    if (!historyGrid || !historyGrid.moments || historyGrid.moments.length === 0) {
+      return;
+    }
+    
+    // LEFT arrow = previous (newer moment)
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateHistory(-1);
+    }
+    
+    // RIGHT arrow = next (older moment)
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateHistory(1);
+    }
+  });
+}
+
+/**
+ * Navigate history by offset
+ * @param {number} offset - -1 for prev (newer), +1 for next (older)
+ */
+function navigateHistory(offset) {
+  const moments = historyGrid.moments;
+  
+  // Find current selection
+  const currentCell = document.querySelector('.sigil-cell.selected');
+  if (currentCell) {
+    const momentId = currentCell.dataset.momentId;
+    selectedHistoryIndex = moments.findIndex(m => m.id === momentId);
+  }
+  
+  // If nothing selected, start at beginning
+  if (selectedHistoryIndex === -1) {
+    selectedHistoryIndex = 0;
+  } else {
+    // Move selection
+    selectedHistoryIndex = Math.max(0, Math.min(moments.length - 1, selectedHistoryIndex + offset));
+  }
+  
+  // Get and display the selected moment
+  const selectedMoment = moments[selectedHistoryIndex];
+  if (selectedMoment) {
+    onHistoryMomentClick(selectedMoment);
+    
+    // Update visual selection
+    const cells = document.querySelectorAll('.sigil-cell');
+    cells.forEach(cell => {
+      if (cell.dataset.momentId === selectedMoment.id) {
+        cell.classList.add('selected');
+        cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        cell.classList.remove('selected');
+      }
+    });
+  }
+}
+
+// Initialize keyboard navigation
+initHistoryKeyboardNav();
+
+// ============================================
 // Socket.io Connection (READ-ONLY - no session)
 // ============================================
 

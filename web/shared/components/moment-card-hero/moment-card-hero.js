@@ -145,8 +145,8 @@ export class MomentCardHero {
         scale: 1.0,
         lineColor: '#ffffff',
         lineWeight: 1,
-        drawDuration: 600,
-        undrawDuration: 600,
+        drawDuration: 300,
+        undrawDuration: 300,
       });
     }
     
