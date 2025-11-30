@@ -24,6 +24,18 @@ export async function getAudioPromptById(id) {
 }
 
 /**
+ * Get audio prompt by slug
+ */
+export async function getAudioPromptBySlug(slug) {
+  const pool = getPool();
+  const result = await pool.query(
+    'SELECT * FROM audio_prompts WHERE slug = $1',
+    [slug]
+  );
+  return result.rows[0];
+}
+
+/**
  * Get active audio prompt
  */
 export async function getActiveAudioPrompt() {
@@ -37,16 +49,17 @@ export async function getActiveAudioPrompt() {
 /**
  * Create a new audio prompt
  */
-export async function createAudioPrompt(name, slug, systemPrompt, generationConfig = {}) {
+export async function createAudioPrompt(name, slug, systemPrompt, userPrompt = '', generationConfig = {}) {
   const pool = getPool();
   const result = await pool.query(
-    `INSERT INTO audio_prompts (name, slug, system_prompt, temperature, top_p, top_k, max_output_tokens, sample_rate, packet_interval)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO audio_prompts (name, slug, system_prompt, user_prompt, temperature, top_p, top_k, max_output_tokens, sample_rate, packet_interval)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
     [
       name, 
       slug, 
       systemPrompt,
+      userPrompt,
       generationConfig.temperature ?? 0.8,
       generationConfig.topP ?? 0.9,
       generationConfig.topK ?? 40,
@@ -61,12 +74,12 @@ export async function createAudioPrompt(name, slug, systemPrompt, generationConf
 /**
  * Update an existing audio prompt
  */
-export async function updateAudioPrompt(id, name, slug, systemPrompt, generationConfig = {}) {
+export async function updateAudioPrompt(id, name, slug, systemPrompt, userPrompt = '', generationConfig = {}) {
   const pool = getPool();
   const result = await pool.query(
     `UPDATE audio_prompts 
-     SET name = $2, slug = $3, system_prompt = $4,
-         temperature = $5, top_p = $6, top_k = $7, max_output_tokens = $8, sample_rate = $9, packet_interval = $10,
+     SET name = $2, slug = $3, system_prompt = $4, user_prompt = $5,
+         temperature = $6, top_p = $7, top_k = $8, max_output_tokens = $9, sample_rate = $10, packet_interval = $11,
          updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
@@ -75,6 +88,7 @@ export async function updateAudioPrompt(id, name, slug, systemPrompt, generation
       name, 
       slug, 
       systemPrompt,
+      userPrompt,
       generationConfig.temperature ?? 0.8,
       generationConfig.topP ?? 0.9,
       generationConfig.topK ?? 40,

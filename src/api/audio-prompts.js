@@ -4,6 +4,7 @@ import {
   getAllAudioPrompts,
   getActiveAudioPrompt,
   getAudioPromptById,
+  getAudioPromptBySlug,
   createAudioPrompt,
   updateAudioPrompt,
   activateAudioPrompt,
@@ -72,12 +73,32 @@ export async function getAudioPromptAPI(req, res) {
 }
 
 /**
+ * GET /api/audio-prompts/by-slug/:slug
+ * Get audio prompt by slug
+ */
+export async function getAudioPromptBySlugAPI(req, res) {
+  try {
+    const { slug } = req.params;
+    const prompt = await getAudioPromptBySlug(slug);
+    
+    if (!prompt) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+    
+    res.json({ prompt });
+  } catch (error) {
+    console.error('[API] Error getting audio prompt by slug:', error);
+    res.status(500).json({ error: 'Failed to get prompt' });
+  }
+}
+
+/**
  * POST /api/audio-prompts
  * Create or update an audio prompt
  */
 export async function saveAudioPrompt(req, res) {
   try {
-    const { id, name, slug, systemPrompt, generationConfig } = req.body;
+    const { id, name, slug, systemPrompt, userPrompt, generationConfig } = req.body;
     
     if (!name || !slug || !systemPrompt) {
       return res.status(400).json({ error: 'Name, slug, and systemPrompt are required' });
@@ -87,13 +108,13 @@ export async function saveAudioPrompt(req, res) {
     
     if (id) {
       // Update existing
-      savedPrompt = await updateAudioPrompt(id, name, slug, systemPrompt, generationConfig);
+      savedPrompt = await updateAudioPrompt(id, name, slug, systemPrompt, userPrompt || '', generationConfig);
       if (!savedPrompt) {
         return res.status(404).json({ error: 'Prompt not found' });
       }
     } else {
       // Create new
-      savedPrompt = await createAudioPrompt(name, slug, systemPrompt, generationConfig);
+      savedPrompt = await createAudioPrompt(name, slug, systemPrompt, userPrompt || '', generationConfig);
     }
     
     res.json({ prompt: savedPrompt });

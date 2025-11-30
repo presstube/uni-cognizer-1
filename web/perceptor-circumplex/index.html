@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perceptor Circumplex - Emotional Audio Analysis</title>
+  
+  <!-- CSS Foundation -->
+  <link rel="stylesheet" href="../shared/styles/base.css">
+  <link rel="stylesheet" href="../shared/styles/components.css">
+  <link rel="stylesheet" href="circumplex.css">
+</head>
+<body>
+  <!-- Control panel - top-left -->
+  <div id="control-panel">
+    <h1 class="panel-title">Perceptor Circumplex</h1>
+    <p class="panel-subtitle">Emotional Audio Analysis</p>
+    
+    <div class="api-key-group">
+      <label for="api-key-input">
+        Gemini API Key 
+        <a href="https://aistudio.google.com/app/api-keys" target="_blank" rel="noopener">(get one free)</a>
+      </label>
+      <input 
+        type="text" 
+        id="api-key-input" 
+        placeholder=""
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    
+    <button id="toggle-btn">START LISTENING</button>
+    
+    <div id="status" class="status">⚫ Disconnected</div>
+  </div>
+  
+  <!-- Circumplex visualizer - center -->
+  <div id="visualizer-container">
+    <canvas id="circumplex-canvas"></canvas>
+    <div id="emotion-label"></div>
+    <div id="coordinates">
+      <span>Valence: <span id="valence-value">--</span></span>
+      <span>Arousal: <span id="arousal-value">--</span></span>
+    </div>
+  </div>
+  
+  <!-- Response display - right -->
+  <div id="response-container">
+    <h3>Latest Response</h3>
+    <div id="transcript"></div>
+    <div id="reasoning"></div>
+    <div id="confidence"></div>
+  </div>
+  
+  <!-- Debug panel - bottom-left -->
+  <div id="debug-panel">
+    <h4>Acoustic Features</h4>
+    <div class="debug-row">
+      <span>RMS:</span>
+      <span id="rms-value">--</span>
+    </div>
+    <div class="debug-row">
+      <span>ZCR:</span>
+      <span id="zcr-value">--</span>
+    </div>
+    <div class="debug-row">
+      <span>Centroid:</span>
+      <span id="centroid-value">--</span>
+    </div>
+    <div class="debug-row">
+      <span>Envelope:</span>
+      <span id="envelope-value">--</span>
+    </div>
+  </div>
+  
+  <script type="module" src="app.js"></script>
+</body>
+</html>

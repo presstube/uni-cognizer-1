@@ -61,6 +61,9 @@ app.use('/prompt-editor/audio-percept', express.static('web/prompt-editor/audio-
 // Serve Perceptor Remote (user-facing sensing station)
 app.use('/perceptor-remote', express.static('web/perceptor-remote'));
 
+// Serve Perceptor Circumplex (audio emotion analysis)
+app.use('/perceptor-circumplex', express.static('web/perceptor-circumplex'));
+
 // Serve Dashboard (read-only cognizer monitor)
 app.use('/dashboard', express.static('web/dashboard'));
 
@@ -131,6 +134,7 @@ app.delete('/api/visual-prompts/:id', editorAuth, visualPrompts.deleteVisualProm
 // Mount Audio Prompts API (with editor auth in production)
 app.get('/api/audio-prompts', editorAuth, audioPrompts.listAudioPrompts);
 app.get('/api/audio-prompts/active', editorAuth, audioPrompts.getActiveAudioPromptAPI);
+app.get('/api/audio-prompts/by-slug/:slug', editorAuth, audioPrompts.getAudioPromptBySlugAPI);
 app.get('/api/audio-prompts/:id', editorAuth, audioPrompts.getAudioPromptAPI);
 app.post('/api/audio-prompts', editorAuth, audioPrompts.saveAudioPrompt);
 app.post('/api/audio-prompts/:id/activate', editorAuth, audioPrompts.activateAudioPromptAPI);
