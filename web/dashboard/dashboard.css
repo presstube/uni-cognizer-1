@@ -11,7 +11,7 @@ body {
 
 /* Left pane - system status + percepts */
 .left {
-  flex: 1;
+  flex: 0 0 20%;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -44,7 +44,7 @@ body {
 
 /* Center pane - mind moment details */
 .center {
-  flex: 1;
+  flex: 0 0 30%;
   padding: var(--space-md) var(--space-lg);
   display: flex;
   flex-direction: column;
@@ -52,25 +52,32 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   border-right: 1px solid var(--color-border);
+  
+  /* Enable container queries for responsive text */
+  container-type: inline-size;
+  container-name: moment-pane;
 }
 
 /* Far right pane - history grid */
 .far-right {
-  flex: 1;
+  flex: 0 0 50%;
   height: 100vh;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--color-border);
 }
 
-/* NO SESSION state: 33/33/33, show history (default above) */
-body.no-session .left,
-body.no-session .center,
-body.no-session .far-right {
-  flex: 1;
+/* NO SESSION state: 20/30/50, show history */
+body.no-session .left {
+  flex: 0 0 20%;
+}
+
+body.no-session .center {
+  flex: 0 0 30%;
 }
 
 body.no-session .far-right {
+  flex: 0 0 50%;
   display: flex;
 }
 
