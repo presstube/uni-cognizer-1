@@ -57,8 +57,8 @@ function distanceTransform(pixels, width, height) {
  */
 export async function canvasToSDF(canvasCode, options = {}) {
   const {
-    width = 256,
-    height = 256,
+    width = 512,
+    height = 512,
     canvasWidth = 100,
     canvasHeight = 100,
     strokeWidth = 2,

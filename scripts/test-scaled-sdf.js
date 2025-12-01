@@ -28,16 +28,16 @@ async function testScaledSDF() {
     console.log(`Found Cycle ${row.cycle}: "${row.sigil_phrase}"`);
     console.log(`Sigil code: ${row.sigil_code.length} chars\n`);
     
-    // Generate SDF with 0.75x scale (centered in 256x256)
-    console.log('Generating SDF with 0.75x scale...');
+    // Generate SDF with 0.75x scale (centered in 512x512)
+    console.log('Generating SDF at 512×512 resolution with 0.75x scale...');
     
     const sigilSDF = await canvasToSDF(row.sigil_code, {
-      width: 256,
-      height: 256,
+      width: 512,
+      height: 512,
       canvasWidth: 100,
       canvasHeight: 100,
       strokeWidth: 2,
-      scale: 0.75  // NEW: Scale down the artwork
+      scale: 0.75  // Scale down the artwork
     });
     
     console.log(`✓ Generated ${sigilSDF.width}×${sigilSDF.height} SDF`);

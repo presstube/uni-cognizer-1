@@ -240,8 +240,8 @@ export function cognize(visualPercepts, audioPercepts, depth = 3) {
       try {
         const { canvasToSDF } = await import('../sigil/canvas-to-sdf.js');
         sigilSDF = await canvasToSDF(sigilCode, { 
-          width: 256, 
-          height: 256,
+          width: 512, 
+          height: 512,
           canvasWidth: 100,
           canvasHeight: 100,
           strokeWidth: 2,

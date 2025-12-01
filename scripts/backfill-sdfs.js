@@ -7,7 +7,7 @@ async function backfillSDFs() {
   
   const dryRun = process.argv[2] !== '--confirm';
   
-  console.log('\n🎨 SDF BACKFILL - Regenerating ALL SDFs with 0.75x scale\n');
+  console.log('\n🎨 SDF BACKFILL - Regenerating ALL SDFs at 512×512 resolution\n');
   console.log('═'.repeat(80));
   
   try {
@@ -39,16 +39,16 @@ async function backfillSDFs() {
     
     if (dryRun) {
     console.log('\n❌ DRY RUN - No SDFs will be regenerated\n');
-    console.log('To actually regenerate ALL SDFs with 0.75x scale, run:');
+    console.log('To actually regenerate ALL SDFs at 512×512 resolution, run:');
     console.log('  node scripts/backfill-sdfs.js --confirm\n');
     console.log('⚠️  Note: This will OVERWRITE existing SDFs');
-    console.log('⚠️  Estimated time: ' + Math.ceil(needsSDF.rows.length * 0.2) + ' seconds\n');
+    console.log('⚠️  Estimated time: ' + Math.ceil(needsSDF.rows.length * 0.5) + ' seconds\n');
       console.log('═'.repeat(80) + '\n');
       await pool.end();
       process.exit(0);
     }
     
-    console.log('\n✅ CONFIRMED - Regenerating ALL SDFs with 0.75x scale...\n');
+    console.log('\n✅ CONFIRMED - Regenerating ALL SDFs at 512×512 resolution...\n');
     
     // Import the SDF generator
     const { canvasToSDF } = await import('../src/sigil/canvas-to-sdf.js');
@@ -62,10 +62,10 @@ async function backfillSDFs() {
       const progress = `[${i + 1}/${needsSDF.rows.length}]`;
       
       try {
-        // Generate SDF from canvas code with 0.75x scale
+        // Generate SDF from canvas code at 512×512 resolution
         const sigilSDF = await canvasToSDF(row.sigil_code, {
-          width: 256,
-          height: 256,
+          width: 512,
+          height: 512,
           canvasWidth: 100,
           canvasHeight: 100,
           strokeWidth: 2,
@@ -95,7 +95,7 @@ async function backfillSDFs() {
     console.log('\n' + '═'.repeat(80));
     console.log('\n✅ SDF REGENERATION COMPLETE!\n');
     console.log(`Summary:`);
-    console.log(`   - ${successCount} SDFs regenerated successfully (0.75x scale)`);
+    console.log(`   - ${successCount} SDFs regenerated successfully (512×512)`);
     console.log(`   - ${failCount} failures`);
     console.log(`   - Duration: ${duration}s`);
     console.log(`   - Average: ${(duration / needsSDF.rows.length).toFixed(2)}s per SDF\n`);
