@@ -126,3 +126,4 @@ This confirms it's using your UI settings, not the saved database settings.
 
 Restart the server and reload the Personality Forge page. Now you can test with any LLM configuration without saving! 🎯
 
+

@@ -33,3 +33,4 @@ INSERT INTO schema_migrations (version)
 VALUES (12)
 ON CONFLICT (version) DO NOTHING;
 
+

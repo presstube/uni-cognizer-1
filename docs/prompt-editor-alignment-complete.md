@@ -240,3 +240,4 @@ Shared patterns for all prompt editors:
 
 **All prompt editors now aligned with dashboard/perceptor CSS architecture while preserving their editor-appropriate visual design. Ready for testing!**
 
+
