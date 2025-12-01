@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perceptor Circumplex</title>
+  
+  <!-- CSS Foundation -->
+  <link rel="stylesheet" href="../shared/styles/base.css">
+  <link rel="stylesheet" href="../shared/styles/components.css">
+  <link rel="stylesheet" href="../shared/components/api-key-input/api-key-input.css">
+  <link rel="stylesheet" href="circumplex.css">
+</head>
+<body>
+  <!-- Full-screen video feed -->
+  <div id="video-container">
+    <video id="webcam" autoplay playsinline muted></video>
+  </div>
+  
+  <!-- Control panel - top left -->
+  <div id="control-panel">
+    <div class="api-key-group">
+      <label for="api-key-input">
+        Gemini API Key 
+        <a href="https://aistudio.google.com/app/api-keys" target="_blank" rel="noopener">(get one free)</a>
+      </label>
+      <input 
+        type="text" 
+        id="api-key-input" 
+        class="api-key-input"
+        placeholder=""
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    
+    <button id="toggle-btn">START</button>
+  </div>
+  
+  <!-- Response display - top right -->
+  <div id="response-panel">
+    <div class="response-section">
+      <div class="label">🎤 Audio Transcript</div>
+      <div id="audio-transcript" class="value">Waiting for audio...</div>
+      <div class="circumplex-row">
+        <div class="circumplex-metric">
+          <div class="label">Valence</div>
+          <div id="audio-valence" class="value">--</div>
+        </div>
+        <div class="circumplex-metric">
+          <div class="label">Arousal</div>
+          <div id="audio-arousal" class="value">--</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="response-section">
+      <div class="label">👁️ Visual Description</div>
+      <div id="visual-description" class="value">Waiting for visual...</div>
+      <div class="circumplex-row">
+        <div class="circumplex-metric">
+          <div class="label">Valence</div>
+          <div id="visual-valence" class="value">--</div>
+        </div>
+        <div class="circumplex-metric">
+          <div class="label">Arousal</div>
+          <div id="visual-arousal" class="value">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module" src="app.js"></script>
+</body>
+</html>
+

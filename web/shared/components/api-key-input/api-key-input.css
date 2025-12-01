@@ -1,0 +1,64 @@
+/* ============================================
+   API KEY INPUT COMPONENT - Shared
+   ============================================
+   
+   Usage:
+   <div class="api-key-group">
+     <label for="api-key-input">
+       Gemini API Key 
+       <a href="https://aistudio.google.com/app/api-keys" target="_blank" rel="noopener">(get one free)</a>
+     </label>
+     <input 
+       type="text" 
+       id="api-key-input" 
+       placeholder=""
+       autocomplete="off"
+       spellcheck="false"
+     />
+   </div>
+   ============================================ */
+
+.api-key-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-key-group label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.api-key-group label a {
+  color: rgba(100, 150, 255, 0.9);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.api-key-group label a:hover {
+  color: rgba(150, 200, 255, 1);
+}
+
+.api-key-input {
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  padding: var(--space-sm) 12px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  outline: none;
+  transition: all 0.2s;
+  width: 220px;
+}
+
+.api-key-input:focus {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.api-key-input::placeholder {
+  color: var(--color-text-dim);
+}
+
