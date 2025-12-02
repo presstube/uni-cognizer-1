@@ -1,12 +1,13 @@
 import { getPool } from './db/index.js';
+import { normalizeMindMoment } from './types/mind-moment.js';
 
 const DREAM_CYCLE_MS = parseInt(process.env.DREAM_CYCLE_MS, 10) || 20000;
 let dreamIntervalId = null;
 let dreamCallback = null;
 
 /**
- * Get a random mind moment from database with full sigil data
- * @returns {Object|null} { cycle, mindMoment, sigilCode, sigilPhrase, kinetic, lighting, sdf } or null
+ * Get a random mind moment from database with full data including percepts
+ * @returns {Object|null} Normalized mind moment or null
  */
 async function getRandomMindMoment() {
   if (process.env.DATABASE_ENABLED !== 'true') {
@@ -19,6 +20,7 @@ async function getRandomMindMoment() {
       SELECT 
         cycle, mind_moment, sigil_phrase, sigil_code,
         kinetic, lighting,
+        visual_percepts, audio_percepts, prior_moment_ids,
         sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
         created_at
       FROM mind_moments
@@ -31,7 +33,7 @@ async function getRandomMindMoment() {
 
     const row = result.rows[0];
     
-    // Convert SDF Buffer to format expected by sigil callback
+    // Convert SDF Buffer if present
     let sdf = null;
     if (row.sigil_sdf_data) {
       sdf = {
@@ -41,19 +43,20 @@ async function getRandomMindMoment() {
       };
     }
 
-    // Parse JSONB fields (kinetic and lighting)
-    const kinetic = typeof row.kinetic === 'string' ? JSON.parse(row.kinetic) : row.kinetic;
-    const lighting = typeof row.lighting === 'string' ? JSON.parse(row.lighting) : row.lighting;
-
-    return {
+    // Use normalization function for consistent structure
+    return normalizeMindMoment({
       cycle: row.cycle,
-      mindMoment: row.mind_moment,
-      sigilCode: row.sigil_code,
-      sigilPhrase: row.sigil_phrase,
-      kinetic,
-      lighting,
-      sdf
-    };
+      mind_moment: row.mind_moment,
+      sigil_code: row.sigil_code,
+      sigil_phrase: row.sigil_phrase,
+      kinetic: row.kinetic,
+      lighting: row.lighting,
+      visual_percepts: row.visual_percepts,
+      audio_percepts: row.audio_percepts,
+      prior_moment_ids: row.prior_moment_ids,
+      sdf,
+      isDream: true
+    });
   } catch (error) {
     console.error('💭 Dream error:', error.message);
     return null;
@@ -69,16 +72,16 @@ export function startDreamLoop(io) {
     if (dream) {
       console.log(`💭 Dreaming of cycle ${dream.cycle}: "${dream.sigilPhrase}"`);
       
-      // Emit mind moment
+      // Emit mind moment with original percepts
       io.emit('mindMoment', {
         cycle: dream.cycle,
         mindMoment: dream.mindMoment,
         sigilPhrase: dream.sigilPhrase,
         kinetic: dream.kinetic,
         lighting: dream.lighting,
-        visualPercepts: [],
-        audioPercepts: [],
-        priorMoments: [],
+        visualPercepts: dream.visualPercepts,
+        audioPercepts: dream.audioPercepts,
+        priorMoments: dream.priorMomentIds,
         isDream: true,
         timestamp: new Date().toISOString()
       });

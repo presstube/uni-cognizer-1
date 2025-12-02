@@ -75,10 +75,10 @@ npm run client:fake
 
 ## Progress Summary
 
-- **Checkpoints Completed**: 4 / 13 
-- **Current Phase**: Phase 1 (Quick Wins) - ✅ COMPLETE
-- **Current Step**: READY FOR INTEGRATION TESTING
-- **Next Milestone**: Phase 2 (Data Structure Unification) or testing validation
+- **Checkpoints Completed**: 7 / 13 
+- **Phases Complete**: Phase 1 ✅, Phase 2 ✅
+- **Current Phase**: Phase 3 (Unified Consciousness Loop) - READY TO START
+- **Next Milestone**: Phase 3 - The Big Refactor (merge loops into single consciousness)
 
 ---
 
@@ -295,6 +295,132 @@ State watching is already achieved through `LoopManager` console logging:
 ### Next Steps
 ✅ Phase 1 validated and production-ready  
 ➡️ Ready for Phase 2 (Data Structure Unification)
+
+---
+
+## Phase 2: Data Structure Unification
+
+### Step 2.1: Fetch Percepts in Dreams (~30 min)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Update dream loop to fetch and emit the original percepts (visual, audio, prior moments) that were part of the mind moment when it was created.
+
+#### Changes Made
+- ✅ Updated SQL query to include `visual_percepts`, `audio_percepts`, `prior_moment_ids`
+- ✅ Added parsing for JSONB percept fields
+- ✅ Updated `getRandomMindMoment()` return value to include percepts
+- ✅ Updated `startDreamLoop()` emission to use real percepts instead of empty arrays
+
+#### Files Modified
+- `src/dream-loop.js` - Query expanded, parsing added, emission updated
+
+#### Benefits Achieved
+- ✅ Dreams now show original sensory context
+- ✅ Dashboard will display percepts during dream mode
+- ✅ Symmetric data structure between LIVE and DREAM modes
+
+#### Validation
+- ✅ Linter passes (no errors)
+- ⏸️  Integration testing pending (will test after Phase 2 complete)
+
+**Status**: Checkpoint 2.1 complete, moving to Step 2.2
+
+---
+
+### Step 2.2: Unified Mind Moment Interface (~1 hour)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Create a shared type definition and validation function for mind moments to ensure consistency across the codebase.
+
+#### Changes Made
+- ✅ Created `src/types/mind-moment.js` with standard structure
+- ✅ Added `validateMindMoment()` - checks required fields
+- ✅ Added `normalizeMindMoment()` - converts raw data to standard structure
+- ✅ Added `isCompleteMindMoment()` - checks if sigil is present
+- ✅ Added JSDoc type definitions for IDE support
+
+#### Files Created
+- `src/types/mind-moment.js` - Type definitions and utilities
+
+#### Benefits Achieved
+- ✅ Type safety with JSDoc annotations
+- ✅ Clear contract for all mind moment consumers
+- ✅ Normalization function handles snake_case and camelCase fields
+- ✅ Easier testing and validation
+
+#### Validation
+- ✅ Linter passes (no errors)
+- ✅ Type definition complete
+
+**Status**: Checkpoint 2.2 complete, moving to Step 2.3
+
+---
+
+### Step 2.3: Normalize DB Save/Load (~1 hour)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Ensure perfect symmetry between what goes into the database and what comes out. Use the normalization function to provide consistent structure.
+
+#### Changes Made
+- ✅ Updated `src/dream-loop.js` to import `normalizeMindMoment`
+- ✅ Refactored `getRandomMindMoment()` to use normalization
+- ✅ Removed manual field parsing (now handled by normalizer)
+- ✅ Consistent camelCase structure throughout
+
+#### Files Modified
+- `src/dream-loop.js` - Uses normalization for DB→structure conversion
+
+#### Benefits Achieved
+- ✅ Perfect symmetry: DB → normalize → emit
+- ✅ Handles both snake_case (DB) and camelCase (code) fields
+- ✅ Single source of truth for structure conversion
+- ✅ Easier to maintain and test
+
+#### Validation
+- ✅ Linter passes (no errors)
+- ⏸️  Integration testing pending
+
+**Status**: Checkpoint 2.3 complete - **PHASE 2 COMPLETE**
+
+---
+
+## 🎉 PHASE 2 COMPLETE - Data Structure Unification
+
+**Completed**: December 2, 2025
+
+### Summary
+- ✅ Step 2.1: Dreams fetch percepts from DB
+- ✅ Step 2.2: Created unified mind moment interface (`src/types/mind-moment.js`)
+- ✅ Step 2.3: Normalized DB save/load with `normalizeMindMoment()`
+
+### Metrics
+- **Files created**: 1 (`src/types/mind-moment.js`)
+- **Files modified**: 1 (`src/dream-loop.js`)
+- **New functions**: 3 (`validateMindMoment`, `normalizeMindMoment`, `isCompleteMindMoment`)
+- **Data asymmetry**: RESOLVED (dreams now include percepts)
+
+### Benefits Achieved
+- ✅ Dreams show full sensory context (visual, audio percepts)
+- ✅ Type safety with JSDoc annotations
+- ✅ Consistent structure between LIVE and DREAM modes
+- ✅ Normalization handles case conversion automatically
+- ✅ Clear contract for all mind moment consumers
+
+### Next Steps
+✅ Phase 2 complete and ready for testing  
+➡️ Ready for Phase 3 (Unified Consciousness Loop) - the big refactor!
 
 ---
 
