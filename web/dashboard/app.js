@@ -309,8 +309,8 @@ function connect() {
     socket.emit('getCycleStatus');
     socket.emit('getSessionStatus');
     
-    // Load history grid
-    historyGrid.loadHistory(100);
+    // Load history grid (load all moments)
+    historyGrid.loadHistory();
   });
   
   // Cycle status response - initial sync of countdown and state

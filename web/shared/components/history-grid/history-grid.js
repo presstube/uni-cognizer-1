@@ -15,10 +15,16 @@ export class HistoryGrid {
   
   /**
    * Load and render history from API
+   * @param {boolean} loadAll - If true, loads all moments; if false, uses limit (default: true)
+   * @param {number} limit - Max number of moments to load when loadAll is false (default: 100)
    */
-  async loadHistory(limit = 100) {
+  async loadHistory(loadAll = true, limit = 100) {
     try {
-      const response = await fetch(`/api/mind-moments/recent?limit=${limit}`);
+      const endpoint = loadAll 
+        ? '/api/mind-moments/all'
+        : `/api/mind-moments/recent?limit=${limit}`;
+      
+      const response = await fetch(endpoint);
       const data = await response.json();
       this.moments = data.moments || [];
       this.render();
