@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import express from 'express';
-import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory, getCycleStatus } from './src/main.js';
+import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory, getCycleStatus, startDreamLoop, stopDreamLoop } from './src/main.js';
 import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
 import { CognitiveState } from './src/cognitive-states.js';
@@ -185,6 +185,13 @@ const sessionManager = new SessionManager(SESSION_TIMEOUT_MS, (sessionId) => {
   // Stop cognitive loop if no active sessions
   if (activeSessions.size === 0) {
     stopCognitiveLoop();
+    
+    // Start dream loop after timeout
+    setTimeout(() => {
+      const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
+      startDreamLoop(mindMomentCallback, sigilCallback);
+      io.emit('cognitiveState', { state: CognitiveState.DREAMING });
+    }, 1000);
   }
   
   // Notify all clients about timeout
@@ -192,6 +199,49 @@ const sessionManager = new SessionManager(SESSION_TIMEOUT_MS, (sessionId) => {
 });
 let activeSessions = new Set();
 let socketToSession = new Map(); // Track socket.id -> sessionId mapping
+
+/**
+ * Helper: Create dream loop callbacks for mind moment and sigil events
+ * Returns [mindMomentCallback, sigilCallback]
+ */
+function createDreamCallbacks() {
+  const mindMomentCallback = (cycle, mindMoment, sigilPhrase, kinetic, lighting) => {
+    io.emit('mindMoment', {
+      cycle,
+      mindMoment,
+      sigilPhrase,
+      kinetic,
+      lighting,
+      visualPercepts: [],
+      audioPercepts: [],
+      priorMoments: [],
+      isDream: true,
+      timestamp: new Date().toISOString()
+    });
+  };
+  
+  const sigilCallback = (cycle, sigilCode, sigilPhrase, sigilSDF) => {
+    const sigilData = {
+      cycle,
+      sigilCode,
+      sigilPhrase,
+      isDream: true,
+      timestamp: new Date().toISOString()
+    };
+    
+    if (sigilSDF && sigilSDF.data) {
+      sigilData.sdf = {
+        width: sigilSDF.width,
+        height: sigilSDF.height,
+        data: Buffer.from(sigilSDF.data).toString('base64')
+      };
+    }
+    
+    io.emit('sigil', sigilData);
+  };
+  
+  return [mindMomentCallback, sigilCallback];
+}
 
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
@@ -235,6 +285,10 @@ io.on('connection', (socket) => {
     
     // Start cognitive loop if not already running
     if (activeSessions.size === 1) {
+      // Stop dream loop before starting cognitive loop
+      stopDreamLoop();
+      io.emit('cognitiveState', { state: CognitiveState.IDLE });
+      
       console.log('🚀 FIRST SESSION - STARTING COGNITIVE LOOP');
       process.stdout.write('🚀 COGNITIVE LOOP STARTING NOW\n');
       startCognitiveLoop(
@@ -363,6 +417,13 @@ io.on('connection', (socket) => {
     // Stop cognitive loop if no active sessions
     if (activeSessions.size === 0) {
       stopCognitiveLoop();
+      
+      // Start dream loop after small delay (allow in-flight operations to complete)
+      setTimeout(() => {
+        const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
+        startDreamLoop(mindMomentCallback, sigilCallback);
+        io.emit('cognitiveState', { state: CognitiveState.DREAMING });
+      }, 1000);
     }
     
     // Broadcast updated session count to all clients
@@ -407,6 +468,13 @@ io.on('connection', (socket) => {
       // Stop cognitive loop if no active sessions
       if (activeSessions.size === 0) {
         stopCognitiveLoop();
+        
+        // Start dream loop after disconnect
+        setTimeout(() => {
+          const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
+          startDreamLoop(mindMomentCallback, sigilCallback);
+          io.emit('cognitiveState', { state: CognitiveState.DREAMING });
+        }, 1000);
       }
       
       // Broadcast updated session count to all clients
@@ -434,6 +502,13 @@ httpServer.listen(PORT, () => {
   console.log(`🎨 Sigil reference image: ${sigilImage ? '✓ loaded' : '✗ not found'}`);
   
   console.log('');
+  
+  // Start dream loop if no sessions at startup
+  const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
+  startDreamLoop(mindMomentCallback, sigilCallback);
+  io.emit('cognitiveState', { state: CognitiveState.DREAMING });
+  console.log('💭 Starting in dream state (no active sessions)');
+  
   console.log('Ready for connections...\n');
 });
 

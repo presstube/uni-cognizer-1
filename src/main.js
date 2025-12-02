@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { cognize, onMindMoment, onSigil, onStateEvent, clearListeners, getHistory } from './real-cog.js';
 import { CognitiveState } from './cognitive-states.js';
+import { startDreamLoop, stopDreamLoop, isDreaming } from './dream-loop.js';
 
 const DEPTH = 3;
 const COGNITIVE_CYCLE_MS = parseInt(process.env.COGNITIVE_CYCLE_MS, 10) || 5000;
@@ -124,7 +125,19 @@ export function stopCognitiveLoop() {
  */
 export function getCycleStatus() {
   const isRunning = cognitiveIntervalId !== null;
+  const dreaming = isDreaming();
   const now = Date.now();
+  
+  // If dreaming, return dream state
+  if (dreaming) {
+    return {
+      isRunning: false,
+      intervalMs: COGNITIVE_CYCLE_MS,
+      nextCycleAt: null,
+      msUntilNextCycle: null,
+      state: CognitiveState.DREAMING
+    };
+  }
   
   if (!isRunning || !lastCycleStartTime) {
     return {
@@ -150,5 +163,5 @@ export function getCycleStatus() {
   };
 }
 
-export { getHistory };
+export { getHistory, startDreamLoop, stopDreamLoop, isDreaming };
 
