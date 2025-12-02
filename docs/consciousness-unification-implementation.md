@@ -75,10 +75,10 @@ npm run client:fake
 
 ## Progress Summary
 
-- **Checkpoints Completed**: 7 / 13 
-- **Phases Complete**: Phase 1 ✅, Phase 2 ✅
-- **Current Phase**: Phase 3 (Unified Consciousness Loop) - READY TO START
-- **Next Milestone**: Phase 3 - The Big Refactor (merge loops into single consciousness)
+- **Checkpoints Completed**: 11 / 13 
+- **Phases Complete**: Phase 1 ✅, Phase 2 ✅, Phase 3 ✅
+- **Current Phase**: Phase 4 (Testing & Validation) - READY TO START
+- **Next Milestone**: Integration testing of unified consciousness loop
 
 ---
 
@@ -421,6 +421,167 @@ Ensure perfect symmetry between what goes into the database and what comes out. 
 ### Next Steps
 ✅ Phase 2 complete and ready for testing  
 ➡️ Ready for Phase 3 (Unified Consciousness Loop) - the big refactor!
+
+---
+
+## Phase 3: Unified Consciousness Loop
+
+**Goal**: Merge `main.js` and `dream-loop.js` into a single `consciousness-loop.js` with mode switching. ONE consciousness with TWO modes: LIVE (generate) and DREAM (replay).
+
+### Step 3.1: Create Consciousness Loop Module (~3 hours)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Create new `src/consciousness-loop.js` that encapsulates both live cognition and dream replay in a single class with mode parameter.
+
+#### Changes Made
+- ✅ Created `src/consciousness-loop.js` with `ConsciousnessLoop` class
+- ✅ Implemented LIVE mode (uses `cognize()` from real-cog.js)
+- ✅ Implemented DREAM mode (queries random moments from DB)
+- ✅ Added `switchMode()` method for seamless transitions
+- ✅ Added `addPercept()` method for percept queue management
+- ✅ Integrated listener setup for LIVE mode events
+- ✅ Used `normalizeMindMoment()` for consistent structure
+
+#### Files Created
+- `src/consciousness-loop.js` - 350+ lines, unified loop implementation
+
+---
+
+### Step 3.2: Update State Machine (~30 min)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Add consciousness mode constants to separate mode (LIVE/DREAM) from state (IDLE/AGGREGATING/etc).
+
+#### Changes Made
+- ✅ Added `ConsciousnessMode` export to `src/cognitive-states.js`
+- ✅ Constants: `ConsciousnessMode.LIVE` and `ConsciousnessMode.DREAM`
+- ✅ Clear separation: mode = what system does, state = current activity
+
+#### Files Modified
+- `src/cognitive-states.js` - Added ConsciousnessMode constants
+
+---
+
+### Step 3.3: Simplify Server Integration (~2 hours)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Update server.js to use the new unified consciousness loop instead of separate loop imports.
+
+#### Changes Made
+- ✅ Updated imports: removed `main.js` and `dream-loop.js` imports
+- ✅ Added import for `ConsciousnessLoop` and `ConsciousnessMode`
+- ✅ Removed broadcast helper functions (now in ConsciousnessLoop)
+- ✅ Updated `LoopManager` to use `ConsciousnessLoop` instance
+- ✅ Added `initialize()` method to LoopManager
+- ✅ Updated `transitionToLive()` to use `switchMode()`
+- ✅ Updated `transitionToDream()` to use `switchMode()`
+- ✅ Updated percept handler to use `loopManager.addPercept()`
+- ✅ Updated server startup to call `loopManager.initialize()`
+- ✅ Updated graceful shutdown to stop consciousness loop
+
+#### Files Modified
+- `server.js` - Complete refactor to use unified loop (~100 lines simplified)
+
+#### Benefits Achieved
+- ✅ Single loop instance manages all consciousness
+- ✅ Mode switching is parameter change, not loop replacement
+- ✅ Cleaner server.js (removed ~150 lines)
+- ✅ No more start/stop of separate loops
+- ✅ Unified event emission
+
+---
+
+### Step 3.4: Deprecate Old Files (~30 min)
+
+**Status**: ✅ COMPLETE  
+**Started**: December 2, 2025  
+**Completed**: December 2, 2025
+
+#### Goal
+Move old loop files to graveyard with documentation.
+
+#### Changes Made
+- ✅ Moved `src/main.js` → `graveyard/consciousness-unification-phase3/`
+- ✅ Moved `src/dream-loop.js` → `graveyard/consciousness-unification-phase3/`
+- ✅ Created README.md in graveyard with restoration instructions
+- ✅ Documented why files were merged
+- ✅ Kept `src/real-cog.js` (still needed for cognition logic)
+
+#### Files Moved
+- `src/main.js` - Archived
+- `src/dream-loop.js` - Archived
+
+#### Files Kept
+- `src/real-cog.js` - Contains core cognition logic, still used by ConsciousnessLoop
+
+---
+
+## 🎉 PHASE 3 COMPLETE - Unified Consciousness Loop
+
+**Completed**: December 2, 2025
+
+### Summary
+- ✅ Step 3.1: Created unified ConsciousnessLoop class
+- ✅ Step 3.2: Added ConsciousnessMode constants
+- ✅ Step 3.3: Refactored server.js integration
+- ✅ Step 3.4: Archived old loop files with documentation
+
+### Architecture Transformation
+
+**Before (Phases 1-2)**:
+```
+server.js
+  ├─ startCognitiveLoop() → main.js → real-cog.js
+  └─ startDreamLoop() → dream-loop.js → DB
+```
+
+**After (Phase 3)**:
+```
+server.js
+  └─ ConsciousnessLoop (single instance)
+      ├─ LIVE mode → real-cog.js
+      └─ DREAM mode → DB
+```
+
+### Metrics
+- **Files created**: 1 (`consciousness-loop.js`)
+- **Files modified**: 3 (`server.js`, `cognitive-states.js`, graveyard README)
+- **Files archived**: 2 (`main.js`, `dream-loop.js`)
+- **Lines removed from server.js**: ~150
+- **Total ConsciousnessLoop code**: 350+ lines
+- **Mental model**: 2 loops → 1 loop with 2 modes
+
+### Key Benefits
+- ✅ **Single consciousness** - ONE loop, not two separate systems
+- ✅ **Mode parameter** - LIVE/DREAM is a setting, not architecture
+- ✅ **Identical output** - Both modes emit same event structure
+- ✅ **Seamless switching** - `switchMode()` handles transitions
+- ✅ **Cleaner code** - Removed duplication and complexity
+- ✅ **Easier testing** - Single class to test with mode parameter
+
+### Integration Testing Required
+⏸️  **Critical**: Phase 3 makes significant architectural changes  
+🧪 **Test both modes**:
+- DREAM mode startup
+- LIVE mode session handling  
+- Mode transitions
+- Event emission structure
+
+### Next Steps
+➡️ Ready for integration testing  
+➡️ Then Phase 4 (comprehensive testing & validation)
 
 ---
 

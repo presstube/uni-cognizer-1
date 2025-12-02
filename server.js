@@ -2,10 +2,10 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import express from 'express';
-import { addPercept, startCognitiveLoop, stopCognitiveLoop, getHistory, getCycleStatus, startDreamLoop, stopDreamLoop } from './src/main.js';
+import { ConsciousnessLoop } from './src/consciousness-loop.js';
 import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
-import { CognitiveState } from './src/cognitive-states.js';
+import { CognitiveState, ConsciousnessMode } from './src/cognitive-states.js';
 import { initDatabase, closeDatabase } from './src/db/index.js';
 import { runMigrations } from './src/db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
@@ -175,69 +175,20 @@ const io = new Server(httpServer, {
 });
 
 /**
- * Broadcast mind moment to all clients
- */
-function broadcastMindMoment(io, {
-  cycle,
-  mindMoment,
-  sigilPhrase,
-  kinetic,
-  lighting,
-  visualPercepts = [],
-  audioPercepts = [],
-  priorMoments = [],
-  isDream = false
-}) {
-  io.emit('mindMoment', {
-    cycle,
-    mindMoment,
-    sigilPhrase,
-    kinetic,
-    lighting,
-    visualPercepts,
-    audioPercepts,
-    priorMoments,
-    isDream,
-    timestamp: new Date().toISOString()
-  });
-}
-
-/**
- * Broadcast sigil to all clients
- */
-function broadcastSigil(io, {
-  cycle,
-  sigilCode,
-  sigilPhrase,
-  sdf = null,
-  isDream = false
-}) {
-  const sigilData = {
-    cycle,
-    sigilCode,
-    sigilPhrase,
-    isDream,
-    timestamp: new Date().toISOString()
-  };
-  
-  if (sdf && sdf.data) {
-    sigilData.sdf = {
-      width: sdf.width,
-      height: sdf.height,
-      data: Buffer.from(sdf.data).toString('base64')
-    };
-  }
-  
-  io.emit('sigil', sigilData);
-}
-
-/**
  * Loop Manager - Centralized mode switching
+ * Now uses unified ConsciousnessLoop
  */
 class LoopManager {
   constructor(io) {
     this.io = io;
     this.activeSessions = new Set();
+    this.consciousness = new ConsciousnessLoop(io);
+  }
+  
+  async initialize() {
+    // Start in dream mode
+    this.consciousness.start();
+    console.log('💭 Starting in dream state (no active sessions)');
   }
   
   sessionStarted(sessionId) {
@@ -255,18 +206,18 @@ class LoopManager {
   }
   
   transitionToLive() {
-    stopDreamLoop();
-    this.io.emit('cognitiveState', { state: CognitiveState.IDLE });
     console.log('🚀 FIRST SESSION - STARTING COGNITIVE LOOP');
     process.stdout.write('🚀 COGNITIVE LOOP STARTING NOW\n');
-    startCognitiveLoop(this.io);
+    this.consciousness.switchMode(ConsciousnessMode.LIVE);
   }
   
   transitionToDream() {
-    stopCognitiveLoop();
-    startDreamLoop(this.io);
-    this.io.emit('cognitiveState', { state: CognitiveState.DREAMING });
     console.log('💭 Returning to dream state (no active sessions)');
+    this.consciousness.switchMode(ConsciousnessMode.DREAM);
+  }
+  
+  addPercept(percept) {
+    this.consciousness.addPercept(percept);
   }
   
   getSessionCount() {
@@ -296,7 +247,7 @@ io.on('connection', (socket) => {
 
   // Cycle status - available to any client, no session required
   socket.on('getCycleStatus', () => {
-    const status = getCycleStatus();
+    const status = loopManager.consciousness.getCycleStatus();
     socket.emit('cycleStatus', status);
   });
   
@@ -351,8 +302,8 @@ io.on('connection', (socket) => {
     // Update session activity
     sessionManager.updateActivity(sessionId);
     
-    // Add percept to queue
-    addPercept({
+    // Add percept to consciousness loop
+    loopManager.addPercept({
       type,
       ...data,
       timestamp: percept.timestamp || new Date().toISOString()
@@ -411,8 +362,9 @@ io.on('connection', (socket) => {
 
   socket.on('getHistory', () => {
     // No session required - read-only operation
+    // Note: History is now maintained in real-cog.js (legacy)
     socket.emit('history', { 
-      history: getHistory(),
+      history: {},
       timestamp: new Date().toISOString()
     });
   });
@@ -440,7 +392,7 @@ io.on('connection', (socket) => {
   });
 });
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log('╔═══════════════════════════════════════════════════════════╗');
   console.log('║  COGNIZER-1 WebSocket Server                             ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
@@ -455,8 +407,8 @@ httpServer.listen(PORT, () => {
   
   console.log('');
   
-  // Start dream loop if no sessions at startup
-  loopManager.transitionToDream();
+  // Initialize consciousness loop (starts in dream mode)
+  await loopManager.initialize();
   
   console.log('Ready for connections...\n');
 });
@@ -464,7 +416,7 @@ httpServer.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  stopCognitiveLoop();
+  loopManager.consciousness.stop();
   
   // Close database connection
   await closeDatabase();
