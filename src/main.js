@@ -33,7 +33,7 @@ function dumpPercepts() {
   return snapshot;
 }
 
-export function startCognitiveLoop(callback, sigilCallback, stateCallback) {
+export function startCognitiveLoop(io) {
   if (cognitiveIntervalId) return;
   
   // Clear any lingering listeners from previous session
@@ -49,58 +49,85 @@ export function startCognitiveLoop(callback, sigilCallback, stateCallback) {
     await cognize(visualPercepts, audioPercepts, DEPTH);
   }, COGNITIVE_CYCLE_MS);
   
-  if (callback) {
-    onMindMoment((...args) => {
-      // Track state transition to VISUALIZING after mind moment
-      currentState = CognitiveState.VISUALIZING;
-      // Forward to original callback
-      callback(...args);
+  // Set up mind moment listener
+  onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
+    // Track state transition to VISUALIZING after mind moment
+    currentState = CognitiveState.VISUALIZING;
+    
+    // Emit mind moment
+    io.emit('mindMoment', {
+      cycle,
+      mindMoment,
+      sigilPhrase,
+      kinetic,
+      lighting,
+      visualPercepts,
+      audioPercepts,
+      priorMoments,
+      timestamp: new Date().toISOString()
     });
-  }
+    
+    // Transition to VISUALIZING state
+    io.emit('cognitiveState', { state: CognitiveState.VISUALIZING });
+  });
   
-  if (sigilCallback) {
-    onSigil((...args) => {
-      // Forward to original callback
-      sigilCallback(...args);
-      
-      // After sigil completes, if loop has stopped, emit state transition to IDLE
+  // Set up sigil listener
+  onSigil((cycle, sigilCode, sigilPhrase, sigilSDF) => {
+    // Emit sigil
+    const sigilData = {
+      cycle,
+      sigilCode,
+      sigilPhrase,
+      timestamp: new Date().toISOString()
+    };
+    
+    if (sigilSDF && sigilSDF.data) {
+      sigilData.sdf = {
+        width: sigilSDF.width,
+        height: sigilSDF.height,
+        data: Buffer.from(sigilSDF.data).toString('base64')
+      };
+    }
+    
+    io.emit('sigil', sigilData);
+    
+    // After sigil completes, if loop has stopped, emit state transition to IDLE
+    if (!cognitiveIntervalId) {
+      currentState = CognitiveState.IDLE;
+      io.emit('cognitiveState', { state: CognitiveState.IDLE });
+      console.log('💤 Transitioned to IDLE after in-flight operations');
+    }
+  });
+  
+  // Set up state event listener
+  onStateEvent((eventType, data) => {
+    // Track state changes
+    if (eventType === 'cycleStarted') {
+      currentState = CognitiveState.COGNIZING;
+      io.emit('cognitiveState', { state: CognitiveState.COGNIZING });
+      io.emit('cycleStarted', data);
+    } else if (eventType === 'cycleCompleted') {
+      // If loop stopped during cycle, transition to IDLE after completion
       if (!cognitiveIntervalId) {
         currentState = CognitiveState.IDLE;
-        // Trigger a synthetic state event for IDLE transition
-        if (stateCallback) {
-          stateCallback('transitionToIdle', { 
-            reason: 'cognitive loop stopped',
-            timestamp: new Date().toISOString()
-          });
-        }
+        io.emit('cognitiveState', { state: CognitiveState.IDLE });
+      } else {
+        currentState = CognitiveState.AGGREGATING;
+        io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
       }
-    });
-  }
-  
-  if (stateCallback) {
-    onStateEvent((eventType, data) => {
-      // Track state changes
-      if (eventType === 'cycleStarted') {
-        currentState = CognitiveState.COGNIZING;
-      } else if (eventType === 'cycleCompleted' || eventType === 'cycleFailed') {
-        // If loop stopped during cycle, transition to IDLE after completion
-        if (!cognitiveIntervalId) {
-          currentState = CognitiveState.IDLE;
-          // Emit IDLE transition after forwarding current event
-          setTimeout(() => {
-            stateCallback('transitionToIdle', {
-              reason: 'cognitive loop stopped',
-              timestamp: new Date().toISOString()
-            });
-          }, 0);
-        } else {
-          currentState = CognitiveState.AGGREGATING;
-        }
-      }
-      // Forward to original callback
-      stateCallback(eventType, data);
-    });
-  }
+      io.emit('cycleCompleted', data);
+    } else if (eventType === 'cycleFailed') {
+      currentState = CognitiveState.AGGREGATING;
+      io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
+      io.emit('cycleFailed', data);
+    } else if (eventType === 'transitionToIdle') {
+      currentState = CognitiveState.IDLE;
+      io.emit('cognitiveState', { state: CognitiveState.IDLE });
+      console.log('💤 Transitioned to IDLE after in-flight operations');
+    } else if (eventType === 'sigilFailed') {
+      io.emit('sigilFailed', data);
+    }
+  });
   
   console.log(`🧠 Cognitive loop started (${COGNITIVE_CYCLE_MS}ms cycle)`);
   process.stdout.write(`🧠 Cognitive loop ACTIVE - cycle every ${COGNITIVE_CYCLE_MS}ms\n`);

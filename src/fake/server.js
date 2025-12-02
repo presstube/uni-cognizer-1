@@ -29,6 +29,14 @@ try {
 const app = express();
 app.use(express.json());
 
+// Serve web clients (same as real server)
+app.use('/perceptor-remote', express.static('web/perceptor-remote'));
+app.use('/perceptor-circumplex', express.static('web/perceptor-circumplex'));
+app.use('/dashboard', express.static('web/dashboard'));
+app.use('/node_modules', express.static('node_modules'));
+app.use('/shared', express.static('web/shared'));
+app.use('/web/shared', express.static('web/shared'));
+
 app.get('/', (req, res) => {
   res.json({ 
     status: 'healthy',

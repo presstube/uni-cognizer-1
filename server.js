@@ -174,74 +174,122 @@ const io = new Server(httpServer, {
   }
 });
 
+/**
+ * Broadcast mind moment to all clients
+ */
+function broadcastMindMoment(io, {
+  cycle,
+  mindMoment,
+  sigilPhrase,
+  kinetic,
+  lighting,
+  visualPercepts = [],
+  audioPercepts = [],
+  priorMoments = [],
+  isDream = false
+}) {
+  io.emit('mindMoment', {
+    cycle,
+    mindMoment,
+    sigilPhrase,
+    kinetic,
+    lighting,
+    visualPercepts,
+    audioPercepts,
+    priorMoments,
+    isDream,
+    timestamp: new Date().toISOString()
+  });
+}
+
+/**
+ * Broadcast sigil to all clients
+ */
+function broadcastSigil(io, {
+  cycle,
+  sigilCode,
+  sigilPhrase,
+  sdf = null,
+  isDream = false
+}) {
+  const sigilData = {
+    cycle,
+    sigilCode,
+    sigilPhrase,
+    isDream,
+    timestamp: new Date().toISOString()
+  };
+  
+  if (sdf && sdf.data) {
+    sigilData.sdf = {
+      width: sdf.width,
+      height: sdf.height,
+      data: Buffer.from(sdf.data).toString('base64')
+    };
+  }
+  
+  io.emit('sigil', sigilData);
+}
+
+/**
+ * Loop Manager - Centralized mode switching
+ */
+class LoopManager {
+  constructor(io) {
+    this.io = io;
+    this.activeSessions = new Set();
+  }
+  
+  sessionStarted(sessionId) {
+    this.activeSessions.add(sessionId);
+    if (this.activeSessions.size === 1) {
+      this.transitionToLive();
+    }
+  }
+  
+  sessionEnded(sessionId) {
+    this.activeSessions.delete(sessionId);
+    if (this.activeSessions.size === 0) {
+      setTimeout(() => this.transitionToDream(), 1000);
+    }
+  }
+  
+  transitionToLive() {
+    stopDreamLoop();
+    this.io.emit('cognitiveState', { state: CognitiveState.IDLE });
+    console.log('🚀 FIRST SESSION - STARTING COGNITIVE LOOP');
+    process.stdout.write('🚀 COGNITIVE LOOP STARTING NOW\n');
+    startCognitiveLoop(this.io);
+  }
+  
+  transitionToDream() {
+    stopCognitiveLoop();
+    startDreamLoop(this.io);
+    this.io.emit('cognitiveState', { state: CognitiveState.DREAMING });
+    console.log('💭 Returning to dream state (no active sessions)');
+  }
+  
+  getSessionCount() {
+    return this.activeSessions.size;
+  }
+}
+
+const loopManager = new LoopManager(io);
+let socketToSession = new Map(); // Track socket.id -> sessionId mapping
+
 const sessionManager = new SessionManager(SESSION_TIMEOUT_MS, (sessionId) => {
   // Session timed out - clean up server state
   console.log(`⏰ Cleaning up timed out session: ${sessionId}`);
-  activeSessions.delete(sessionId);
   socketToSession.forEach((sid, socketId) => {
     if (sid === sessionId) socketToSession.delete(socketId);
   });
   
-  // Stop cognitive loop if no active sessions
-  if (activeSessions.size === 0) {
-    stopCognitiveLoop();
-    
-    // Start dream loop after timeout
-    setTimeout(() => {
-      const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
-      startDreamLoop(mindMomentCallback, sigilCallback);
-      io.emit('cognitiveState', { state: CognitiveState.DREAMING });
-    }, 1000);
-  }
+  // Use loop manager to handle transition
+  loopManager.sessionEnded(sessionId);
   
   // Notify all clients about timeout
   io.emit('sessionTimeout', { sessionId });
 });
-let activeSessions = new Set();
-let socketToSession = new Map(); // Track socket.id -> sessionId mapping
-
-/**
- * Helper: Create dream loop callbacks for mind moment and sigil events
- * Returns [mindMomentCallback, sigilCallback]
- */
-function createDreamCallbacks() {
-  const mindMomentCallback = (cycle, mindMoment, sigilPhrase, kinetic, lighting) => {
-    io.emit('mindMoment', {
-      cycle,
-      mindMoment,
-      sigilPhrase,
-      kinetic,
-      lighting,
-      visualPercepts: [],
-      audioPercepts: [],
-      priorMoments: [],
-      isDream: true,
-      timestamp: new Date().toISOString()
-    });
-  };
-  
-  const sigilCallback = (cycle, sigilCode, sigilPhrase, sigilSDF) => {
-    const sigilData = {
-      cycle,
-      sigilCode,
-      sigilPhrase,
-      isDream: true,
-      timestamp: new Date().toISOString()
-    };
-    
-    if (sigilSDF && sigilSDF.data) {
-      sigilData.sdf = {
-        width: sigilSDF.width,
-        height: sigilSDF.height,
-        data: Buffer.from(sigilSDF.data).toString('base64')
-      };
-    }
-    
-    io.emit('sigil', sigilData);
-  };
-  
-  return [mindMomentCallback, sigilCallback];
-}
 
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
@@ -255,8 +303,8 @@ io.on('connection', (socket) => {
   // Session status - available to any client, no session required
   socket.on('getSessionStatus', () => {
     socket.emit('sessionsUpdate', {
-      count: activeSessions.size,
-      sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+      count: loopManager.getSessionCount(),
+      sessions: Array.from(loopManager.activeSessions).map(id => ({ id, status: 'active' }))
     });
   });
 
@@ -265,7 +313,6 @@ io.on('connection', (socket) => {
     process.stdout.write(`▶️  CLIENT SESSION STARTED: ${sessionId}\n`);
     
     const session = sessionManager.startSession(sessionId);
-    activeSessions.add(sessionId);
     socketToSession.set(socket.id, sessionId);
     
     // Create session in database
@@ -277,89 +324,14 @@ io.on('connection', (socket) => {
       }
     }
     
+    // Use loop manager to handle session start
+    loopManager.sessionStarted(sessionId);
+    
     // Broadcast updated session count to all clients
     io.emit('sessionsUpdate', {
-      count: activeSessions.size,
-      sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+      count: loopManager.getSessionCount(),
+      sessions: Array.from(loopManager.activeSessions).map(id => ({ id, status: 'active' }))
     });
-    
-    // Start cognitive loop if not already running
-    if (activeSessions.size === 1) {
-      // Stop dream loop before starting cognitive loop
-      stopDreamLoop();
-      io.emit('cognitiveState', { state: CognitiveState.IDLE });
-      
-      console.log('🚀 FIRST SESSION - STARTING COGNITIVE LOOP');
-      process.stdout.write('🚀 COGNITIVE LOOP STARTING NOW\n');
-      startCognitiveLoop(
-        // Mind moment callback
-        (cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
-          // Broadcast mind moment once to all connected clients
-          io.emit('mindMoment', {
-            cycle,
-            mindMoment,
-            sigilPhrase,
-            kinetic,
-            lighting,
-            visualPercepts,
-            audioPercepts,
-            priorMoments,
-            timestamp: new Date().toISOString()
-          });
-          
-          // Transition to VISUALIZING state after mind moment
-          io.emit('cognitiveState', { state: CognitiveState.VISUALIZING });
-        },
-        // Sigil callback
-        (cycle, sigilCode, sigilPhrase, sigilSDF) => {
-          // Broadcast sigil once to all connected clients
-          const sigilData = {
-            cycle,
-            sigilCode,
-            sigilPhrase,
-            timestamp: new Date().toISOString()
-          };
-          
-          // Include SDF if available (as base64 for transport)
-          if (sigilSDF && sigilSDF.data) {
-            sigilData.sdf = {
-              width: sigilSDF.width,
-              height: sigilSDF.height,
-              data: Buffer.from(sigilSDF.data).toString('base64')
-            };
-          }
-          
-          io.emit('sigil', sigilData);
-        },
-        // State event callback
-        (eventType, data) => {
-          // Broadcast state events to all connected clients
-          if (eventType === 'cycleStarted') {
-            // High-level state change
-            io.emit('cognitiveState', { state: CognitiveState.COGNIZING });
-            // Detailed cycle event
-            io.emit('cycleStarted', data);
-          } else if (eventType === 'cycleCompleted') {
-            // High-level state change
-            io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
-            // Detailed cycle event
-            io.emit('cycleCompleted', data);
-          } else if (eventType === 'cycleFailed') {
-            // High-level state change
-            io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
-            // Detailed cycle event
-            io.emit('cycleFailed', data);
-          } else if (eventType === 'transitionToIdle') {
-            // Loop stopped, in-flight operations complete
-            io.emit('cognitiveState', { state: CognitiveState.IDLE });
-            console.log('💤 Transitioned to IDLE after in-flight operations');
-          } else if (eventType === 'sigilFailed') {
-            // Sigil generation failed (optional notification)
-            io.emit('sigilFailed', data);
-          }
-        }
-      );
-    }
     
     socket.emit('sessionStarted', { 
       sessionId, 
@@ -402,7 +374,6 @@ io.on('connection', (socket) => {
     console.log(`⏸️  Ending session: ${sessionId}`);
     
     const session = sessionManager.endSession(sessionId);
-    activeSessions.delete(sessionId);
     socketToSession.delete(socket.id);
     
     // End session in database
@@ -414,22 +385,13 @@ io.on('connection', (socket) => {
       }
     }
     
-    // Stop cognitive loop if no active sessions
-    if (activeSessions.size === 0) {
-      stopCognitiveLoop();
-      
-      // Start dream loop after small delay (allow in-flight operations to complete)
-      setTimeout(() => {
-        const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
-        startDreamLoop(mindMomentCallback, sigilCallback);
-        io.emit('cognitiveState', { state: CognitiveState.DREAMING });
-      }, 1000);
-    }
+    // Use loop manager to handle session end
+    loopManager.sessionEnded(sessionId);
     
     // Broadcast updated session count to all clients
     io.emit('sessionsUpdate', {
-      count: activeSessions.size,
-      sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+      count: loopManager.getSessionCount(),
+      sessions: Array.from(loopManager.activeSessions).map(id => ({ id, status: 'active' }))
     });
     
     socket.emit('sessionEnded', { 
@@ -462,25 +424,15 @@ io.on('connection', (socket) => {
       
       // Clean up session
       sessionManager.endSession(sessionId);
-      activeSessions.delete(sessionId);
       socketToSession.delete(socket.id);
       
-      // Stop cognitive loop if no active sessions
-      if (activeSessions.size === 0) {
-        stopCognitiveLoop();
-        
-        // Start dream loop after disconnect
-        setTimeout(() => {
-          const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
-          startDreamLoop(mindMomentCallback, sigilCallback);
-          io.emit('cognitiveState', { state: CognitiveState.DREAMING });
-        }, 1000);
-      }
+      // Use loop manager to handle session end
+      loopManager.sessionEnded(sessionId);
       
       // Broadcast updated session count to all clients
       io.emit('sessionsUpdate', {
-        count: activeSessions.size,
-        sessions: Array.from(activeSessions).map(id => ({ id, status: 'active' }))
+        count: loopManager.getSessionCount(),
+        sessions: Array.from(loopManager.activeSessions).map(id => ({ id, status: 'active' }))
       });
     } else {
       console.log(`🔌 Client disconnected: ${socket.id} (no active session)`);
@@ -504,10 +456,7 @@ httpServer.listen(PORT, () => {
   console.log('');
   
   // Start dream loop if no sessions at startup
-  const [mindMomentCallback, sigilCallback] = createDreamCallbacks();
-  startDreamLoop(mindMomentCallback, sigilCallback);
-  io.emit('cognitiveState', { state: CognitiveState.DREAMING });
-  console.log('💭 Starting in dream state (no active sessions)');
+  loopManager.transitionToDream();
   
   console.log('Ready for connections...\n');
 });

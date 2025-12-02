@@ -60,7 +60,7 @@ async function getRandomMindMoment() {
   }
 }
 
-export function startDreamLoop(mindMomentCallback, sigilCallback) {
+export function startDreamLoop(io) {
   if (dreamIntervalId) return;
 
   dreamIntervalId = setInterval(async () => {
@@ -69,21 +69,38 @@ export function startDreamLoop(mindMomentCallback, sigilCallback) {
     if (dream) {
       console.log(`💭 Dreaming of cycle ${dream.cycle}: "${dream.sigilPhrase}"`);
       
-      // Emit mind moment first (if callback provided)
-      if (mindMomentCallback) {
-        mindMomentCallback(
-          dream.cycle,
-          dream.mindMoment,
-          dream.sigilPhrase,
-          dream.kinetic,
-          dream.lighting
-        );
+      // Emit mind moment
+      io.emit('mindMoment', {
+        cycle: dream.cycle,
+        mindMoment: dream.mindMoment,
+        sigilPhrase: dream.sigilPhrase,
+        kinetic: dream.kinetic,
+        lighting: dream.lighting,
+        visualPercepts: [],
+        audioPercepts: [],
+        priorMoments: [],
+        isDream: true,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Emit sigil
+      const sigilData = {
+        cycle: dream.cycle,
+        sigilCode: dream.sigilCode,
+        sigilPhrase: dream.sigilPhrase,
+        isDream: true,
+        timestamp: new Date().toISOString()
+      };
+      
+      if (dream.sdf && dream.sdf.data) {
+        sigilData.sdf = {
+          width: dream.sdf.width,
+          height: dream.sdf.height,
+          data: Buffer.from(dream.sdf.data).toString('base64')
+        };
       }
       
-      // Then emit sigil (if callback provided)
-      if (sigilCallback) {
-        sigilCallback(dream.cycle, dream.sigilCode, dream.sigilPhrase, dream.sdf);
-      }
+      io.emit('sigil', sigilData);
     }
   }, DREAM_CYCLE_MS);
 
