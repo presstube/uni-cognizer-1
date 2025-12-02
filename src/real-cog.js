@@ -418,8 +418,22 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         } catch (sigilError) {
           console.error(`❌ Sigil generation failed:`, sigilError.message);
           cognitiveHistory[thisCycle].sigilCode = null;
-          // cognitiveHistory[thisCycle].sigilSVG = null; // Commented out - not generating SVG
           cognitiveHistory[thisCycle].sigilSDF = null;
+          
+          // Store error in database for diagnostics
+          if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
+            try {
+              const { getPool } = await import('./db/index.js');
+              const pool = getPool();
+              await pool.query(
+                'UPDATE mind_moments SET sigil_generation_error = $1 WHERE id = $2',
+                [sigilError.message, cognitiveHistory[thisCycle].id]
+              );
+              console.log(`💾 Sigil error logged to database`);
+            } catch (dbError) {
+              console.error('Failed to log sigil error:', dbError.message);
+            }
+          }
           
           // Emit sigil failed event
           dispatchStateEvent('sigilFailed', {

@@ -32,7 +32,8 @@ export async function runMigrations() {
     '011_add_image_settings_to_sigil_prompts.sql',
     '012_add_generation_config_to_personalities.sql',
     '013_add_sigil_prompt_tracking.sql',
-    '014_add_sigil_svg_sdf.sql'
+    '014_add_sigil_svg_sdf.sql',
+    '015_add_sigil_generation_error.sql'
   ];
   
   try {
