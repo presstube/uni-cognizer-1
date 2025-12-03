@@ -139,7 +139,7 @@ export class ConsciousnessLoop {
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           created_at
         FROM mind_moments
-        WHERE sigil_code IS NOT NULL
+        WHERE sigil_code IS NOT NULL AND cycle >= 48
         ORDER BY RANDOM()
         LIMIT 1
       `);
