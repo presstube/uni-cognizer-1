@@ -469,6 +469,50 @@ function connect() {
       }
     }
   });
+  
+  // Clear display event (for dream mode lifecycle)
+  socket.on('clearDisplay', ({ clearPercepts, clearMindMoment, clearSigil }) => {
+    console.log('🧹 Clear display:', { clearPercepts, clearMindMoment, clearSigil });
+    
+    if (clearPercepts) {
+      // Clear live percept feed (top right)
+      $percepts.innerHTML = '<div class="empty">Waiting for percepts...</div>';
+      
+      // Clear moment percepts list (center pane)
+      $perceptsList.innerHTML = '';
+    }
+    
+    if (clearMindMoment && currentMomentCard) {
+      // Fade out animation
+      if (currentMomentCard.element) {
+        currentMomentCard.element.style.opacity = '0';
+        currentMomentCard.element.style.transition = 'opacity 0.3s ease-out';
+        
+        // Clear after fade
+        setTimeout(() => {
+          $momentCardContainer.innerHTML = '';
+          currentMomentCard = null;
+        }, 300);
+      } else {
+        // No animation if element not found
+        $momentCardContainer.innerHTML = '';
+        currentMomentCard = null;
+      }
+    }
+    
+    if (clearSigil) {
+      currentSigilCode = null;
+      
+      // Clear SDF preview
+      if ($sdfPreview) {
+        $sdfPreview.innerHTML = '';
+        $sdfPreview.classList.remove('has-sdf');
+      }
+      
+      // Reset sigil status
+      $sdfStatus.textContent = '—';
+    }
+  });
 }
 
 // ============================================

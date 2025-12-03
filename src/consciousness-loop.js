@@ -14,7 +14,7 @@ import { getPool } from './db/index.js';
 import { normalizeMindMoment } from './types/mind-moment.js';
 
 const LIVE_CYCLE_MS = parseInt(process.env.COGNITIVE_CYCLE_MS, 10) || 5000;
-const DREAM_CYCLE_MS = parseInt(process.env.DREAM_CYCLE_MS, 10) || 20000;
+const DREAM_CYCLE_MS = parseInt(process.env.DREAM_CYCLE_MS, 10) || 30000;
 const PRIOR_CONTEXT_DEPTH = 3;
 
 export class ConsciousnessLoop {
@@ -147,8 +147,8 @@ export class ConsciousnessLoop {
     const lastTimestamp = new Date(allPercepts[allPercepts.length - 1].timestamp).getTime();
     const originalDuration = lastTimestamp - firstTimestamp;
     
-    // Scale timing to fit 90% of dream cycle window (save 10% for processing feel)
-    const dispersalWindow = DREAM_CYCLE_MS * 0.9; // 18s of 20s cycle
+    // PHASE 1: Percept dispersal (0-18s) - 60% of cycle
+    const dispersalWindow = 18000;
     const scaleFactor = originalDuration > 0 ? dispersalWindow / originalDuration : 1;
     
     console.log(`  💭 Replaying ${allPercepts.length} percepts over ${(dispersalWindow / 1000).toFixed(1)}s`);
@@ -186,13 +186,25 @@ export class ConsciousnessLoop {
       this.dreamTimeouts.push(timeoutId);
     });
     
-    // Emit mind moment + sigil at the end
-    const finalTimeout = setTimeout(() => {
-      console.log(`  💭 Dream complete: "${dream.sigilPhrase}"`);
+    // PHASE 2: Mind moment + sigil emission (20s)
+    const momentTimeout = setTimeout(() => {
+      console.log(`  💭 [20.0s] Mind moment + sigil emitted`);
       this.broadcastMoment(dream);
-    }, dispersalWindow);
+    }, 20000);
     
-    this.dreamTimeouts.push(finalTimeout);
+    this.dreamTimeouts.push(momentTimeout);
+    
+    // PHASE 3: Clear display (29.9s) - right before next cycle
+    const clearDisplayTimeout = setTimeout(() => {
+      console.log(`  💭 [29.9s] Clearing display for next dream`);
+      this.clearDisplay({
+        clearPercepts: true,
+        clearMindMoment: true,
+        clearSigil: true
+      });
+    }, 29900);
+    
+    this.dreamTimeouts.push(clearDisplayTimeout);
   }
   
   /**
@@ -452,6 +464,32 @@ export class ConsciousnessLoop {
       nextCycleAt: null,  // Could calculate based on last cycle time if needed
       msUntilNextCycle: null
     };
+  }
+  
+  /**
+   * Clear display on clients (used by both LIVE and DREAM modes)
+   * @param {Object} options - What to clear
+   */
+  clearDisplay(options = {}) {
+    const {
+      clearPercepts = true,
+      clearMindMoment = true,
+      clearSigil = true
+    } = options;
+    
+    this.io.emit('clearDisplay', {
+      clearPercepts,
+      clearMindMoment,
+      clearSigil,
+      timestamp: new Date().toISOString()
+    });
+    
+    const cleared = [];
+    if (clearPercepts) cleared.push('percepts');
+    if (clearMindMoment) cleared.push('mindMoment');
+    if (clearSigil) cleared.push('sigil');
+    
+    console.log(`🧹 Display cleared: ${cleared.join(', ')}`);
   }
 }
 
