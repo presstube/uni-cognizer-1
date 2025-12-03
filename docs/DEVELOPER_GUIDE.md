@@ -2,751 +2,573 @@
 
 **Practical reference for working with Cognizer-1**
 
-Last updated: November 17, 2025
+Last updated: December 2, 2025
+
+---
+
+## Quick Start
+
+```bash
+npm install
+npm start  # Production server (port 3001)
+```
+
+**Web Clients:**
+- Dashboard: http://localhost:3001/dashboard
+- Perceptor: http://localhost:3001/perceptor-remote
+- Prompt Editors: http://localhost:3001/prompt-editor/{personality|sigil|visual-percept|audio-percept}
 
 ---
 
 ## Architecture Overview
 
-### System Components
+### Unified Consciousness Loop
 
 ```
 WebSocket Server (server.js)
   ↓
-Cognitive Loop (main.js)
-  ↓
-Real Cognition (real-cog.js) → LLM Providers → Sigil Generation
-  ↓
-Database Persistence (PostgreSQL)
+ConsciousnessLoop (consciousness-loop.js)
+  ├─ DREAM mode → Database → Replay historical moments
+  └─ LIVE mode → Real Cognition (real-cog.js) → LLM → New moments
+       ↓
+    Sigil Generation → Database Persistence
 ```
 
-### Key Characteristics
-- **Functional**: Pure functions, minimal side effects
-- **Modular**: Clean separation of concerns
-- **Persistent**: PostgreSQL for mind moments & sessions
-- **Versioned**: Every mind moment tagged with Cognizer version
-- **Provider-agnostic**: Supports OpenAI, Anthropic, Gemini
+**ONE consciousness, TWO modes:**
+- **DREAM**: Replays random historical moments (20s intervals)
+- **LIVE**: Generates new moments from percepts (5s intervals)
 
 ### File Structure
 
 ```
-server.js                    # WebSocket server entry point
+server.js                    # WebSocket server + Express
 src/
-├── main.js                  # Cognitive loop orchestration
-├── real-cog.js              # LLM cognition (generates mind moments)
-├── version.js               # Version management
-├── cognitive-states.js      # State constants (AGGREGATING, COGNIZING, etc.)
+├── consciousness-loop.js    # Unified loop (DREAM/LIVE modes)
+├── real-cog.js              # LLM cognition
+├── cognitive-states.js      # State + mode constants
 ├── session-manager.js       # Session lifecycle
-├── personality-uni-v2.js    # UNI's personality prompt
-├── providers/               # LLM abstraction layer
-│   ├── index.js             # Provider selection
+├── personality-uni-v2.js    # UNI's personality
+├── types/
+│   └── mind-moment.js       # Type definitions
+├── providers/               # LLM abstraction
+│   ├── index.js
 │   ├── openai.js
 │   ├── anthropic.js
 │   └── gemini.js
 ├── sigil/                   # Sigil generation
-│   ├── generator.js         # Main generator
-│   ├── prompt.js            # LLM prompt for sigils
-│   └── image.js             # Image generation (future)
-├── db/                      # Database layer
-│   ├── index.js             # Connection pool
-│   ├── migrate.js           # Migration runner
-│   ├── mind-moments.js      # Mind moment repository
-│   ├── sessions.js          # Session repository
-│   └── migrations/          # SQL migrations
-│       └── 001_initial_schema.sql
-└── fake/                    # Mock server for testing
-    ├── server.js            # Mock WebSocket server
-    ├── cog.js               # Mock cognition (no LLM cost)
-    └── main.js              # Standalone test runner
+│   ├── generator.js
+│   ├── canvas-to-sdf.js
+│   └── image.js
+├── db/                      # PostgreSQL layer
+└── api/                     # REST endpoints
+web/
+├── dashboard/               # Read-only monitor
+├── perceptor-remote/        # Percept input
+├── perceptor-circumplex/    # Emotion analysis
+└── prompt-editor/           # Prompt management
+```
+
+---
+
+## Configuration
+
+Create `.env`:
+
+```bash
+# LLM Provider (openai | anthropic | gemini)
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your_key
+
+# Server
+PORT=3001
+COGNITIVE_CYCLE_MS=5000      # LIVE mode interval
+DREAM_CYCLE_MS=20000          # DREAM mode interval
+SESSION_TIMEOUT_MS=60000
+
+# Database
+DATABASE_URL=postgresql://...
+DATABASE_ENABLED=true
+
+# Auth (production only)
+NODE_ENV=production
+EDITOR_PASSWORD=secure_password
 ```
 
 ---
 
 ## Database Schema
 
-### Tables
+### Core Tables
 
-#### `cognizer_versions`
-Tracks Cognizer releases.
-
+**`mind_moments`** - All cognitive outputs
 ```sql
-version VARCHAR(20) PRIMARY KEY   -- "0.1.0"
-released_at TIMESTAMP             -- When deployed
-notes TEXT                        -- Release notes
+id UUID PRIMARY KEY
+cycle INTEGER
+session_id VARCHAR(100)
+mind_moment TEXT
+sigil_phrase VARCHAR(200)
+sigil_code TEXT
+kinetic JSONB
+lighting JSONB
+visual_percepts JSONB
+audio_percepts JSONB
+prior_moment_ids UUID[]
+sigil_sdf_data BYTEA
+cognizer_version VARCHAR(20)
 ```
 
-#### `personalities`
-Stores personality prompts for UNI.
+**`personalities`** - Personality prompts
+**`sessions`** - Session tracking
+**`sigil_prompts`** - Sigil generation prompts
+**`visual_prompts`** - Visual percept prompts
+**`audio_prompts`** - Audio percept prompts
 
-```sql
-id UUID PRIMARY KEY               -- Unique ID
-name VARCHAR(100)                 -- Display name
-slug VARCHAR(50) UNIQUE           -- URL-safe identifier
-prompt TEXT                       -- Full personality prompt
-schema JSONB                      -- Output schema (optional)
-created_at TIMESTAMP              -- When created
-updated_at TIMESTAMP              -- When last modified
-active BOOLEAN DEFAULT false      -- Only one can be active
+**Migrations**: Run `npm run migrate` to set up
+
+---
+
+## REST API
+
+### Mind Moments
+
+**GET /api/mind-moments/recent?limit=100**
+Returns recent mind moments with all data (percepts, sigils, etc.)
+
+**GET /api/mind-moments/:id**
+Get specific mind moment by UUID
+
+### Personalities
+
+**GET /api/personalities** - List all  
+**GET /api/personalities/:id** - Get one  
+**POST /api/personalities** - Create  
+**POST /api/personalities/:id/activate** - Make active  
+**DELETE /api/personalities/:id** - Delete
+
+### Sigil Prompts
+
+**GET /api/sigil-prompts** - List all  
+**GET /api/sigil-prompts/active** - Get active  
+**POST /api/sigil-prompts** - Create  
+**POST /api/sigil-prompts/:id/activate** - Activate  
+**POST /api/sigil-prompts/:id/test** - Test generation  
+
+### Sigils (Public)
+
+**GET /api/sigils/:id/svg** - Get sigil as SVG  
+**GET /api/sigils/:id/sdf** - Get sigil as SDF PNG  
+**GET /api/sigils/:id/code** - Get canvas drawing code
+
+### Gemini Tokens
+
+**GET /api/gemini/token** - Generate ephemeral token (30 min expiry)
+
+*Auth: Password via `x-password` header (if TOKEN_PASSWORD set)*
+
+---
+
+## WebSocket API
+
+### Client → Server
+
+**`startSession`** - Start cognitive session
+```javascript
+socket.emit('startSession', { sessionId: 'unique-id' });
 ```
 
-#### `sessions`
-Tracks cognitive sessions.
-
-```sql
-id VARCHAR(100) PRIMARY KEY       -- Session ID
-start_time TIMESTAMP              -- Session start
-end_time TIMESTAMP                -- Session end (null if active)
-percept_count INTEGER             -- Total percepts received
-mind_moment_count INTEGER         -- Total mind moments generated
-metadata JSONB                    -- Custom session data
+**`percept`** - Send visual/audio percept
+```javascript
+socket.emit('percept', {
+  sessionId: 'id',
+  type: 'visual' | 'audio',
+  data: { /* percept data */ },
+  timestamp: '2025-12-02T...'
+});
 ```
 
-#### `mind_moments`
-Core table - every mind moment UNI generates.
-
-```sql
-id UUID PRIMARY KEY               -- Unique ID
-cycle INTEGER                     -- Cycle number
-session_id VARCHAR(100)           -- Which session (FK to sessions)
-
--- Content
-mind_moment TEXT                  -- The observation
-sigil_phrase VARCHAR(200)         -- Visual essence
-sigil_code TEXT                   -- Canvas drawing code
-
--- Physical outputs
-kinetic JSONB                     -- Movement pattern
-lighting JSONB                    -- Lighting settings
-
--- Context
-visual_percepts JSONB             -- Array of visual percepts
-audio_percepts JSONB              -- Array of audio percepts
-prior_moment_ids UUID[]           -- Array of 3 prior moment IDs
-
--- Metadata
-cognizer_version VARCHAR(20)      -- Version that generated this (FK)
-personality_id UUID               -- Personality used (FK to personalities)
-llm_provider VARCHAR(20)          -- "openai", "anthropic", "gemini"
-processing_duration_ms INTEGER    -- How long it took
-
--- Timing
-created_at TIMESTAMP              -- When created
-
--- Constraints
-UNIQUE(session_id, cycle)         -- One moment per cycle per session
+**`endSession`** - End session
+```javascript
+socket.emit('endSession', { sessionId: 'id' });
 ```
 
-### Indexes
+**`getCycleStatus`** - Get loop timing info  
+**`getSessionStatus`** - Get active session count  
+**`getHistory`** - Get recent cycles (legacy)
 
-```sql
-idx_mind_moments_session     -- Fast session queries
-idx_mind_moments_personality -- Query by personality
-idx_mind_moments_created     -- Recent moments
-idx_mind_moments_version     -- Query by version
+### Server → Client
+
+**`cognitiveState`** - State changes
+```javascript
+{ state: 'IDLE' | 'AGGREGATING' | 'COGNIZING' | 'VISUALIZING' | 'DREAMING' }
 ```
 
-### Query Examples
+**`mindMoment`** - New mind moment
+```javascript
+{
+  cycle: 123,
+  mindMoment: "Observation text",
+  sigilPhrase: "essence",
+  kinetic: { pattern: 'IDLE' },
+  lighting: { color: '#fff', pattern: 'SMOOTH_WAVES' },
+  visualPercepts: [/* percepts */],
+  audioPercepts: [/* percepts */],
+  priorMoments: [/* UUIDs */],
+  isDream: false,
+  timestamp: '2025-12-02T...'
+}
+```
 
-```sql
--- Get session history
-SELECT cycle, mind_moment, created_at
-FROM mind_moments
-WHERE session_id = 'uni'
-ORDER BY cycle ASC;
+**`sigil`** - Sigil visualization
+```javascript
+{
+  cycle: 123,
+  sigilCode: "ctx.arc(...)",
+  sigilPhrase: "essence",
+  sdf: { width: 512, height: 512, data: "base64..." },
+  isDream: false,
+  timestamp: '2025-12-02T...'
+}
+```
 
--- Get recent moments with version
-SELECT cycle, mind_moment, cognizer_version, llm_provider
-FROM mind_moments
-ORDER BY created_at DESC
-LIMIT 10;
+**`sessionStarted`** - Session confirmed  
+**`sessionEnded`** - Session closed  
+**`sessionTimeout`** - Session timed out  
+**`perceptReceived`** - Percept acknowledged (broadcast to all clients)
+```javascript
+{
+  sessionId: 'id',
+  type: 'visual' | 'audio',
+  data: { /* percept data */ },
+  timestamp: '2025-12-02T...'
+}
+```
+**`cycleStarted`** - Cycle beginning  
+**`cycleCompleted`** - Cycle finished  
+**`cycleFailed`** - Cycle error
 
--- Performance by version
-SELECT cognizer_version,
-       COUNT(*) as moments,
-       AVG(processing_duration_ms) as avg_speed
-FROM mind_moments
-GROUP BY cognizer_version;
+---
 
--- Get moment with full prior context
-SELECT mm.*, 
-       array_agg(prior.mind_moment) as prior_moments
-FROM mind_moments mm
-LEFT JOIN LATERAL (
-  SELECT mind_moment 
-  FROM mind_moments 
-  WHERE id = ANY(mm.prior_moment_ids)
-) prior ON true
-WHERE mm.id = 'some-uuid'
-GROUP BY mm.id;
+## Web Clients
+
+### Dashboard (Read-Only Monitor)
+
+**URL**: http://localhost:3001/dashboard  
+**Purpose**: Observe UNI's consciousness in real-time
+
+**Features:**
+- Mind moment display with typewriter effect
+- Sigil visualization (SDF rendering)
+- Percepts sidebar (visual/audio)
+- State indicator (DREAMING/AGGREGATING/COGNIZING/VISUALIZING)
+- Connection status
+- Session count
+
+**Tech**: Vanilla JS, Socket.IO client, HTML5 Canvas
+
+---
+
+### Perceptor Remote (Percept Input)
+
+**URL**: http://localhost:3001/perceptor-remote  
+**Purpose**: Send visual/audio percepts to UNI
+
+**Features:**
+- Session management (start/end)
+- Visual percept buttons (pre-configured actions)
+- Audio percept via Gemini Live API
+- Real-time connection status
+- Session timer
+
+**Tech**: Vanilla JS, Socket.IO, Gemini Live API
+
+---
+
+### Perceptor Circumplex (Emotion Analysis)
+
+**URL**: http://localhost:3001/perceptor-circumplex  
+**Purpose**: Visual/audio percepts with 2D emotion circumplex
+
+**Features:**
+- Circumplex emotion picker (valence × arousal)
+- Visual action selection
+- Audio input with transcript
+- Emotion-based percept generation
+- Real-time feedback
+
+**Tech**: Vanilla JS, Canvas 2D, Gemini Live API
+
+---
+
+### Prompt Editors (System Configuration)
+
+**URLs:**
+- Personality: http://localhost:3001/prompt-editor/personality
+- Sigil: http://localhost:3001/prompt-editor/sigil
+- Visual Percept: http://localhost:3001/prompt-editor/visual-percept
+- Audio Percept: http://localhost:3001/prompt-editor/audio-percept
+
+**Purpose**: Manage prompts for different system components
+
+**Features:**
+- CRUD for prompts (create, update, delete)
+- Version history
+- Activate/deactivate prompts
+- Test prompt generation
+- LLM settings (temperature, model, tokens)
+
+**Auth**: HTTP Basic Auth in production (EDITOR_PASSWORD env var)
+
+**Tech**: Vanilla JS, CodeMirror/Monaco for editing
+
+---
+
+## ConsciousnessLoop API
+
+### Class Methods
+
+**`constructor(io)`** - Initialize with Socket.IO instance
+
+**`start()`** - Start loop in current mode  
+**`stop()`** - Stop loop  
+**`switchMode(mode)`** - Switch between 'LIVE' and 'DREAM'  
+**`addPercept(percept)`** - Add percept to queue (LIVE mode only)  
+**`getCycleStatus()`** - Get timing and state info
+
+### Usage Example
+
+```javascript
+import { ConsciousnessLoop } from './src/consciousness-loop.js';
+import { ConsciousnessMode } from './src/cognitive-states.js';
+
+const consciousness = new ConsciousnessLoop(io);
+consciousness.start();  // Starts in DREAM mode
+
+// Switch to LIVE when session starts
+consciousness.switchMode(ConsciousnessMode.LIVE);
+
+// Add percepts
+consciousness.addPercept({
+  type: 'visual',
+  action: 'VISITOR_APPROACHES',
+  emoji: '👋'
+});
+
+// Switch back to DREAM when session ends
+consciousness.switchMode(ConsciousnessMode.DREAM);
 ```
 
 ---
 
-## Development Workflow
+## Common Workflows
 
-### Setup
-
-```bash
-# Clone & install
-git clone [repo]
-cd cognizer-1
-npm install
-
-# Configure environment
-cp .env.example .env
-vim .env  # Add API keys
-
-# Setup database (if using)
-npm run migrate
-```
-
-### Environment Variables
+### Start Development Server
 
 ```bash
-# LLM Provider
-LLM_PROVIDER=gemini              # openai | anthropic | gemini
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=...
-
-# Server
-PORT=3001
-COGNITIVE_CYCLE_MS=5000          # Cycle interval (default: 5000ms)
-SESSION_TIMEOUT_MS=60000
-
-# Database (optional)
-DATABASE_URL=postgresql://user:pass@host:5432/cognizer
-DATABASE_ENABLED=true            # Set to false to disable DB
-
-# Personality Forge (optional)
-FORGE_AUTH_ENABLED=true          # Enable password protection
-FORGE_USERNAME=writer            # Defaults to "admin"
-FORGE_PASSWORD=your-secure-password
-```
-
-### Running Locally
-
-```bash
-# Mock LLM (no API cost, instant responses)
-npm run client:fake
-
-# Real LLM (costs money, real responses)
-npm run client:local
-
-# Production server only (no test client)
 npm start
-
-# Test cognitive loop in terminal
-npm run test-fake
+# Server on port 3001
+# Open http://localhost:3001/dashboard
 ```
 
-### Testing
+### Query Database
 
 ```bash
-# Mock server - full cognitive loop with fake LLM
-npm run test-fake
-
-# Test client connects to:
-# - client:fake  → localhost:8081 (mock server)
-# - client:local → localhost:8081 (real server)
-# - client:render → production Render deployment
+npm run db:query       # View recent moments
+npm run migrate        # Run migrations
 ```
 
----
+### Manage Prompts
 
-## Version Management
+Open prompt editors at:
+- http://localhost:3001/prompt-editor/personality
+- http://localhost:3001/prompt-editor/sigil
 
-### Current Version
+Activate a prompt to make it active for generation.
 
-```bash
-# Check version
-npm run version:check
-# Output: Current version: 0.1.0
+### Test Percept Flow
 
-# Or directly
-node -p "require('./package.json').version"
-```
-
-### Bumping Version
-
-**When to bump:**
-- **PATCH** (0.1.0 → 0.1.1): Bug fixes
-- **MINOR** (0.1.0 → 0.2.0): New features (most common)
-- **MAJOR** (0.9.0 → 1.0.0): Breaking changes
-
-**Process:**
-
-```bash
-# 1. Decide bump type (patch/minor/major)
-# 2. Run npm version
-npm version minor -m "feat: Add personality system"
-# This:
-# - Updates package.json
-# - Creates git commit
-# - Creates git tag (v0.2.0)
-
-# 3. Push with tags
-git push origin main --follow-tags
-
-# 4. After deployment, register in database
-npm run version:register -- --notes "Added personality management"
-```
-
-### How It Works
-
-```
-package.json (version: "0.1.0")
-    ↓ (read at startup)
-src/version.js (exports COGNIZER_VERSION)
-    ↓ (imported by)
-real-cog.js (includes in every mind moment)
-    ↓ (saves)
-DATABASE: mind_moments (cognizer_version column)
-```
-
-Every mind moment is automatically tagged with the version that generated it.
+1. Start server: `npm start`
+2. Open perceptor: http://localhost:3001/perceptor-remote
+3. Click "Start Session"
+4. Send percepts (visual buttons or audio)
+5. Watch dashboard for mind moments
+6. Click "End Session"
+7. Server returns to DREAM mode
 
 ---
 
 ## Deployment
 
-### Railway/Render
+**Production**: https://uni-cognizer-1.onrender.com
 
-**Automatic deployment on git push.**
+Deploy on Render with:
+- PostgreSQL database
+- Environment variables configured
+- Automatic migrations on startup
 
+**Test Production**:
 ```bash
-# Push to main branch
-git push origin main
-
-# Railway/Render automatically:
-# 1. Pulls code
-# 2. npm install
-# 3. npm run migrate (runs DB migrations)
-# 4. npm start (starts server)
-```
-
-### Environment Variables (Production)
-
-Set in Railway/Render dashboard:
-- `LLM_PROVIDER`
-- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY`
-- `DATABASE_URL` (auto-provided by Railway/Render)
-- `DATABASE_ENABLED=true`
-- `PORT` (auto-provided)
-
-### Post-Deployment
-
-```bash
-# Register new version in database (run once per version)
-npm run version:register -- --notes "Your release notes"
-```
-
-### Health Check
-
-Server logs on startup:
-```
-📦 Cognizer v0.1.0 (Node v20.10.0)
-🗄️  Database: Connected
-🌐 Server listening on port 3001
+npm run client:render  # Opens test client pointing to Render
 ```
 
 ---
 
-## API Reference
+## Debugging
 
-### WebSocket API
+### Check Logs
 
-**Connection:**
-```javascript
-const socket = io('http://localhost:3001');
+Server logs show:
+- `💭 Dreaming of cycle X` - DREAM mode active
+- `🚀 FIRST SESSION - STARTING COGNITIVE LOOP` - LIVE mode active
+- `🔄 Switched to [MODE] mode` - Mode transitions
+- `✅ CYCLE X COMPLETE` - Successful cognition
+
+### Common Issues
+
+**Server won't start**: Check DATABASE_URL, ensure PostgreSQL running  
+**No percepts processing**: Check session is active, mode is LIVE  
+**Sigil generation fails**: Check API keys, provider credits  
+**Dreams not showing percepts**: Old DB entries may not have percepts
+
+### Database Cleanup
+
+```bash
+node scripts/soft-cleanup-sigils.js --confirm
+# Removes moments without sigils, cleans orphaned references
 ```
 
-**Client → Server Events:**
+---
+
+## Key Concepts
+
+### Consciousness Modes
+
+- **DREAM**: System idle, replaying memories every 20s
+- **LIVE**: Active session, processing percepts every 5s
+
+**Auto-switching:**
+- First session starts → DREAM → LIVE
+- Last session ends → LIVE → (1s delay) → DREAM
+
+### Mind Moments
+
+Every moment contains:
+- Cognitive observation (text)
+- Sigil phrase (essence)
+- Kinetic pattern (movement)
+- Lighting pattern (color/animation)
+- Original percepts (visual/audio)
+- Prior context (3 moments)
+- Sigil code + SDF visualization
+
+### Dumb Client Architecture
+
+**Principle**: All clients are 100% event-driven, zero state
+
+- Clients emit actions (startSession, percept, endSession)
+- Server broadcasts events (mindMoment, sigil, cognitiveState)
+- All clients see all events (broadcast)
+- No client-side state beyond UI display
+
+---
+
+## Extending the System
+
+### Add New Consciousness Mode
+
+Edit `src/consciousness-loop.js`:
 
 ```javascript
-// Start a session
-socket.emit('startSession', { 
-  sessionId: 'unique-session-id' 
-});
-
-// Send a percept
-socket.emit('percept', {
-  sessionId: 'unique-session-id',
-  type: 'visual',  // or 'audio'
-  data: {
-    // Visual percept
-    emoji: '👋',
-    action: 'Person waving',
-    confidence: 0.95,
-    timestamp: '2025-11-17T20:00:00Z'
-    
-    // OR Audio percept
-    // transcript: "Hello UNI",
-    // analysis: "Friendly greeting"
+async tick() {
+  if (this.mode === 'DREAM') {
+    await this.dreamTick();
+  } else if (this.mode === 'LIVE') {
+    await this.liveTick();
+  } else if (this.mode === 'IMAGINE') {  // NEW
+    await this.imagineTick();            // NEW
   }
-});
+}
 
-// End session
-socket.emit('endSession', { 
-  sessionId: 'unique-session-id' 
-});
-```
-
-**Server → Client Events:**
-
-```javascript
-// Cycle started (pre-cognition)
-socket.on('cycleStarted', ({ 
-  cycle,           // Cycle number
-  visualPercepts,  // Count of visual percepts
-  audioPercepts,   // Count of audio percepts
-  priorMoments,    // Count of prior moments in context
-  timestamp        // ISO timestamp
-}) => {});
-
-// Mind moment generated
-socket.on('mindMoment', ({ 
-  cycle,           // Cycle number
-  mindMoment,      // Text observation
-  sigilPhrase,     // Visual essence (1-5 words)
-  kinetic,         // Movement pattern object
-  lighting,        // Lighting settings object
-  visualPercepts,  // Array of visual percepts
-  audioPercepts,   // Array of audio percepts
-  priorMoments     // Array of prior moments used
-}) => {});
-
-// Sigil generated (after mind moment)
-socket.on('sigil', ({ 
-  cycle,           // Cycle number
-  sigilCode,       // Canvas drawing commands
-  sigilPhrase      // Visual essence
-}) => {});
-
-// Cognitive state changed
-socket.on('cognitiveState', ({ 
-  state            // 'AGGREGATING' | 'COGNIZING' | 'VISUALIZING'
-}) => {});
-
-// Cycle completed (final event)
-socket.on('cycleCompleted', ({ 
-  cycle,           // Cycle number
-  mindMoment,      // Text observation
-  sigilPhrase,     // Visual essence
-  kinetic,         // Movement pattern
-  lighting,        // Lighting settings
-  sigilCode,       // Canvas code (or null)
-  duration,        // Total duration in ms
-  timestamp        // ISO timestamp
-}) => {});
-```
-
-### Cognitive States
-
-| State | Meaning |
-|-------|---------|
-| `AGGREGATING` | Waiting for next cycle, collecting percepts |
-| `COGNIZING` | LLM processing in flight |
-| `VISUALIZING` | Generating sigil visualization |
-
-### Output Formats
-
-**Kinetic Pattern:**
-```javascript
-{
-  pattern: "IDLE" | "HAPPY_BOUNCE" | "SLOW_SWAY" | "JIGGLE"
+async imagineTick() {
+  // Your creative generation logic here
+  const moment = await generateCreativeMoment();
+  this.broadcastMoment(moment);
 }
 ```
 
-**Lighting:**
+Add to `src/cognitive-states.js`:
 ```javascript
-{
-  color: "0xffffff",     // Hex color string
-  pattern: "SMOOTH_WAVES" | "CIRCULAR_PULSE" | "HECTIC_NOISE" | "IDLE",
-  speed: 0-1             // Animation speed
-}
+export const ConsciousnessMode = {
+  LIVE: 'LIVE',
+  DREAM: 'DREAM',
+  IMAGINE: 'IMAGINE'  // NEW
+};
 ```
+
+### Add New Percept Type
+
+1. Update schema in prompt editor
+2. Add handler in `real-cog.js`
+3. Update percept formatting in prompt construction
+4. No client changes needed (event-driven)
 
 ---
 
-## Personality Forge
+## Testing
 
-**Web UI for managing UNI's personality without code.**
-
-### Access
-
-**All Prompt Editors:**
-- **Personality:** `http://localhost:3001/prompt-editor/personality/`
-- **Sigil:** `http://localhost:3001/prompt-editor/sigil/`
-- **Visual Percept:** `http://localhost:3001/prompt-editor/visual-percept/`
-
-**Legacy URLs (redirect automatically):**
-- `/forge` → `/prompt-editor/personality`
-- `/personality-prompt-editor` → `/prompt-editor/personality`
-- `/sigil-prompt-editor` → `/prompt-editor/sigil`
-- `/visual-percept-prompt-editor` → `/prompt-editor/visual-percept`
-
-### Authentication
-
-**Local Development:**
-- ✅ **No password required** - Open access for development
-
-**Production:**
-- 🔒 **HTTP Basic Auth** - Browser login prompt
-- Set `NODE_ENV=production` to enable
-
-**Production Configuration:**
-```bash
-NODE_ENV=production                    # Enable auth
-EDITOR_USERNAME=admin                  # Optional (default: admin)
-EDITOR_PASSWORD=your_secure_password   # Required
-```
-
-**Browser Experience (Production):**
-1. Visit `/prompt-editor/personality/`
-2. Browser shows login prompt
-3. Enter username + password
-4. Access all editors with same credentials
-
-**Protected Resources (Production Only):**
-- `/prompt-editor/*` → All editor UIs
-- `/api/personalities/*` → Personality API
-- `/api/sigil-prompts/*` → Sigil prompts API
-
-### Workflow
-
-1. **Load** existing personality from dropdown
-2. **Edit** personality prompt in textarea
-3. **Test** with mock percepts (4 presets + custom JSON)
-4. **See** real LLM response in ~3 seconds
-5. **Iterate** until satisfied
-6. **Save** with new name/slug
-7. **Activate** to make it production-ready
-8. **Restart server** to load new personality
-
-### REST API Endpoints
-
-All endpoints require auth if `FORGE_AUTH_ENABLED=true`.
+### Manual Testing
 
 ```bash
-# List personalities
-GET /api/personalities
-# Returns: { personalities: [{ id, name, slug, active, created_at }] }
+# Terminal 1: Start server
+npm start
 
-# Get active personality
-GET /api/personalities/active
-# Returns: { personality: { id, name, slug, prompt, active } }
+# Browser 1: Dashboard
+open http://localhost:3001/dashboard
 
-# Get specific personality (includes full prompt)
-GET /api/personalities/:id
-# Returns: { personality: { id, name, slug, prompt, ... } }
-
-# Create/update personality
-POST /api/personalities
-# Body: { name, slug, prompt }
-# Returns: { personality: { id, ... } }
-
-# Activate personality
-POST /api/personalities/:id/activate
-# Returns: { personality, message: "Restart server..." }
-
-# Test personality with mock percepts
-POST /api/personalities/:id/test
-# Body: { visualPercepts: [...], audioPercepts: [...] }
-# Returns: { mindMoment, sigilPhrase, kinetic, lighting }
-
-# Delete personality (only if not active)
-DELETE /api/personalities/:id
-# Returns: { success: true }
+# Browser 2: Perceptor
+open http://localhost:3001/perceptor-remote
+# Start session, send percepts, watch dashboard update
 ```
 
-### Database Schema
-
-```sql
-CREATE TABLE personalities (
-  id UUID PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  slug VARCHAR(50) UNIQUE NOT NULL,
-  prompt TEXT NOT NULL,
-  schema JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-  active BOOLEAN DEFAULT false
-);
-
--- Only one personality can be active at a time
-CREATE UNIQUE INDEX unique_active_personality
-  ON personalities (active) WHERE active = true;
-```
-
-### Production Integration
-
-**Server startup:**
-```javascript
-// server.js initializes personality from database
-await initializePersonality();
-// Logs: 🎭 Loaded personality: UNI Tripartite v2.1
-```
-
-**Every mind moment:**
-- Uses `currentPersonality` prompt from database
-- Tags mind moment with `personality_id`
-- Enables analytics: compare personalities, track performance
-
-**To switch personalities:**
-1. Writer activates new personality in Forge
-2. Developer restarts server (or pushes any commit)
-3. Server loads new active personality
-4. All future mind moments use new personality
-
-### Security Notes
-
-- **Basic HTTP Auth**: Simple, works everywhere, good for small teams
-- **Use HTTPS**: Password sent in base64 encoding
-- **Rate limit test endpoint**: Each test calls real LLM (costs money!)
-- **Can't delete active personality**: Safety constraint prevents accidents
-
-### Deployment Checklist
-
-Before sharing with writers:
-
-- [ ] Set `FORGE_AUTH_ENABLED=true` in production
-- [ ] Set strong `FORGE_PASSWORD`
-- [ ] Run migrations: `npm run migrate`
-- [ ] Seed initial personality: `npm run db:seed-personality`
-- [ ] Test Forge access with password
-- [ ] Share credentials securely (1Password, etc.)
-- [ ] Show writer how to use (share writer-guide.md)
-
----
-
-## Database Queries
+### Database Queries
 
 ```bash
-# Query recent mind moments
+# Query recent moments
 npm run db:query
 
-# Or use psql directly
-psql $DATABASE_URL -c "SELECT cycle, mind_moment, cognizer_version FROM mind_moments ORDER BY cycle DESC LIMIT 10;"
+# Check schema
+npm run db:schema
 ```
 
 ---
 
 ## Troubleshooting
 
-### Database Connection Fails
+**Import errors after refactor**:
+- Old code may import from `src/main.js` or `src/dream-loop.js`
+- These are now in `src/consciousness-loop.js`
+- Check `graveyard/consciousness-unification-phase3/` for old implementations
 
-```bash
-# Check DATABASE_URL is set
-echo $DATABASE_URL
+**Mode stuck**:
+- Check LoopManager session tracking
+- Verify session start/end events firing
+- Check console for transition logs
 
-# Test connection
-psql $DATABASE_URL -c "SELECT 1;"
-
-# Run migrations
-npm run migrate
-```
-
-### Version Registration Fails
-
-```bash
-# Make sure DATABASE_ENABLED=true
-# Make sure version doesn't already exist
-npm run version:register
-# If "already registered", that's correct - versions are immutable
-```
-
-### LLM Provider Not Working
-
-```bash
-# Check provider is set
-echo $LLM_PROVIDER
-
-# Check API key is set
-echo $OPENAI_API_KEY  # (or ANTHROPIC_API_KEY, GEMINI_API_KEY)
-
-# Test with fake server (no LLM needed)
-npm run client:fake
-```
-
-### Server Won't Start
-
-```bash
-# Check port isn't in use
-lsof -i :3001
-
-# Check environment variables
-cat .env
-
-# Check logs for errors
-npm start
-```
+**Percepts not processing**:
+- Verify mode is LIVE (check logs)
+- Check session is active
+- Verify percepts added to queue
 
 ---
 
-## Code Principles (Prime Directive)
+## Documentation
 
-1. **Functional Programming**: Pure functions, single responsibility
-2. **Immutable State**: `const` by default, no mutation
-3. **File Size**: Target <80 lines per file
-4. **Minimal Libraries**: Use vanilla JS where practical
-5. **Dumb Client Architecture**: All state on server
-
----
-
-## Adding Features
-
-### Adding a New LLM Provider
-
-1. Create `src/providers/new-provider.js`
-2. Export `callLLM` function
-3. Add to `src/providers/index.js`
-4. Add API key to `.env`
-
-### Adding a New Output Type
-
-1. Update personality prompt in `src/personality-uni-v2.js`
-2. Update schema in `src/db/migrations/*.sql`
-3. Update `saveMindMoment` in `src/db/mind-moments.js`
-4. Update WebSocket events in `server.js`
-
-### Adding a New Cognitive State
-
-1. Add constant to `src/cognitive-states.js`
-2. Update state transitions in `src/main.js`
-3. Emit state changes via WebSocket
+- `prime-directive.md` - Coding principles
+- `README.md` - Quick start and overview
+- `docs/DEVELOPER_GUIDE.md` - This file
+- `graveyard/docs-2025-12-02/` - Archived implementation docs
 
 ---
 
-## Performance
+## License
 
-### Typical Timings
-
-- **Mind moment generation**: 1-5s (depending on LLM)
-- **Sigil generation**: 2-4s
-- **Total cycle**: 3-9s
-- **Database save**: <50ms
-
-### Optimization Tips
-
-- Use `COGNITIVE_CYCLE_MS` to control cycle frequency
-- Mock server for development (instant responses)
-- Database indexes are already optimized
-- LLM provider choice affects speed:
-  - Gemini Flash: Fast, cheap
-  - GPT-4o: Medium, expensive
-  - Claude: Slow, high quality
-
----
-
-## Further Reading
-
-- **Current architecture work**: `docs/extending-cognizer.md`
-- **Historical docs**: `graveyard/` (organized by topic)
-- **Code principles**: `prime-directive.md`
-- **Root README**: Quick start guide
-
----
-
-**This is the practical guide. For design/planning, see `extending-cognizer.md`.**
-
+MIT
