@@ -23,6 +23,7 @@ export class ConsciousnessLoop {
     this.mode = 'DREAM';  // Start in dream mode
     this.intervalId = null;
     this.currentState = CognitiveState.IDLE;
+    this.dreamTimeouts = [];  // Track dream dispersal timeouts
     
     // Percept queue for LIVE mode
     this.perceptQueue = {
@@ -59,6 +60,10 @@ export class ConsciousnessLoop {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+      
+      // Clear dream dispersal timeouts
+      this.dreamTimeouts.forEach(timeout => clearTimeout(timeout));
+      this.dreamTimeouts = [];
       
       // Clear listeners if in LIVE mode
       if (this.mode === 'LIVE') {
@@ -101,15 +106,93 @@ export class ConsciousnessLoop {
   }
   
   /**
-   * DREAM mode: Recall a random moment from memory
+   * DREAM mode: Recall and replay a moment with temporal percept dispersal
    */
   async dreamTick() {
     const dream = await this.recallMoment();
     
-    if (dream) {
-      console.log(`💭 Dreaming of cycle ${dream.cycle}: "${dream.sigilPhrase}"`);
+    if (!dream) return;
+    
+    console.log(`💭 Dreaming of cycle ${dream.cycle}: "${dream.sigilPhrase}"`);
+    
+    // Collect all percepts with type markers
+    const allPercepts = [
+      ...dream.visualPercepts.map(p => ({ ...p, type: 'visual' })),
+      ...dream.audioPercepts.map(p => ({ ...p, type: 'audio' }))
+    ].filter(p => p.timestamp); // Only include percepts with timestamps
+    
+    // Fallback: If no percepts, emit immediately
+    if (allPercepts.length === 0) {
+      console.log('  💭 No percepts in dream, broadcasting immediately');
       this.broadcastMoment(dream);
+      return;
     }
+    
+    // Clear any pending timeouts from previous dream
+    this.dreamTimeouts.forEach(t => clearTimeout(t));
+    this.dreamTimeouts = [];
+    
+    // Sort percepts chronologically by timestamp
+    try {
+      allPercepts.sort((a, b) => 
+        new Date(a.timestamp) - new Date(b.timestamp)
+      );
+    } catch (error) {
+      console.error('⚠️  Failed to sort percepts by timestamp:', error.message);
+      // Continue with unsorted percepts
+    }
+    
+    // Calculate timing pattern from original timestamps
+    const firstTimestamp = new Date(allPercepts[0].timestamp).getTime();
+    const lastTimestamp = new Date(allPercepts[allPercepts.length - 1].timestamp).getTime();
+    const originalDuration = lastTimestamp - firstTimestamp;
+    
+    // Scale timing to fit 90% of dream cycle window (save 10% for processing feel)
+    const dispersalWindow = DREAM_CYCLE_MS * 0.9; // 18s of 20s cycle
+    const scaleFactor = originalDuration > 0 ? dispersalWindow / originalDuration : 1;
+    
+    console.log(`  💭 Replaying ${allPercepts.length} percepts over ${(dispersalWindow / 1000).toFixed(1)}s`);
+    console.log(`     Original duration: ${(originalDuration / 1000).toFixed(1)}s, scale: ${scaleFactor.toFixed(2)}x`);
+    
+    // Emit percepts with scaled timing
+    allPercepts.forEach((percept, index) => {
+      const perceptTime = new Date(percept.timestamp).getTime();
+      const relativeTime = perceptTime - firstTimestamp;
+      const scaledTime = relativeTime * scaleFactor;
+      
+      const timeoutId = setTimeout(() => {
+        const { type, timestamp, ...data } = percept;
+        
+        this.io.emit('perceptReceived', {
+          sessionId: 'dream',
+          type,
+          data,
+          timestamp: new Date().toISOString(), // Current time for display
+          originalTimestamp: timestamp,        // Preserve original for reference
+          isDream: true                        // Flag for client awareness
+        });
+        
+        // Log percept emission
+        if (type === 'visual') {
+          console.log(`  💭 [${(scaledTime / 1000).toFixed(1)}s] 👁️  ${data.emoji} ${data.action}`);
+        } else {
+          const preview = data.transcript 
+            ? `"${data.transcript.slice(0, 40)}..."` 
+            : data.analysis;
+          console.log(`  💭 [${(scaledTime / 1000).toFixed(1)}s] 🎤 ${data.emoji} ${preview}`);
+        }
+      }, scaledTime);
+      
+      this.dreamTimeouts.push(timeoutId);
+    });
+    
+    // Emit mind moment + sigil at the end
+    const finalTimeout = setTimeout(() => {
+      console.log(`  💭 Dream complete: "${dream.sigilPhrase}"`);
+      this.broadcastMoment(dream);
+    }, dispersalWindow);
+    
+    this.dreamTimeouts.push(finalTimeout);
   }
   
   /**
@@ -139,7 +222,12 @@ export class ConsciousnessLoop {
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           created_at
         FROM mind_moments
-        WHERE sigil_code IS NOT NULL AND cycle >= 48
+        WHERE sigil_code IS NOT NULL 
+          AND cycle >= 48
+          AND (
+            jsonb_array_length(visual_percepts) > 0 
+            OR jsonb_array_length(audio_percepts) > 0
+          )
         ORDER BY RANDOM()
         LIMIT 1
       `);
