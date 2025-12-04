@@ -7,6 +7,7 @@ import { MomentCard } from '../shared/components/moment-card/moment-card.js';
 import { MomentCardHero } from '../shared/components/moment-card-hero/moment-card-hero.js';
 import { HistoryGrid } from '../shared/components/history-grid/history-grid.js';
 import { Sigil } from '../shared/sigil.standalone.js';
+import { UniBrand } from '../shared/components/uni-brand/uni-brand.js';
 
 // ============================================
 // Configuration
@@ -55,6 +56,34 @@ const $pngStatus = document.getElementById('png-status');
 const $pngDisplay = document.getElementById('sigil-png-display');
 const $percepts = document.getElementById('percepts');
 const $historyGrid = document.getElementById('history-grid');
+const $uniBrand = document.getElementById('uni-brand');
+
+// ============================================
+// UniBrand Initialization
+// ============================================
+
+/**
+ * Initialize UniBrand component
+ */
+function initUniBrand() {
+  try {
+    const uniBrand = new UniBrand({
+      canvasSize: 80,
+      lineColor: '#ffffff',
+      lineWeight: 2.0
+    });
+    
+    const element = uniBrand.create();
+    $uniBrand.appendChild(element);
+    
+    console.log('🎨 UniBrand initialized');
+  } catch (error) {
+    console.error('Failed to initialize UniBrand:', error);
+  }
+}
+
+// Initialize UniBrand
+initUniBrand();
 
 // ============================================
 // History Grid
