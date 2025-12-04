@@ -371,7 +371,7 @@ export class ConsciousnessLoop {
     });
     
     // Sigil listener
-    onSigil((cycle, sigilCode, sigilPhrase, sigilSDF) => {
+    onSigil((cycle, sigilCode, sigilPhrase, sigilPNG) => {
       const sigilData = {
         cycle,
         sigilCode,
@@ -380,11 +380,11 @@ export class ConsciousnessLoop {
         timestamp: new Date().toISOString()
       };
       
-      if (sigilSDF && sigilSDF.data) {
-        sigilData.sdf = {
-          width: sigilSDF.width,
-          height: sigilSDF.height,
-          data: Buffer.from(sigilSDF.data).toString('base64')
+      if (sigilPNG && sigilPNG.data) {
+        sigilData.png = {
+          width: sigilPNG.width,
+          height: sigilPNG.height,
+          data: Buffer.from(sigilPNG.data).toString('base64')
         };
       }
       

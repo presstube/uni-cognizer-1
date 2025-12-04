@@ -186,9 +186,9 @@ export function onSigil(listener) {
   sigilListeners.push(listener);
 }
 
-function dispatchSigil(cycle, sigilCode, sigilPhrase, sigilSDF) {
+function dispatchSigil(cycle, sigilCode, sigilPhrase, sigilPNG) {
   sigilListeners.forEach(listener => {
-    listener(cycle, sigilCode, sigilPhrase, sigilSDF);
+    listener(cycle, sigilCode, sigilPhrase, sigilPNG);
   });
 }
 
@@ -321,44 +321,31 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         try {
           const { sigilCode, sigilPromptId } = await generateSigil(result.sigilPhrase);
           
-          // Generate SVG from canvas code (commented out - not used, keeping SDF only)
-          /*
-          let sigilSVG = null;
+          // Generate PNG directly from canvas code
+          let sigilPNG = null;
           try {
-            const { canvasToSVG } = await import('./sigil/canvas-to-svg.js');
-            sigilSVG = canvasToSVG(sigilCode, 100, 100);
-          } catch (svgError) {
-            console.warn('⚠️  SVG generation failed:', svgError.message);
-          }
-          */
-          let sigilSVG = null; // Defined as null since SVG generation is disabled
-          
-          // Generate SDF directly from canvas code (simpler and more accurate than SVG→SDF)
-          let sigilSDF = null;
-          try {
-            const { canvasToSDF } = await import('./sigil/canvas-to-sdf.js');
-            sigilSDF = await canvasToSDF(sigilCode, { 
+            const { canvasToPNG } = await import('./sigil/canvas-to-png.js');
+            sigilPNG = await canvasToPNG(sigilCode, { 
               width: 512, 
               height: 512,
               canvasWidth: 100,
               canvasHeight: 100,
-              strokeWidth: 2,
-              scale: 0.75  // Scale down to prevent gradient cutoff
+              strokeWidth: 1.0,
+              scale: 1.0  // Full scale
             });
-          } catch (sdfError) {
-            console.warn('⚠️  SDF generation failed:', sdfError.message);
+          } catch (pngError) {
+            console.warn('⚠️  PNG generation failed:', pngError.message);
           }
           
           const sigilDuration = Date.now() - sigilStartTime;
           
-          // Update history with sigil formats
+          // Update history with PNG
           cognitiveHistory[thisCycle].sigilCode = sigilCode;
-          // cognitiveHistory[thisCycle].sigilSVG = sigilSVG; // Commented out - not generating SVG
-          if (sigilSDF) {
-            cognitiveHistory[thisCycle].sigilSDF = sigilSDF;
+          if (sigilPNG) {
+            cognitiveHistory[thisCycle].sigilPNG = sigilPNG;
           }
           
-          // Update sigil data in database (with SVG and SDF if available)
+          // Update sigil data in database (with PNG if available)
           if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
             try {
               const { getPool } = await import('./db/index.js');
@@ -366,23 +353,22 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
               
               console.log(`💾 Updating sigil in database (ID: ${cognitiveHistory[thisCycle].id.substring(0, 8)}...)`);
               
-              // Check if sigil_svg and sigil_sdf columns exist
-              if (sigilSDF) {
+              if (sigilPNG) {
                 try {
                   await pool.query(
                     `UPDATE mind_moments 
                      SET sigil_code = $1,
-                         sigil_sdf_data = $2,
-                         sigil_sdf_width = $3,
-                         sigil_sdf_height = $4,
+                         sigil_png_data = $2,
+                         sigil_png_width = $3,
+                         sigil_png_height = $4,
                          sigil_prompt_id = $5
                      WHERE id = $6`,
-                    [sigilCode, sigilSDF.data, sigilSDF.width, sigilSDF.height, sigilPromptId, cognitiveHistory[thisCycle].id]
+                    [sigilCode, sigilPNG.data, sigilPNG.width, sigilPNG.height, sigilPromptId, cognitiveHistory[thisCycle].id]
                   );
-                  console.log(`✓ Sigil saved to database (code + SDF)`);
+                  console.log(`✓ Sigil saved to database (code + PNG)`);
                 } catch (columnError) {
-                  // Columns might not exist yet - fall back to just code
-                  console.warn('⚠️  SDF columns not available, saving code only');
+                  // PNG columns might not exist yet - fall back to just code
+                  console.warn('⚠️  PNG columns not available, saving code only');
                   await pool.query(
                     'UPDATE mind_moments SET sigil_code = $1, sigil_prompt_id = $2 WHERE id = $3',
                     [sigilCode, sigilPromptId, cognitiveHistory[thisCycle].id]
@@ -390,12 +376,12 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
                   console.log('✓ Sigil saved to database (code only)');
                 }
               } else {
-                // No SDF generated, just update sigil_code
+                // No PNG generated, just update sigil_code
                 await pool.query(
                   'UPDATE mind_moments SET sigil_code = $1, sigil_prompt_id = $2 WHERE id = $3',
                   [sigilCode, sigilPromptId, cognitiveHistory[thisCycle].id]
                 );
-                console.log(`✓ Sigil saved to database (code only, no SVG/SDF)`);
+                console.log(`✓ Sigil saved to database (code only, no PNG)`);
               }
             } catch (dbError) {
               console.error('❌ Failed to update sigil in database:', dbError.message);
@@ -406,19 +392,18 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
           
           console.log(`✓ Sigil generated (${sigilDuration}ms)`);
           console.log(`  Code: ${sigilCode.length} chars`);
-          // console.log(`  SVG: ${sigilSVG.length} chars`); // Commented out - not generating SVG
-          if (sigilSDF) {
-            console.log(`  SDF: ${sigilSDF.width}×${sigilSDF.height} (${sigilSDF.data.length} bytes)`);
+          if (sigilPNG) {
+            console.log(`  PNG: ${sigilPNG.width}×${sigilPNG.height} (${sigilPNG.data.length} bytes)`);
           }
           console.log('');
           
-          // Emit sigil event (include SDF if available)
-          dispatchSigil(thisCycle, sigilCode, result.sigilPhrase, sigilSDF);
+          // Emit sigil event (include PNG if available)
+          dispatchSigil(thisCycle, sigilCode, result.sigilPhrase, sigilPNG);
           
         } catch (sigilError) {
           console.error(`❌ Sigil generation failed:`, sigilError.message);
           cognitiveHistory[thisCycle].sigilCode = null;
-          cognitiveHistory[thisCycle].sigilSDF = null;
+          cognitiveHistory[thisCycle].sigilPNG = null;
           
           // Store error in database for diagnostics
           if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {

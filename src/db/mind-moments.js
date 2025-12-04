@@ -96,6 +96,7 @@ export async function getMindMomentWithFullSigil(momentId) {
       id, cycle, session_id, mind_moment, sigil_phrase,
       sigil_code, sigil_svg, 
       sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
+      sigil_png_data, sigil_png_width, sigil_png_height,
       kinetic, lighting, created_at
     FROM mind_moments 
     WHERE id = $1
