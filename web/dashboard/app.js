@@ -38,10 +38,12 @@ let historyGrid = null;
 
 const $connection = document.getElementById('connection');
 const $sessions = document.getElementById('sessions');
-const $sessionList = document.getElementById('session-list');
 const $state = document.getElementById('state');
 const $countdown = document.getElementById('countdown');
 const $cycle = document.getElementById('cycle');
+const $center = document.querySelector('.center');
+const $collectingState = document.getElementById('collecting-state');
+const $contentState = document.getElementById('content-state');
 const $momentCardContainer = document.getElementById('moment-card-container');
 const $perceptsList = document.getElementById('percepts-list');
 const $priorMomentsList = document.getElementById('prior-moments-list');
@@ -65,6 +67,9 @@ const $historyGrid = document.getElementById('history-grid');
  */
 function onHistoryMomentClick(moment) {
   console.log('📜 History moment clicked:', moment.cycle);
+  
+  // Switch to content state
+  showContentState();
   
   // Update cycle
   $cycle.textContent = moment.cycle ? `#${moment.cycle}` : '—';
@@ -249,6 +254,22 @@ function updateStateDisplay(state) {
 }
 
 /**
+ * Show collecting state (instant, no fade)
+ */
+function showCollectingState() {
+  $center.classList.add('is-collecting');
+  console.log('💭 Showing collecting state');
+}
+
+/**
+ * Show content state (instant, no fade)
+ */
+function showContentState() {
+  $center.classList.remove('is-collecting');
+  console.log('👁️ Showing content state');
+}
+
+/**
  * Clear countdown timer and display
  */
 function clearCountdown() {
@@ -264,7 +285,7 @@ function clearCountdown() {
  * Handle the case when no sessions are active
  */
 function handleNoActiveSessions() {
-  $sessionList.innerHTML = '<div class="session-item">No active sessions</div>';
+  $sessions.textContent = 'none';
   clearCountdown();
   
   // Show history when no active session
@@ -276,9 +297,13 @@ function handleNoActiveSessions() {
  * Handle the case when sessions are active
  */
 function handleActiveSessions(sessions) {
-  $sessionList.innerHTML = sessions
-    .map(s => `<div class="session-item">• ${s.id}</div>`)
-    .join('');
+  // If transitioning from dream mode (no-session), clear dream percepts
+  if (document.body.classList.contains('no-session')) {
+    console.log('🧹 Clearing dream percepts on transition to live mode');
+    clearPercepts();
+  }
+  
+  $sessions.textContent = sessions.map(s => s.id).join(', ');
   // Request fresh cycle status to sync countdown
   socket.emit('getCycleStatus');
   
@@ -344,7 +369,6 @@ function connect() {
   // Session tracking - shows which clients are actively observing
   socket.on('sessionsUpdate', ({ count, sessions }) => {
     console.log('📊 Sessions:', { count, sessions });
-    $sessions.textContent = count;
     
     if (count === 0) {
       handleNoActiveSessions();
@@ -375,6 +399,9 @@ function connect() {
   // Mind moment received - update all fields and create moment card
   socket.on('mindMoment', (data) => {
     console.log('🧠 Mind moment:', data.mindMoment?.substring(0, 50) + '...');
+    
+    // Switch to content state (instant)
+    showContentState();
     
     // Update cycle
     $cycle.textContent = data.cycle ? `#${data.cycle}` : '—';
@@ -475,29 +502,24 @@ function connect() {
     console.log('🧹 Clear display:', { clearPercepts, clearMindMoment, clearSigil });
     
     if (clearPercepts) {
-      // Clear live percept feed (top right)
+      // Clear live percept feed (left pane)
       $percepts.innerHTML = '<div class="empty">Waiting for percepts...</div>';
-      
-      // Clear moment percepts list (center pane)
-      $perceptsList.innerHTML = '';
     }
     
-    if (clearMindMoment && currentMomentCard) {
-      // Fade out animation
-      if (currentMomentCard.element) {
-        currentMomentCard.element.style.opacity = '0';
-        currentMomentCard.element.style.transition = 'opacity 0.3s ease-out';
-        
-        // Clear after fade
-        setTimeout(() => {
-          $momentCardContainer.innerHTML = '';
-          currentMomentCard = null;
-        }, 300);
-      } else {
-        // No animation if element not found
-        $momentCardContainer.innerHTML = '';
-        currentMomentCard = null;
-      }
+    if (clearMindMoment) {
+      // Clear all content instantly
+      $momentCardContainer.innerHTML = '';
+      $perceptsList.innerHTML = '';
+      $priorMomentsList.innerHTML = '';
+      $lighting.innerHTML = '<span class="lighting-text">—</span>';
+      $timestamp.textContent = '—';
+      $personalityName.textContent = '—';
+      $sigilPromptName.textContent = '—';
+      
+      currentMomentCard = null;
+      
+      // Switch to collecting state (instant)
+      showCollectingState();
     }
     
     if (clearSigil) {
@@ -758,8 +780,9 @@ function addPercept(data) {
 
 console.log('🚀 Dashboard initializing...');
 
-// Set initial state - no session, show history
+// Set initial state - no session, show history, collecting percepts
 document.body.classList.add('no-session');
+showCollectingState();
 
 connect();
 

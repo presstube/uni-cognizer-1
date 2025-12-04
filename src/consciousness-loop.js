@@ -257,6 +257,30 @@ export class ConsciousnessLoop {
           data: row.sigil_sdf_data
         };
       }
+      
+      // Fetch prior moments data if IDs exist
+      let priorMoments = [];
+      if (row.prior_moment_ids && row.prior_moment_ids.length > 0) {
+        try {
+          const priorResult = await pool.query(`
+            SELECT id, cycle, mind_moment, sigil_phrase, sigil_code
+            FROM mind_moments
+            WHERE id = ANY($1)
+            ORDER BY cycle DESC
+          `, [row.prior_moment_ids]);
+          
+          priorMoments = priorResult.rows.map(p => ({
+            id: p.id,
+            cycle: p.cycle,
+            mindMoment: p.mind_moment,
+            sigilPhrase: p.sigil_phrase,
+            sigilCode: p.sigil_code
+          }));
+        } catch (error) {
+          console.error('💭 Failed to fetch prior moments:', error.message);
+          // Continue without prior moments
+        }
+      }
 
       // Use normalization function for consistent structure
       return normalizeMindMoment({
@@ -268,7 +292,7 @@ export class ConsciousnessLoop {
         lighting: row.lighting,
         visual_percepts: row.visual_percepts,
         audio_percepts: row.audio_percepts,
-        prior_moment_ids: row.prior_moment_ids,
+        prior_moments: priorMoments, // Pass the fetched moment objects, not IDs
         sdf,
         isDream: true
       });

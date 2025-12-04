@@ -16,117 +16,126 @@
   <link rel="stylesheet" href="/dashboard/dashboard.css">
 </head>
 <body>
-  <!-- Left: System Status + Percepts -->
-  <div class="left">
-    <!-- System Status Section -->
-    <div class="system-status">
-      <div>
-        <div class="label">Connection</div>
-        <div class="value connection disconnected" id="connection">Disconnected</div>
-      </div>
-      
-      <div>
-        <div class="label">Active Sessions</div>
-        <div class="value" id="sessions">0</div>
-        <div class="session-list" id="session-list"></div>
-      </div>
-      
-      <div>
-        <div class="label">State</div>
-        <div class="value state aggregating" id="state">AGGREGATING</div>
-      </div>
-      
-      <div>
-        <div class="label">Next Cycle</div>
-        <div class="countdown" id="countdown">—</div>
-      </div>
-      
-      <div>
-        <div class="label">Cycle</div>
-        <div class="value" id="cycle">—</div>
-      </div>
+  <!-- Top Status Strip -->
+  <div class="top-status-strip">
+    <div class="status-group">
+      <div class="label">Connection</div>
+      <div class="value connection disconnected" id="connection">Disconnected</div>
     </div>
     
-    <!-- Divider -->
-    <div class="pane-divider"></div>
+    <div class="status-group">
+      <div class="label">Active Sessions</div>
+      <div class="value" id="sessions">none</div>
+    </div>
     
-    <!-- Percepts Section -->
-    <div class="percepts-stream" id="percepts">
-      <div class="empty">Waiting for percepts...</div>
+    <div class="status-group">
+      <div class="label">State</div>
+      <div class="value state aggregating" id="state">AGGREGATING</div>
+    </div>
+    
+    <div class="status-group">
+      <div class="label">Next Cycle</div>
+      <div class="countdown" id="countdown">—</div>
+    </div>
+    
+    <div class="status-group">
+      <div class="label">Cycle</div>
+      <div class="value" id="cycle">—</div>
     </div>
   </div>
   
-  <!-- Center: Mind Moment Details -->
-  <div class="center">
-    <div class="moment-section">
-      <div class="label">Mind Moment</div>
-      <div id="moment-card-container"></div>
-    </div>
-    
-    <div class="percepts-section">
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Left: Percepts Only -->
+    <div class="left">
       <div class="label">Percepts</div>
-      <div class="percepts-list" id="percepts-list">
-        <div class="empty-percepts">No percepts yet</div>
+      <!-- Percepts Section -->
+      <div class="percepts-stream" id="percepts">
+        <div class="empty">Waiting for percepts...</div>
       </div>
     </div>
     
-    <div class="prior-moments-section">
-      <div class="label">Prior Mind Moments</div>
-      <div class="prior-moments-list" id="prior-moments-list">
-        <div class="empty-prior">No prior moments</div>
-      </div>
-    </div>
-    
-    <div>
-      <div class="label">Lighting</div>
-      <div class="lighting-display" id="lighting">
-        <span class="color-swatch"></span>
-        <span class="lighting-text">—</span>
-      </div>
-    </div>
-    
-    <div>
-      <div class="label">Generated</div>
-      <div class="value" id="timestamp">—</div>
-    </div>
-    
-    <div>
-      <div class="label">Personality</div>
-      <div class="value" id="personality-name">—</div>
-    </div>
-    
-    <div>
-      <div class="label">Sigil Prompt</div>
-      <div class="value" id="sigil-prompt-name">—</div>
-    </div>
-    
-    <div class="sigil-formats-section">
-      <div class="label">Sigil Formats</div>
-      <div class="sigil-formats">
-        <!-- SVG Format (commented out - keeping SDF only)
-        <div class="format-item">
-          <span class="format-label">SVG:</span>
-          <span class="format-value" id="svg-status">—</span>
-        </div>
-        -->
-        <div class="format-item">
-          <span class="format-label">SDF:</span>
-          <span class="format-value" id="sdf-status">—</span>
-        </div>
+    <!-- Center: Mind Moment Details -->
+    <div class="center">
+      <!-- Collecting State (shown during clearDisplay) -->
+      <div class="collecting-state" id="collecting-state">
+        <div class="label">Mind Moment</div>
+        <div class="collecting-message">Collecting Percepts...</div>
       </div>
       
-      <!-- SVG Preview (commented out - keeping SDF only) -->
-      <!-- <div class="svg-preview" id="svg-preview"></div> -->
-      
-      <!-- SDF Preview (centered in pane) -->
-      <div class="sdf-preview" id="sdf-preview"></div>
+      <!-- Content State (shown when moment is active) -->
+      <div class="content-state" id="content-state">
+        <div class="moment-section">
+          <div class="label">Mind Moment</div>
+          <div id="moment-card-container"></div>
+        </div>
+        
+        <div class="percepts-section">
+          <div class="label">Percepts</div>
+          <div class="percepts-list" id="percepts-list">
+            <div class="empty-percepts">No percepts yet</div>
+          </div>
+        </div>
+        
+        <div class="prior-moments-section">
+          <div class="label">Prior Mind Moments</div>
+          <div class="prior-moments-list" id="prior-moments-list">
+            <div class="empty-prior">No prior moments</div>
+          </div>
+        </div>
+        
+        <div>
+          <div class="label">Lighting</div>
+          <div class="lighting-display" id="lighting">
+            <span class="color-swatch"></span>
+            <span class="lighting-text">—</span>
+          </div>
+        </div>
+        
+        <div>
+          <div class="label">Generated</div>
+          <div class="value" id="timestamp">—</div>
+        </div>
+        
+        <div>
+          <div class="label">Personality</div>
+          <div class="value" id="personality-name">—</div>
+        </div>
+        
+        <div>
+          <div class="label">Sigil Prompt</div>
+          <div class="value" id="sigil-prompt-name">—</div>
+        </div>
+        
+        <div class="sigil-formats-section">
+          <div class="label">Sigil Formats</div>
+          <div class="sigil-formats">
+            <!-- SVG Format (commented out - keeping SDF only)
+            <div class="format-item">
+              <span class="format-label">SVG:</span>
+              <span class="format-value" id="svg-status">—</span>
+            </div>
+            -->
+            <div class="format-item">
+              <span class="format-label">SDF:</span>
+              <span class="format-value" id="sdf-status">—</span>
+            </div>
+          </div>
+          
+          <!-- SVG Preview (commented out - keeping SDF only) -->
+          <!-- <div class="svg-preview" id="svg-preview"></div> -->
+          
+          <!-- SDF Preview (centered in pane) -->
+          <div class="sdf-preview" id="sdf-preview"></div>
+        </div>
+      </div>
     </div>
-  </div>
   
   <!-- Far Right: History Grid -->
   <div class="far-right">
     <div class="label">History</div>
     <div class="history-grid" id="history-grid"></div>
+  </div>
   </div>
   
   <script type="module" src="/dashboard/app.js"></script>

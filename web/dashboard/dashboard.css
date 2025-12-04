@@ -2,44 +2,65 @@
    DASHBOARD CSS - Component-Specific Styles
    ============================================ */
 
-/* Layout */
+/* Layout - Split into top strip + main content */
 body {
   display: flex;
+  flex-direction: column;
   overflow: hidden;
   height: 100vh;
 }
 
-/* Left pane - system status + percepts */
+/* Top Status Strip - 60px horizontal bar */
+.top-status-strip {
+  flex: 0 0 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: 0 var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Status groups - use existing label/value pattern in horizontal layout */
+.status-group {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  position: relative;
+}
+
+/* Override label to be inline in status strip */
+.status-group .label {
+  margin-bottom: 0;
+}
+
+/* Main content area - 3 columns below top strip */
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  height: calc(100vh - 60px);
+}
+
+/* Left pane - percepts only (no more system status) */
 .left {
   flex: 0 0 20%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--color-border);
   overflow: hidden;
 }
 
-/* System Status Section */
-.system-status {
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  flex-shrink: 0;
-}
-
-/* Subtle divider between system status and percepts */
-.pane-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
+.left .label {
+  padding: var(--space-md) var(--space-md) var(--space-sm);
 }
 
 /* Percepts Stream */
 .percepts-stream {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-md);
+  padding: 0 var(--space-md) var(--space-md);
 }
 
 /* Center pane - mind moment details */
@@ -58,10 +79,38 @@ body {
   container-name: moment-pane;
 }
 
+/* Collecting State - simple message */
+.collecting-state {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.center.is-collecting .collecting-state {
+  display: flex;
+}
+
+.center.is-collecting .content-state {
+  display: none;
+}
+
+.collecting-message {
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}
+
+/* Content State - normal layout */
+.content-state {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
 /* Far right pane - history grid */
 .far-right {
   flex: 0 0 50%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--color-border);
@@ -102,9 +151,8 @@ body.active-session .far-right {
 
 /* Countdown */
 .countdown {
-  font-size: var(--font-size-xl);
-  font-weight: 200;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--font-size-md);
+  color: var(--color-text-bright);
 }
 
 /* Moment Section */
@@ -191,19 +239,6 @@ body.active-session .far-right {
   display: flex;
   gap: var(--space-md);
   flex-wrap: wrap;
-}
-
-/* Session List */
-.session-list {
-  margin-top: var(--space-sm);
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.5);
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.session-item {
-  padding: 2px 0;
 }
 
 /* Sigil Formats Section */
