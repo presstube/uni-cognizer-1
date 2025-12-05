@@ -90,6 +90,37 @@ router.get('/mind-moments/all', async (req, res) => {
 });
 
 /**
+ * Get minimal mind moments for grid display (lightweight)
+ * GET /api/mind-moments/grid
+ */
+router.get('/mind-moments/grid', async (req, res) => {
+  if (process.env.DATABASE_ENABLED !== 'true') {
+    return res.json({ moments: [] });
+  }
+  
+  try {
+    const pool = getPool();
+    const result = await pool.query(`
+      SELECT 
+        mm.id,
+        mm.cycle,
+        mm.sigil_code
+      FROM mind_moments mm
+      WHERE mm.session_id = 'uni'
+      ORDER BY mm.cycle DESC
+    `);
+    
+    res.json({ 
+      moments: result.rows,
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error fetching mind moments grid:', error);
+    res.status(500).json({ error: 'Failed to fetch mind moments' });
+  }
+});
+
+/**
  * Get a specific mind moment by ID
  * GET /api/mind-moments/:id
  */

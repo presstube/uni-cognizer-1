@@ -15,16 +15,12 @@ export class HistoryGrid {
   
   /**
    * Load and render history from API
-   * @param {boolean} loadAll - If true, loads all moments; if false, uses limit (default: true)
-   * @param {number} limit - Max number of moments to load when loadAll is false (default: 100)
+   * Uses lightweight grid endpoint for initial load
    */
-  async loadHistory(loadAll = true, limit = 100) {
+  async loadHistory() {
     try {
-      const endpoint = loadAll 
-        ? '/api/mind-moments/all'
-        : `/api/mind-moments/recent?limit=${limit}`;
-      
-      const response = await fetch(endpoint);
+      // Use lightweight grid endpoint - only fetches id, cycle, sigil_code
+      const response = await fetch('/api/mind-moments/grid');
       const data = await response.json();
       this.moments = data.moments || [];
       this.render();
@@ -84,15 +80,27 @@ export class HistoryGrid {
       }
     }
     
-    // Click handler
-    cell.addEventListener('click', () => {
-      if (this.onMomentClick) {
-        this.onMomentClick(moment);
-      }
-      
-      // Visual feedback
+    // Click handler - fetch full moment details on demand
+    cell.addEventListener('click', async () => {
+      // Visual feedback immediately
       document.querySelectorAll('.sigil-cell').forEach(c => c.classList.remove('selected'));
       cell.classList.add('selected');
+      
+      if (this.onMomentClick) {
+        // Fetch full moment details from API
+        try {
+          const response = await fetch(`/api/mind-moments/${moment.id}`);
+          const data = await response.json();
+          
+          if (data.moment) {
+            this.onMomentClick(data.moment);
+          } else {
+            console.error('No moment data returned for:', moment.id);
+          }
+        } catch (error) {
+          console.error('Failed to fetch moment details:', error);
+        }
+      }
     });
     
     cell.appendChild(canvas);

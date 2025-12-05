@@ -109,6 +109,9 @@ function onHistoryMomentClick(moment) {
   // Switch to content state
   showContentState();
   
+  // Scroll center pane to top
+  $center.scrollTop = 0;
+  
   // Update cycle
   $cycle.textContent = moment.cycle ? `#${moment.cycle}` : '—';
   
@@ -240,7 +243,7 @@ function initHistoryKeyboardNav() {
  * Navigate history by offset
  * @param {number} offset - -1 for prev (newer), +1 for next (older)
  */
-function navigateHistory(offset) {
+async function navigateHistory(offset) {
   const moments = historyGrid.moments;
   
   // Find current selection
@@ -261,7 +264,17 @@ function navigateHistory(offset) {
   // Get and display the selected moment
   const selectedMoment = moments[selectedHistoryIndex];
   if (selectedMoment) {
-    onHistoryMomentClick(selectedMoment);
+    // Fetch full moment details from API
+    try {
+      const response = await fetch(`/api/mind-moments/${selectedMoment.id}`);
+      const data = await response.json();
+      
+      if (data.moment) {
+        onHistoryMomentClick(data.moment);
+      }
+    } catch (error) {
+      console.error('Failed to fetch moment details:', error);
+    }
     
     // Update visual selection
     const cells = document.querySelectorAll('.sigil-cell');

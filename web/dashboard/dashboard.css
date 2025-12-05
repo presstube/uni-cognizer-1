@@ -17,13 +17,13 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-lg);
-  background: rgba(255, 200, 0, 0.15);
-  border-bottom: 1px solid rgba(255, 200, 0, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .exploring-label {
   font-size: var(--font-size-md);
-  color: rgba(255, 220, 100, 1);
+  color: var(--color-text-bright);
   font-weight: normal;
 }
 
@@ -51,22 +51,6 @@ body {
 /* Adjust layout when exploring banner is present */
 body.exploring-mode .main-content {
   height: calc(100vh - 100px); /* 60px status + 40px banner */
-}
-
-/* EXPLORING MODE state: 0/50/50, hide percepts, focus on history */
-body.exploring-mode .left {
-  display: none;
-}
-
-body.exploring-mode .center {
-  flex: 0 0 50%;
-  border-right: 1px solid var(--color-border);
-}
-
-body.exploring-mode .far-right {
-  flex: 0 0 50%;
-  display: flex;
-  border-left: none;
 }
 
 
@@ -198,6 +182,23 @@ body.active-session .center {
 
 body.active-session .far-right {
   display: none;
+}
+
+/* EXPLORING MODE state: 0/50/50, hide percepts, focus on history */
+/* These rules must come AFTER no-session and active-session to override them */
+body.exploring-mode .left {
+  display: none !important;
+}
+
+body.exploring-mode .center {
+  flex: 0 0 50% !important;
+  border-right: 1px solid var(--color-border);
+}
+
+body.exploring-mode .far-right {
+  flex: 0 0 50% !important;
+  display: flex !important;
+  border-left: none;
 }
 
 .far-right .label {
