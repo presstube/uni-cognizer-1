@@ -137,3 +137,15 @@ video {
   flex-direction: column;
   gap: var(--space-xs);
 }
+
+/* Circumplex Visualization */
+#viz-container {
+  position: fixed;
+  bottom: var(--space-md);
+  right: var(--space-md);
+  z-index: 1000;
+}
+
+#circumplex-canvas {
+  display: block;
+}

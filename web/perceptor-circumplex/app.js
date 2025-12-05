@@ -2,6 +2,8 @@
 // Perceptor Circumplex v2 - Simple Implementation
 // ============================================
 
+import { CircumplexViz } from './circumplex-viz.js';
+
 // ============================================
 // SECTION 1: State Management
 // ============================================
@@ -29,7 +31,10 @@ const state = {
   pcmBuffer: [],
   
   // Streaming intervals
-  streamInterval: null
+  streamInterval: null,
+  
+  // Visualization
+  circumplexViz: null
 };
 
 // ============================================
@@ -275,6 +280,22 @@ function init() {
   loadApiKey();
   loadPromptProfile();
   setupEventListeners();
+  initializeVisualization();
+}
+
+function initializeVisualization() {
+  try {
+    state.circumplexViz = new CircumplexViz('circumplex-canvas', {
+      size: 400,  // Larger canvas for more label space
+      showLabels: true,
+      showAxes: true,
+      showGrid: false,
+      showDot: true
+    });
+    console.log('✅ Circumplex visualization initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize visualization:', error);
+  }
 }
 
 // ============================================
@@ -750,6 +771,15 @@ function updateUI(response) {
       typeof response.visual.arousal === 'number' 
         ? response.visual.arousal.toFixed(2) 
         : '--';
+  }
+  
+  // Update visualization
+  if (state.circumplexViz && response.audio && response.visual) {
+    // Average audio and visual values for combined position
+    const avgValence = (response.audio.valence + response.visual.valence) / 2;
+    const avgArousal = (response.audio.arousal + response.visual.arousal) / 2;
+    
+    state.circumplexViz.plot(avgValence, avgArousal);
   }
 }
 
