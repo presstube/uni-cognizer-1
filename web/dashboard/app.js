@@ -35,6 +35,7 @@ let currentSigilCode = null;
 let historyGrid = null;
 let currentPerceptExpanded = null;
 let currentState = 'IDLE';
+let exploringMode = false; // false = LIVE, true = EXPLORING
 
 // ============================================
 // DOM Elements
@@ -101,6 +102,9 @@ initUniBrand();
  */
 function onHistoryMomentClick(moment) {
   console.log('📜 History moment clicked:', moment.cycle);
+  
+  // Enter EXPLORING mode
+  enterExploringMode(moment.cycle);
   
   // Switch to content state
   showContentState();
@@ -276,6 +280,70 @@ function navigateHistory(offset) {
 initHistoryKeyboardNav();
 
 // ============================================
+// Exploring Mode
+// ============================================
+
+/**
+ * Enter EXPLORING mode - shows banner and blocks live updates
+ */
+function enterExploringMode(cycle) {
+  exploringMode = true;
+  document.body.classList.add('exploring-mode');
+  
+  // Show exploring banner
+  showExploringBanner(cycle);
+  
+  console.log('📜 Entered EXPLORING mode - cycle #' + cycle);
+}
+
+/**
+ * Exit EXPLORING mode - return to LIVE mode
+ */
+function exitExploringMode() {
+  exploringMode = false;
+  document.body.classList.remove('exploring-mode');
+  
+  // Remove banner
+  const banner = document.querySelector('.exploring-banner');
+  if (banner) banner.remove();
+  
+  // Deselect history grid items
+  document.querySelectorAll('.sigil-cell').forEach(c => c.classList.remove('selected'));
+  
+  // Clear current view
+  showCollectingState();
+  
+  // Request latest live data if socket is connected
+  if (socket && socket.connected) {
+    socket.emit('getCycleStatus');
+  }
+  
+  console.log('🔴 Returned to LIVE mode');
+}
+
+/**
+ * Show exploring mode banner
+ */
+function showExploringBanner(cycle) {
+  // Remove existing banner if any
+  const existing = document.querySelector('.exploring-banner');
+  if (existing) existing.remove();
+  
+  const banner = document.createElement('div');
+  banner.className = 'exploring-banner';
+  banner.innerHTML = `
+    <span class="exploring-label">📜 Exploring History - Cycle #${cycle}</span>
+    <button class="exploring-exit-btn" onclick="window.exitExploringMode()">Return to Live ▶</button>
+  `;
+  
+  // Insert at top of body
+  document.body.insertBefore(banner, document.body.firstChild);
+}
+
+// Expose exitExploringMode globally for onclick handler
+window.exitExploringMode = exitExploringMode;
+
+// ============================================
 // Socket.io Connection (READ-ONLY - no session)
 // ============================================
 
@@ -431,17 +499,33 @@ function connect() {
     }
     
     nextCycleTime = Date.now() + cycleMs;
-    clearPercepts();
-    startCountdown();
+    
+    // Don't clear percepts or update countdown in EXPLORING mode
+    if (!exploringMode) {
+      clearPercepts();
+      startCountdown();
+    }
   });
   
   socket.on('perceptReceived', (data) => {
+    // Guard: ignore in EXPLORING mode
+    if (exploringMode) {
+      console.log('🔒 EXPLORING mode - ignoring live perceptReceived');
+      return;
+    }
+    
     console.log('👁️ Percept:', data.type);
     addPercept(data);
   });
   
   // Mind moment received - update all fields and create moment card
   socket.on('mindMoment', (data) => {
+    // Guard: ignore in EXPLORING mode
+    if (exploringMode) {
+      console.log('🔒 EXPLORING mode - ignoring live mindMoment');
+      return;
+    }
+    
     console.log('🧠 Mind moment:', data.mindMoment?.substring(0, 50) + '...');
     
     // Switch to content state (instant)
@@ -493,6 +577,12 @@ function connect() {
   
   // Sigil received - update moment card with sigil
   socket.on('sigil', async (data) => {
+    // Guard: ignore in EXPLORING mode
+    if (exploringMode) {
+      console.log('🔒 EXPLORING mode - ignoring live sigil');
+      return;
+    }
+    
     console.log('🎨 Sigil received');
     
     // In DREAMING mode, clear Latest Percept when sigil arrives
@@ -549,6 +639,12 @@ function connect() {
   
   // Clear display event (for dream mode lifecycle)
   socket.on('clearDisplay', ({ clearPercepts: shouldClearPercepts, clearMindMoment, clearSigil }) => {
+    // Guard: ignore in EXPLORING mode
+    if (exploringMode) {
+      console.log('🔒 EXPLORING mode - ignoring clearDisplay');
+      return;
+    }
+    
     console.log('🧹 Clear display:', { clearPercepts: shouldClearPercepts, clearMindMoment, clearSigil });
     
     if (shouldClearPercepts) {

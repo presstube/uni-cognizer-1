@@ -4,11 +4,12 @@
 
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  grid-template-columns: repeat(auto-fill, 60px);
   gap: 8px;
   padding: var(--space-md);
-  overflow-y: auto;
-  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: start;
 }
 
 .sigil-cell {

@@ -10,6 +10,66 @@ body {
   height: 100vh;
 }
 
+/* Exploring Mode Banner */
+.exploring-banner {
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-lg);
+  background: rgba(255, 200, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 200, 0, 0.3);
+}
+
+.exploring-label {
+  font-size: var(--font-size-md);
+  color: rgba(255, 220, 100, 1);
+  font-weight: normal;
+}
+
+.exploring-exit-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-text-bright);
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+.exploring-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.exploring-exit-btn:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Adjust layout when exploring banner is present */
+body.exploring-mode .main-content {
+  height: calc(100vh - 100px); /* 60px status + 40px banner */
+}
+
+/* EXPLORING MODE state: 0/50/50, hide percepts, focus on history */
+body.exploring-mode .left {
+  display: none;
+}
+
+body.exploring-mode .center {
+  flex: 0 0 50%;
+  border-right: 1px solid var(--color-border);
+}
+
+body.exploring-mode .far-right {
+  flex: 0 0 50%;
+  display: flex;
+  border-left: none;
+}
+
+
 /* Top Status Strip - 60px horizontal bar */
 .top-status-strip {
   flex: 0 0 60px;
