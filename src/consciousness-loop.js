@@ -194,15 +194,15 @@ export class ConsciousnessLoop {
     
     this.dreamTimeouts.push(momentTimeout);
     
-    // PHASE 3: Clear display (29.9s) - right before next cycle
+    // PHASE 3: Clear display (28s) - 8s after mind moment, 2s buffer before next cycle
     const clearDisplayTimeout = setTimeout(() => {
-      console.log(`  💭 [29.9s] Clearing display for next dream`);
+      console.log(`  💭 [28.0s] Clearing display for next dream`);
       this.clearDisplay({
         clearPercepts: true,
         clearMindMoment: true,
         clearSigil: true
       });
-    }, 29900);
+    }, 28000);
     
     this.dreamTimeouts.push(clearDisplayTimeout);
   }
@@ -232,6 +232,7 @@ export class ConsciousnessLoop {
           kinetic, lighting,
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
+          sigil_png_data, sigil_png_width, sigil_png_height,
           created_at
         FROM mind_moments
         WHERE sigil_code IS NOT NULL 
@@ -255,6 +256,16 @@ export class ConsciousnessLoop {
           width: row.sigil_sdf_width,
           height: row.sigil_sdf_height,
           data: row.sigil_sdf_data
+        };
+      }
+      
+      // Convert PNG Buffer if present
+      let png = null;
+      if (row.sigil_png_data) {
+        png = {
+          width: row.sigil_png_width,
+          height: row.sigil_png_height,
+          data: row.sigil_png_data
         };
       }
       
@@ -294,6 +305,7 @@ export class ConsciousnessLoop {
         audio_percepts: row.audio_percepts,
         prior_moments: priorMoments, // Pass the fetched moment objects, not IDs
         sdf,
+        png,
         isDream: true
       });
     } catch (error) {
@@ -335,6 +347,14 @@ export class ConsciousnessLoop {
           width: moment.sdf.width,
           height: moment.sdf.height,
           data: Buffer.from(moment.sdf.data).toString('base64')
+        };
+      }
+      
+      if (moment.png && moment.png.data) {
+        sigilData.png = {
+          width: moment.png.width,
+          height: moment.png.height,
+          data: Buffer.from(moment.png.data).toString('base64')
         };
       }
       
