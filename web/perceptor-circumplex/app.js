@@ -32,6 +32,7 @@ const state = {
   
   // Streaming intervals
   streamInterval: null,
+  audioInterval: null,
   
   // Visualization
   circumplexViz: null
@@ -540,6 +541,29 @@ function sendSetup() {
   console.log(`📋 Setup sent: ${SYSTEM_PROMPTS[state.promptProfile].name}`);
 }
 
+// Send analysis request after frames
+function requestAnalysis() {
+  try {
+    // Send a text prompt to trigger analysis
+    state.ws.send(JSON.stringify({
+      clientContent: {
+        turns: [{
+          role: 'user',
+          parts: [{
+            text: 'Analyze the current audio and video.'
+          }]
+        }],
+        turnComplete: true
+      }
+    }));
+    
+    console.log('🔄 Requested analysis');
+    
+  } catch (error) {
+    console.error('❌ Error requesting analysis:', error);
+  }
+}
+
 // ============================================
 // SECTION 7: Streaming
 // ============================================
@@ -547,17 +571,106 @@ function sendSetup() {
 function startStreaming() {
   state.streaming = true;
   
-  // Send audio + video every 2 seconds
-  // With continuous streaming, Gemini will respond based on accumulated context
+  // Start continuous audio streaming
+  startAudioStreaming();
+  
+  // Periodic visual analysis requests (triggers response)
   state.streamInterval = setInterval(() => {
     if (!state.streaming || !state.connected) return;
     
-    sendAudioFrame();
-    sendVideoFrame();
+    captureAndAnalyze();
     
-  }, 2000);
+  }, 4000);
   
-  console.log('🎬 Streaming started (2s interval, continuous mode)');
+  console.log('🎬 Streaming started (continuous audio + 4s visual analysis)');
+}
+
+// Continuous audio streaming via realtimeInput
+function startAudioStreaming() {
+  // Send audio every 500ms
+  state.audioInterval = setInterval(() => {
+    if (!state.streaming || !state.connected) return;
+    
+    if (state.pcmBuffer.length > 0) {
+      sendAudioChunk();
+    }
+  }, 500);
+}
+
+function sendAudioChunk() {
+  try {
+    const pcmData = new Uint8Array(state.pcmBuffer);
+    state.pcmBuffer = [];
+    
+    // Convert to base64 in chunks to avoid stack overflow
+    let base64Audio = '';
+    const chunkSize = 32768;
+    for (let i = 0; i < pcmData.length; i += chunkSize) {
+      const chunk = pcmData.subarray(i, Math.min(i + chunkSize, pcmData.length));
+      base64Audio += btoa(String.fromCharCode.apply(null, Array.from(chunk)));
+    }
+    
+    state.ws.send(JSON.stringify({
+      realtimeInput: {
+        mediaChunks: [{
+          mimeType: 'audio/pcm;rate=16000',
+          data: base64Audio
+        }]
+      }
+    }));
+    
+    console.log(`📤 Sent audio chunk (${pcmData.length} bytes)`);
+    
+  } catch (error) {
+    console.error('❌ Error sending audio:', error);
+  }
+}
+
+// Capture video and request analysis (triggers model response)
+async function captureAndAnalyze() {
+  try {
+    const video = document.getElementById('webcam');
+    if (!video.videoWidth || !video.videoHeight) {
+      console.warn('⚠️ Video not ready yet');
+      return;
+    }
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, 640, 480);
+    
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const base64Video = dataUrl.split(',')[1];
+    
+    // Send visual snapshot with analysis request
+    // Audio context accumulates from realtimeInput
+    state.ws.send(JSON.stringify({
+      clientContent: {
+        turns: [{
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: base64Video
+              }
+            },
+            {
+              text: 'Analyze the current emotional state from audio and video.'
+            }
+          ]
+        }],
+        turnComplete: true
+      }
+    }));
+    
+    console.log(`📤 Sent visual analysis request (640x480 JPEG)`);
+    
+  } catch (error) {
+    console.error('❌ Error in captureAndAnalyze:', error);
+  }
 }
 
 function sendAudioFrame() {
@@ -568,7 +681,14 @@ function sendAudioFrame() {
       ? new Uint8Array(state.pcmBuffer)
       : new Uint8Array(0); // Empty array for silence
     
-    const base64Audio = btoa(String.fromCharCode(...pcmData));
+    // Convert to base64 in chunks to avoid stack overflow
+    let base64Audio = '';
+    const chunkSize = 32768; // Process 32KB at a time
+    
+    for (let i = 0; i < pcmData.length; i += chunkSize) {
+      const chunk = pcmData.subarray(i, Math.min(i + chunkSize, pcmData.length));
+      base64Audio += btoa(String.fromCharCode.apply(null, Array.from(chunk)));
+    }
     
     state.ws.send(JSON.stringify({
       realtimeInput: {
@@ -636,6 +756,11 @@ function stopStreaming() {
   if (state.streamInterval) {
     clearInterval(state.streamInterval);
     state.streamInterval = null;
+  }
+  
+  if (state.audioInterval) {
+    clearInterval(state.audioInterval);
+    state.audioInterval = null;
   }
   
   if (state.ws) {
@@ -741,7 +866,7 @@ async function handleResponse(event) {
 }
 
 function updateUI(response) {
-  // Update audio
+  // Update audio display
   if (response.audio) {
     document.getElementById('audio-transcript').textContent = 
       response.audio.transcript || 'No speech detected';
@@ -757,7 +882,7 @@ function updateUI(response) {
         : '--';
   }
   
-  // Update visual
+  // Update visual display
   if (response.visual) {
     document.getElementById('visual-description').textContent = 
       response.visual.description || 'Nothing detected';
@@ -773,13 +898,57 @@ function updateUI(response) {
         : '--';
   }
   
-  // Update visualization
+  // Update visualization (average of both if both present)
   if (state.circumplexViz && response.audio && response.visual) {
     // Average audio and visual values for combined position
     const avgValence = (response.audio.valence + response.visual.valence) / 2;
     const avgArousal = (response.audio.arousal + response.visual.arousal) / 2;
     
     state.circumplexViz.plot(avgValence, avgArousal);
+  }
+  
+  // SPLIT INTO SEPARATE PERCEPTS for cognizer
+  
+  // Send audio percept if we have real audio data
+  if (response.audio && 
+      response.audio.transcript && 
+      response.audio.transcript.toLowerCase() !== 'silence' &&
+      (response.audio.valence !== 0 || response.audio.arousal !== 0)) {
+    
+    const audioPercept = {
+      type: 'audio',
+      transcript: response.audio.transcript,
+      valence: response.audio.valence,
+      arousal: response.audio.arousal,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('%c🎤 AUDIO PERCEPT', 'font-weight: bold; font-size: 16px; color: #00ff00; background: #000; padding: 8px 12px;');
+    console.log('%c' + audioPercept.transcript, 'font-size: 14px; color: #00ff00; font-weight: bold;');
+    console.log('%cValence: ' + audioPercept.valence.toFixed(2) + ' | Arousal: ' + audioPercept.arousal.toFixed(2), 'font-size: 12px; color: #00ff00;');
+    console.log(audioPercept);
+    // TODO: Send to cognizer when integrated
+  }
+  
+  // Send visual percept if we have real visual data
+  if (response.visual && 
+      response.visual.description && 
+      !response.visual.description.includes('No visual information') &&
+      (response.visual.valence !== 0 || response.visual.arousal !== 0)) {
+    
+    const visualPercept = {
+      type: 'visual',
+      description: response.visual.description,
+      valence: response.visual.valence,
+      arousal: response.visual.arousal,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('%c👁️ VISUAL PERCEPT', 'font-weight: bold; font-size: 16px; color: #00d4ff; background: #000; padding: 8px 12px;');
+    console.log('%c' + visualPercept.description, 'font-size: 14px; color: #00d4ff; font-weight: bold;');
+    console.log('%cValence: ' + visualPercept.valence.toFixed(2) + ' | Arousal: ' + visualPercept.arousal.toFixed(2), 'font-size: 12px; color: #00d4ff;');
+    console.log(visualPercept);
+    // TODO: Send to cognizer when integrated
   }
 }
 
