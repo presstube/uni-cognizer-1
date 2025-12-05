@@ -3,6 +3,7 @@
 // ============================================
 
 import { PerceptToast } from '../shared/percept-toast.js';
+import { PerceptExpanded } from '../shared/components/percept-expanded/percept-expanded.js';
 import { MomentCard } from '../shared/components/moment-card/moment-card.js';
 import { MomentCardHero } from '../shared/components/moment-card-hero/moment-card-hero.js';
 import { HistoryGrid } from '../shared/components/history-grid/history-grid.js';
@@ -32,6 +33,8 @@ let countdownInterval = null;
 let currentMomentCard = null;
 let currentSigilCode = null;
 let historyGrid = null;
+let currentPerceptExpanded = null;
+let currentState = 'IDLE';
 
 // ============================================
 // DOM Elements
@@ -54,7 +57,11 @@ const $personalityName = document.getElementById('personality-name');
 const $sigilPromptName = document.getElementById('sigil-prompt-name');
 const $pngStatus = document.getElementById('png-status');
 const $pngDisplay = document.getElementById('sigil-png-display');
+const $perceptPngsSection = document.getElementById('percept-pngs-section');
+const $perceptPngGridContainer = document.getElementById('percept-png-grid-container');
 const $percepts = document.getElementById('percepts');
+const $perceptExpandedContainer = document.getElementById('percept-expanded-container');
+const $collectingMessage = document.querySelector('.collecting-message');
 const $historyGrid = document.getElementById('history-grid');
 const $uniBrand = document.getElementById('uni-brand');
 
@@ -152,8 +159,8 @@ function onHistoryMomentClick(moment) {
   // Sigil Prompt
   $sigilPromptName.textContent = moment.sigil_prompt_name || '—';
   
-  // Update sigil formats (SVG/SDF)
-  updateSigilFormats(moment.id);
+  // Update sigil formats (SVG/SDF) and percept PNG grid
+  updateSigilFormats(moment.id, visualPercepts, audioPercepts);
 }
 
 /**
@@ -276,8 +283,18 @@ initHistoryKeyboardNav();
  * Update cognitive state display with proper styling
  */
 function updateStateDisplay(state) {
+  currentState = state;
   $state.textContent = state;
   $state.className = `value state ${state.toLowerCase()}`;
+  
+  // Update collecting message based on state
+  if ($collectingMessage) {
+    if (state === 'DREAMING') {
+      $collectingMessage.textContent = 'Collecting Dream Percepts...';
+    } else {
+      $collectingMessage.textContent = 'Collecting Percepts...';
+    }
+  }
 }
 
 /**
@@ -477,6 +494,15 @@ function connect() {
   // Sigil received - update moment card with sigil
   socket.on('sigil', async (data) => {
     console.log('🎨 Sigil received');
+    
+    // In DREAMING mode, clear Latest Percept when sigil arrives
+    if (currentState === 'DREAMING' && currentPerceptExpanded) {
+      console.log('💭 Dream sigil: clearing Latest Percept');
+      currentPerceptExpanded.remove();
+      currentPerceptExpanded = null;
+      $perceptExpandedContainer.innerHTML = '';
+    }
+    
     if (data.sigilCode) {
       currentSigilCode = data.sigilCode;
       // Update moment card with sigil if it exists
@@ -522,12 +548,12 @@ function connect() {
   });
   
   // Clear display event (for dream mode lifecycle)
-  socket.on('clearDisplay', ({ clearPercepts, clearMindMoment, clearSigil }) => {
-    console.log('🧹 Clear display:', { clearPercepts, clearMindMoment, clearSigil });
+  socket.on('clearDisplay', ({ clearPercepts: shouldClearPercepts, clearMindMoment, clearSigil }) => {
+    console.log('🧹 Clear display:', { clearPercepts: shouldClearPercepts, clearMindMoment, clearSigil });
     
-    if (clearPercepts) {
-      // Clear live percept feed (left pane)
-      $percepts.innerHTML = '<div class="empty">Waiting for percepts...</div>';
+    if (shouldClearPercepts) {
+      // Clear both percept feed AND expanded component
+      clearPercepts();
     }
     
     if (clearMindMoment) {
@@ -651,6 +677,42 @@ function displayPercepts(visualPercepts, audioPercepts) {
 }
 
 /**
+ * Create percept PNG grid (64×64px icons in chronological order)
+ */
+function createPerceptPNGGrid(allPercepts) {
+  const perceptsWithPNG = allPercepts.filter(({ percept }) => percept.pngData);
+  
+  if (perceptsWithPNG.length === 0) {
+    return null; // No PNGs to display
+  }
+  
+  // Sort by timestamp (oldest first - chronological order)
+  perceptsWithPNG.sort((a, b) => {
+    const timeA = new Date(a.percept.timestamp || 0).getTime();
+    const timeB = new Date(b.percept.timestamp || 0).getTime();
+    return timeA - timeB;
+  });
+  
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'percept-png-grid';
+  
+  perceptsWithPNG.forEach(({ percept, type }) => {
+    const dataUrl = `data:image/png;base64,${percept.pngData}`;
+    const title = percept.description || percept.sigilPhrase || percept.transcript || 'percept';
+    
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.alt = title;
+    img.title = title;
+    img.className = 'percept-icon';
+    
+    gridContainer.appendChild(img);
+  });
+  
+  return gridContainer;
+}
+
+/**
  * Display prior mind moments as cards
  */
 function displayPriorMoments(priorMoments) {
@@ -695,10 +757,12 @@ function updateLightingDisplay(lighting) {
 }
 
 /**
- * Update sigil PNG display
+ * Update sigil PNG display and percept PNG grid
  * @param {string} momentId - UUID of the mind moment
+ * @param {Array} visualPercepts - Visual percepts with PNG data
+ * @param {Array} audioPercepts - Audio percepts with PNG data
  */
-async function updateSigilFormats(momentId) {
+async function updateSigilFormats(momentId, visualPercepts = [], audioPercepts = []) {
   if (!momentId) {
     $pngStatus.textContent = '—';
     if ($pngDisplay) {
@@ -722,11 +786,36 @@ async function updateSigilFormats(momentId) {
         $pngDisplay.innerHTML = `<img src="/api/sigils/${momentId}/png/raw" alt="Sigil PNG" />`;
         $pngDisplay.classList.remove('empty');
       }
+      
+      // Display percept PNG grid in its own section with label
+      const allPercepts = [];
+      if (visualPercepts && visualPercepts.length > 0) {
+        visualPercepts.forEach(percept => {
+          allPercepts.push({ percept, type: 'visual' });
+        });
+      }
+      if (audioPercepts && audioPercepts.length > 0) {
+        audioPercepts.forEach(percept => {
+          allPercepts.push({ percept, type: 'audio' });
+        });
+      }
+      
+      const pngGrid = createPerceptPNGGrid(allPercepts);
+      if (pngGrid && $perceptPngsSection && $perceptPngGridContainer) {
+        $perceptPngGridContainer.innerHTML = '';
+        $perceptPngGridContainer.appendChild(pngGrid);
+        $perceptPngsSection.style.display = 'flex';
+      } else if ($perceptPngsSection) {
+        $perceptPngsSection.style.display = 'none';
+      }
     } else {
       $pngStatus.textContent = 'Not generated';
       if ($pngDisplay) {
         $pngDisplay.innerHTML = '';
         $pngDisplay.classList.add('empty');
+      }
+      if ($perceptPngsSection) {
+        $perceptPngsSection.style.display = 'none';
       }
     }
   } catch (error) {
@@ -735,6 +824,9 @@ async function updateSigilFormats(momentId) {
     if ($pngDisplay) {
       $pngDisplay.innerHTML = '';
       $pngDisplay.classList.add('empty');
+    }
+    if ($perceptPngsSection) {
+      $perceptPngsSection.style.display = 'none';
     }
   }
 }
@@ -747,7 +839,26 @@ async function updateSigilFormats(momentId) {
  * Clear all percepts and show empty state
  */
 function clearPercepts() {
-  $percepts.innerHTML = '<div class="empty">Waiting for percepts...</div>';
+  // Clear toast queue (no "Waiting" message)
+  $percepts.innerHTML = '';
+  
+  // Clear expanded view and show appropriate waiting message
+  if (currentPerceptExpanded) {
+    currentPerceptExpanded.remove();
+    currentPerceptExpanded = null;
+  }
+  
+  // Show waiting message in expanded container based on state
+  const waitingMessage = document.createElement('div');
+  waitingMessage.className = 'percept-expanded-waiting';
+  if (currentState === 'DREAMING') {
+    waitingMessage.textContent = 'Collecting Dream Percepts...';
+  } else {
+    waitingMessage.textContent = 'Waiting for percepts...';
+  }
+  
+  $perceptExpandedContainer.innerHTML = '';
+  $perceptExpandedContainer.appendChild(waitingMessage);
 }
 
 /**
@@ -755,7 +866,11 @@ function clearPercepts() {
  * @param {Object} data - Percept data with type and payload
  */
 function addPercept(data) {
-  // Remove empty message if present
+  // Remove waiting message if present
+  const waiting = $perceptExpandedContainer.querySelector('.percept-expanded-waiting');
+  if (waiting) waiting.remove();
+  
+  // Remove empty message from toast queue if present
   const empty = $percepts.querySelector('.empty');
   if (empty) empty.remove();
   
@@ -766,7 +881,16 @@ function addPercept(data) {
     sigilDrawCalls: data.data?.sigilDrawCalls || data.data?.drawCalls
   };
   
-  // Create and add toast
+  // 1. Update PerceptExpanded (latest percept)
+  if (currentPerceptExpanded) {
+    currentPerceptExpanded.update(percept, data.type);
+  } else {
+    currentPerceptExpanded = new PerceptExpanded(percept, data.type);
+    $perceptExpandedContainer.innerHTML = '';
+    $perceptExpandedContainer.appendChild(currentPerceptExpanded.create());
+  }
+  
+  // 2. Create and add toast to queue
   const toast = new PerceptToast(percept, data.type);
   const element = toast.create();
   $percepts.prepend(element); // Newest at top

@@ -262,6 +262,9 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
       cognitiveHistory[thisCycle].kinetic = result.kinetic;
       cognitiveHistory[thisCycle].lighting = result.lighting;
       
+      // Percept PNGs are already generated (at arrival time)
+      // No need to generate them here - they're already in the percept objects
+      
       // Save to database
       if (process.env.DATABASE_ENABLED === 'true') {
         try {

@@ -8,6 +8,7 @@ import { CognitiveState } from '../cognitive-states.js';
 import { initDatabase, closeDatabase } from '../db/index.js';
 import { runMigrations } from '../db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from '../db/sessions.js';
+import { perceptToPNG } from '../percepts/percept-to-png.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -155,7 +156,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('percept', (percept) => {
+  socket.on('percept', async (percept) => {
     const { sessionId, type, data } = percept;
     
     if (!sessionId || !sessionManager.getSession(sessionId)) {
@@ -165,9 +166,25 @@ io.on('connection', (socket) => {
     
     sessionManager.updateActivity(sessionId);
     
+    // Generate PNG immediately if percept has canvas code
+    const perceptWithPNG = { ...data };
+    try {
+      const canvasCode = data.drawCalls || data.sigilDrawCalls;
+      if (canvasCode) {
+        const png = await perceptToPNG({ ...data });
+        perceptWithPNG.pngData = png.data.toString('base64');
+        perceptWithPNG.pngWidth = png.width;
+        perceptWithPNG.pngHeight = png.height;
+        console.log(`🖼️  Generated percept PNG (${type})`);
+      }
+    } catch (error) {
+      console.warn(`⚠️  Failed to generate percept PNG:`, error.message);
+      // Continue without PNG - don't block percept
+    }
+    
     addPercept({
       type,
-      ...data,
+      ...perceptWithPNG,
       timestamp: percept.timestamp || new Date().toISOString()
     });
     
@@ -177,7 +194,7 @@ io.on('connection', (socket) => {
     io.emit('perceptReceived', {
       sessionId,
       type,
-      data,
+      data: perceptWithPNG,
       timestamp: percept.timestamp || new Date().toISOString()
     });
   });

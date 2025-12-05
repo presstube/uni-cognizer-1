@@ -1,0 +1,131 @@
+/* ============================================
+   PERCEPT EXPANDED COMPONENT
+   ============================================ */
+
+.percept-expanded {
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+/* Header: Type badge + timestamp */
+.percept-expanded-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.percept-type-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.badge-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+}
+
+.badge-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.percept-timestamp {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hero: PNG + Sigil Phrase */
+.percept-expanded-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.percept-png {
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+  opacity: 0.9;
+  image-rendering: crisp-edges;
+}
+
+.percept-png-placeholder {
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: var(--font-size-xs);
+}
+
+.percept-sigil-phrase {
+  flex: 1;
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  color: var(--color-text-bright);
+  line-height: 1.3;
+}
+
+/* Content: Description + details */
+.percept-expanded-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.content-label {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.content-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.5;
+  margin-bottom: var(--space-sm);
+}
+
+.content-text:last-child {
+  margin-bottom: 0;
+}
+
+/* Empty state */
+.percept-expanded-empty {
+  text-align: center;
+  padding: var(--space-lg);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+/* Waiting message (matches Mind Moment collecting style) */
+.percept-expanded-waiting {
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  padding: var(--space-md);
+}

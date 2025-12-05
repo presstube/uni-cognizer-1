@@ -266,3 +266,35 @@ body.active-session .far-right {
   display: none;
 }
 
+/* Percept PNGs Section - with label */
+.percept-pngs-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: 20px;
+}
+
+.percept-png-grid-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Percept PNG Grid - 64×64px icons */
+.percept-png-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 64px);
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.percept-icon {
+  width: 64px;
+  height: 64px;
+  display: block;
+  opacity: 0.9;
+  cursor: default;
+  image-rendering: crisp-edges;
+}
+

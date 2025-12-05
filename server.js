@@ -7,6 +7,7 @@ import { SessionManager } from './src/session-manager.js';
 import { loadReferenceImage } from './src/sigil/image.js';
 import { CognitiveState, ConsciousnessMode } from './src/cognitive-states.js';
 import { initDatabase, closeDatabase } from './src/db/index.js';
+import { perceptToPNG } from './src/percepts/percept-to-png.js';
 import { runMigrations } from './src/db/migrate.js';
 import { createSession as dbCreateSession, endSession as dbEndSession } from './src/db/sessions.js';
 import { initializeCycleIndex, initializePersonality } from './src/real-cog.js';
@@ -291,7 +292,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('percept', (percept) => {
+  socket.on('percept', async (percept) => {
     const { sessionId, type, data } = percept;
     
     if (!sessionId || !sessionManager.getSession(sessionId)) {
@@ -302,21 +303,37 @@ io.on('connection', (socket) => {
     // Update session activity
     sessionManager.updateActivity(sessionId);
     
-    // Add percept to consciousness loop
+    // Generate PNG immediately if percept has canvas code
+    const perceptWithPNG = { ...data };
+    try {
+      const canvasCode = data.drawCalls || data.sigilDrawCalls;
+      if (canvasCode) {
+        const png = await perceptToPNG({ ...data });
+        perceptWithPNG.pngData = png.data.toString('base64');
+        perceptWithPNG.pngWidth = png.width;
+        perceptWithPNG.pngHeight = png.height;
+        console.log(`🖼️  Generated percept PNG (${type})`);
+      }
+    } catch (error) {
+      console.warn(`⚠️  Failed to generate percept PNG:`, error.message);
+      // Continue without PNG - don't block percept
+    }
+    
+    // Add percept to consciousness loop (with PNG if available)
     loopManager.addPercept({
       type,
-      ...data,
+      ...perceptWithPNG,
       timestamp: percept.timestamp || new Date().toISOString()
     });
     
     const session = sessionManager.getSession(sessionId);
     session.perceptCount++;
     
-    // Broadcast percept to all clients (for read-only monitoring)
+    // Broadcast percept to all clients (for read-only monitoring) - includes PNG
     io.emit('perceptReceived', {
       sessionId,
       type,
-      data,
+      data: perceptWithPNG,
       timestamp: percept.timestamp || new Date().toISOString()
     });
   });

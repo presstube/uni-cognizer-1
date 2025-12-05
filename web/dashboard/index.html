@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/shared/styles/base.css">
   <link rel="stylesheet" href="/shared/styles/components.css">
   <link rel="stylesheet" href="/shared/components/percept-toast/percept-toast.css">
+  <link rel="stylesheet" href="/shared/components/percept-expanded/percept-expanded.css">
   <link rel="stylesheet" href="/shared/components/moment-card/moment-card.css">
   <link rel="stylesheet" href="/shared/components/moment-card-hero/moment-card-hero.css">
   <link rel="stylesheet" href="/shared/components/history-grid/history-grid.css">
@@ -51,8 +52,14 @@
   <div class="main-content">
     <!-- Left: Percepts Only -->
     <div class="left">
-      <div class="label">Percepts</div>
-      <!-- Percepts Section -->
+      <div class="label">Latest Percept</div>
+      
+      <!-- NEW: Percept Expanded Display -->
+      <div id="percept-expanded-container"></div>
+      
+      <div class="label">Collected Percepts</div>
+      
+      <!-- Percepts Section (Toast Queue) -->
       <div class="percepts-stream" id="percepts">
         <div class="empty">Waiting for percepts...</div>
       </div>
@@ -116,6 +123,11 @@
         </div>
         
         <div class="sigil-png-display" id="sigil-png-display"></div>
+        
+        <div class="percept-pngs-section" id="percept-pngs-section" style="display: none;">
+          <div class="label">Percept Sigil PNGs</div>
+          <div class="percept-png-grid-container" id="percept-png-grid-container"></div>
+        </div>
       </div>
     </div>
   
