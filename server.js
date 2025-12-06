@@ -16,9 +16,11 @@ import { editorAuth } from './src/api/editor-auth.js';
 import * as sigilPrompts from './src/api/sigil-prompts.js';
 import * as visualPrompts from './src/api/visual-prompts.js';
 import * as audioPrompts from './src/api/audio-prompts.js';
+import * as soundPrompts from './src/api/sound-prompts.js';
 import geminiTokenAPI from './src/api/gemini-token.js';
 import mindMomentsAPI from './src/api/mind-moments-api.js';
 import { registerSigilAPI } from './src/api/sigils-api.js';
+import { seedDefaultCSVs } from './src/db/sound-prompts.js';
 
 const PORT = process.env.PORT || 3001;
 const SESSION_TIMEOUT_MS = process.env.SESSION_TIMEOUT_MS || 60000;
@@ -34,6 +36,8 @@ try {
     await initializeCycleIndex();
     // Initialize personality from database
     await initializePersonality();
+    // Seed default CSV files for sound engine
+    await seedDefaultCSVs();
   }
 } catch (error) {
   console.error('Database initialization failed:', error.message);
@@ -58,6 +62,9 @@ app.use('/prompt-editor/visual-percept', express.static('web/prompt-editor/visua
 
 // Serve Audio Percept Prompt Editor
 app.use('/prompt-editor/audio-percept', express.static('web/prompt-editor/audio-percept'));
+
+// Serve Sound Engine Prompt Editor
+app.use('/prompt-editor/sound', express.static('web/prompt-editor/sound'));
 
 // Serve Perceptor Remote (user-facing sensing station)
 app.use('/perceptor-remote', express.static('web/perceptor-remote'));
@@ -140,6 +147,18 @@ app.get('/api/audio-prompts/:id', editorAuth, audioPrompts.getAudioPromptAPI);
 app.post('/api/audio-prompts', editorAuth, audioPrompts.saveAudioPrompt);
 app.post('/api/audio-prompts/:id/activate', editorAuth, audioPrompts.activateAudioPromptAPI);
 app.delete('/api/audio-prompts/:id', editorAuth, audioPrompts.deleteAudioPromptAPI);
+
+// Mount Sound Prompts API (with editor auth in production)
+app.get('/api/sound-prompts', editorAuth, soundPrompts.listSoundPrompts);
+app.get('/api/sound-prompts/active', editorAuth, soundPrompts.getActiveSoundPromptAPI);
+app.get('/api/sound-prompts/csvs/defaults', editorAuth, soundPrompts.getDefaultCSVs);
+app.get('/api/sound-prompts/random-mind-moment', editorAuth, soundPrompts.getRandomMindMoment);
+app.get('/api/sound-prompts/:id', editorAuth, soundPrompts.getSoundPromptAPI);
+app.post('/api/sound-prompts', editorAuth, soundPrompts.saveSoundPrompt);
+app.post('/api/sound-prompts/test', editorAuth, soundPrompts.testSoundPrompt);
+app.post('/api/sound-prompts/upload-csv', editorAuth, soundPrompts.uploadCSV);
+app.post('/api/sound-prompts/:id/activate', editorAuth, soundPrompts.activateSoundPromptAPI);
+app.delete('/api/sound-prompts/:id', editorAuth, soundPrompts.deleteSoundPromptAPI);
 
 // Favicon (prevent 404)
 app.get('/favicon.ico', (req, res) => {

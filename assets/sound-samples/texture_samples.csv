@@ -1,0 +1,79 @@
+filename,description,tone,density,mood,category
+texture_sample_1,Meditative feel. High pitched chimes quietly come in and out.,neutral,sparse,soothing,Musical
+texture_sample_2,Organic earthy feel. Shells shake creating a rich texture.,neutral,dense,intense,Musical
+texture_sample_3,Technology and Music combine. Chiming tones and liquid digital tones.,neutral,moderate,neutral,Mixed
+texture_sample_4,Dark and otherworldly. Strangle pitch shifted birds with reverb.,cool,sparse,intense,Nature
+texture_sample_5,Slightly abstracted nature. Birds and insects oddly filtered with reverb.,neutral,sparse,neutral,Nature
+texture_sample_6,Creatures from another planet. Birds pitch shifted way down with reversed bits.,cool,sparse,intense,Nature
+texture_sample_7,Strange doubling. Bird calls mixed with pitched down sounds.,cool,sparse,intense,Nature
+texture_sample_8,Seashore. Noisey ocean with gulls calling gently over it.,warm,dense,neutral,Nature
+texture_sample_9,Gentle close feel. Small waves sporadically fall on a seashore. ,neutral,sparse,soothing,Nature
+texture_sample_10,Hot summer day. Cicadas come in waves with other insects chirping.,warm,moderate,neutral,Nature
+texture_sample_11,Close to the creek. Water runs and clicks some stones around.,neutral,moderate,soothing,Nature
+texture_sample_12,"Nature on a different planet. Electronic, harsh, alien vocalizations.",cool,dense,intense,Technological
+texture_sample_13,"Relentless but not too harsh. Liquid poppings, occasionally almost tones.",cool,dense,intense,Technological
+texture_sample_14,Low key malfunctioning transmissions. Static EMF and click sounds.,cool,sparse,intense,Technological
+texture_sample_15,Machines in a miniature hospital. High pitched beeps with some background noise.,cool,moderate,intense,Biological
+texture_sample_16,Heartbeat by itself.,neutral,moderate,neutral,Biological
+texture_sample_17,Geese honking in a field.,neutral,dense,neutral,Nature
+texture_sample_18,Slowly walking through a lake.,cool,moderate,soothing,Nature
+texture_sample_19,Loud crickets at night.,cool,dense,intense,Nature
+texture_sample_20,Birds and crickets in a mellow forest.,neutral,moderate,neutral,Nature
+texture_sample_21,Cars driving by in a city in the snow.,cool,moderate,neutral,Technological
+texture_sample_22,Cars driving by in a city.,neutral,moderate,neutral,Technological
+texture_sample_23,Intense persistent crickets and some quiet birds,neutral,dense,intense,Nature
+texture_sample_24,One loud cricket with lots of white noise,neutral,moderate,neutral,Nature
+texture_sample_25,Many crickets.,neutral,dense,intense,Nature
+texture_sample_26,Rain on a tarp.,cool,dense,soothing,Nature
+texture_sample_27,Strange bugs  and squeaks.,neutral,moderate,neutral,Nature
+texture_sample_28,Ice like granulations in a cave.,cool,moderate,neutral,Mixed
+texture_sample_29,Musical notes swipe up and down like frozen icicles.,cool,dense,intense,Mixed
+texture_sample_30,Clicky almost rhythmic echoing granules. ,cool,dense,intense,Technological
+texture_sample_31,Geese honking in the distance.,neutral,moderate,neutral,Nature
+texture_sample_32,Rain in the rainforest like textured white noise.,neutral,dense,neutral,Nature
+texture_sample_33,Campfire burning.,neutral,moderate,neutral,Nature
+texture_sample_34,Forest rain with some birds and drops hitting leaves.,neutral,moderate,neutral,Nature
+texture_sample_35,Winds gusting by strongly.,cool,moderate,neutral,Nature
+texture_sample_36,Beautiful bird song in a spacious forest.,neutral,moderate,soothing,Nature
+texture_sample_37,Tiny water stream dripping and flowing.,neutral,moderate,neutral,Nature
+texture_sample_38,Crunching of dry grass and leaves- all high frequency.,neutral,dense,neutral,Nature
+texture_sample_39,Flowing stream.,neutral,moderate,soothing,Nature
+texture_sample_40,Birds in a forest a bit more active.,neutral,dense,neutral,Nature
+texture_sample_41,Crackling vinyl.,warm,moderate,soothing,Technological
+texture_sample_42,Tiny sound of rain - beautiful. ,neutral,dense,soothing,Nature
+texture_sample_43,Far off waterfall - low pitched white noise.,neutral,moderate,neutral,Nature
+texture_sample_44,Ringing grain texture.,neutral,dense,intense,Technological
+texture_sample_45,Pebble grain texture with staticy noises.,neutral,moderate,neutral,Technological
+texture_sample_46,Baby ducks chirping in a marsh. Hi pitch calls.,neutral,moderate,neutral,Nature
+texture_sample_47,Raindrops in a hydrophone. Strange liquidy and almost rhythmic.,neutral,moderate,neutral,Nature
+texture_sample_48,Granular crickets with creepy noisey alien calls.,neutral,dense,intense,Mixed
+texture_sample_49,Echo-y effected water flowing.,neutral,moderate,neutral,Mixed
+texture_sample_50,Canoe in the wind and water like an old nature documentary.,neutral,moderate,neutral,Nature
+texture_sample_51,Clear Gulls at the estuary.,neutral,moderate,intense,Nature
+texture_sample_52,Dripping liquid grains.,neutral,dense,neutral,Mixed
+texture_sample_53,Atmosphere with a hanging high note and some clicks and quiet movements.,cool,sparse,intense,Mixed
+texture_sample_54,Pitched down crickets and cicadas and a dark throbbing wind noise.,cool,moderate,intense,Mixed
+texture_sample_55,Flickering grains sounds like they are calculating.,neutral,moderate,neutral,Technological
+texture_sample_56,Static and notes and clicks. Transmission that is a little harsh.,neutral,moderate,intense,Technological
+texture_sample_57,High frequency kind of quiet static.,neutral,moderate,neutral,Technological
+texture_sample_58,Static and sounds of balloons being tapped on and machines.,neutral,moderate,neutral,Technological
+texture_sample_59,percussive clicks,neutral,moderate,soothing,Technological
+texture_sample_60,clocks and found objects bursting forth here and there like strange percussions.,neutral,moderate,intense,Technological
+texture_sample_61,A river of kitchenware. Strange and dense.,neutral,dense,intense,Technological
+texture_sample_62,Distant pops and clicks in a large reverberant space.,neutral,moderate,neutral,Technological
+texture_sample_63,Slow down and speed up of some clicks and pops.,neutral,moderate,neutral,Technological
+texture_sample_64,High pitch clicks and pops almost like a calculation.,cool,moderate,neutral,Technological
+texture_sample_65,Drops of water in a big cave.,cool,sparse,soothing,Nature
+texture_sample_66,Heartbeat muted in tone.,neutral,sparse,neutral,Biological
+texture_sample_67,Rich and beautiful heartbeat with some quiet liquidy noise against it.,neutral,sparse,neutral,Biological
+texture_sample_68,Purr of gentle click going up and down.,neutral,moderate,soothing,Technological
+texture_sample_69,Calculating like tones in muted but reverberant space.,neutral,dense,soothing,Technological
+texture_sample_70,Clicks in a giant space going up and down.,cool,dense,intense,Technological
+texture_sample_71,Liquidy clicks sounds like a computer thinking.,cool,dense,neutral,Technological
+texture_sample_72,Grains stretching out and tightening,neutral,dense,intense,Technological
+texture_sample_73,Reverse chirps that sound almost like electronic creatures.,neutral,dense,neutral,Technological
+texture_sample_74,LIquidy and noisy sounds with some grain notes.,neutral,dense,intense,Technological
+texture_sample_75,Looping atmosphere with a note and a repeating loopy feel.,cool,moderate,intense,Technological
+texture_sample_76,Electronic voices speaking in grains.,neutral,dense,intense,Technological
+texture_sample_77,Pulse like sound with an arhtymic beat and a high pitch drone.,cool,sparse,intense,Biological
+texture_sample_78,Hospital beats against an arhythmic beat.,cool,sparse,neutral,Biological

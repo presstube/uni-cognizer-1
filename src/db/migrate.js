@@ -34,7 +34,8 @@ export async function runMigrations() {
     '013_add_sigil_prompt_tracking.sql',
     '014_add_sigil_svg_sdf.sql',
     '015_add_sigil_generation_error.sql',
-    '016_add_sigil_png.sql'
+    '016_add_sigil_png.sql',
+    '017_sound_prompts.sql'
   ];
   
   try {
