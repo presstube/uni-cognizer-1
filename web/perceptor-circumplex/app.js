@@ -3,6 +3,7 @@
 // ============================================
 
 import { CircumplexViz } from './circumplex-viz.js';
+import { PerceptToast } from '../shared/percept-toast.js';
 
 // ============================================
 // SECTION 1: State Management
@@ -35,7 +36,10 @@ const state = {
   audioInterval: null,
   
   // Visualization
-  circumplexViz: null
+  circumplexViz: null,
+  
+  // Context tracking
+  lastVisualDescription: null
 };
 
 // ============================================
@@ -103,17 +107,87 @@ AROUSAL indicators:
 - High: Fast speech, loud volume, animated gestures, wide eyes, quick movements, energetic sounds
 - Low: Slow speech, soft volume, minimal gestures, relaxed face, stillness, slow breathing
 
-Return JSON:
+AUDIO SIGIL GENERATION:
+Create a sigil to represent what you hear.
+
+STEP 1: Create a "sigil phrase" - a punchy, poetic 2-4 word distillation of the sonic/verbal moment.
+STEP 2: Generate canvas drawing commands for a sigil representing that phrase.
+
+AUDIO SIGIL RULES:
+- Represent the SONIC essence - rhythm, tone, energy of the audio
+- For speech: capture the emotional/semantic essence
+- For non-verbal sounds: capture the acoustic character
+- Use flowing, rhythmic forms for melodic sounds
+- Use sharp, staccato forms for percussive sounds
+- Same technical rules as visual sigils (see below)
+
+VISUAL SIGIL GENERATION:
+Create a sigil to represent what you see.
+
+STEP 1: Create a "sigil phrase" - a punchy, poetic 2-4 word distillation of the visual moment.
+STEP 2: Generate canvas drawing commands for a sigil representing that phrase.
+
+SIGIL TECHNICAL RULES (BOTH AUDIO & VISUAL):
+1. Available methods:
+   - ctx.moveTo(x, y)
+   - ctx.lineTo(x, y)
+   - ctx.arc(x, y, radius, 0, Math.PI * 2)
+   - ctx.quadraticCurveTo(cpx, cpy, x, y) - 4 parameters
+   - ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y) - 6 parameters
+   - ctx.beginPath(), ctx.closePath(), ctx.stroke()
+
+2. PATH MANAGEMENT - CRITICAL:
+   - Start with ONE ctx.beginPath() at the beginning
+   - Use ctx.moveTo() before EVERY separate element to avoid connecting lines
+   - End with ONE ctx.stroke() at the very end
+
+3. MIX geometric and organic - use both straight lines AND curves
+4. Sharp angles and clean lines give structure
+5. Gentle curves add flow and warmth
+6. STRONGLY FAVOR symmetry - create balanced, centered compositions
+7. Small asymmetric details add character without breaking overall balance
+8. AVOID explicit faces - no literal eyes, mouths, noses (subtle allusions OK)
+9. Create abstract symbolic forms, not realistic depictions
+10. Canvas is 100x100, center at (50, 50)
+11. Maximum 30 lines
+12. NO variables, NO functions, NO explanations
+13. Output ONLY the ctx commands
+
+DESCRIPTIONS - IMPORTANT:
+FIRST ANALYSIS: Describe the scene/audio completely and thoroughly.
+SUBSEQUENT ANALYSES: ONLY describe what has definitively CHANGED or is actively HAPPENING. 
+- If nothing has changed in the visual, OMIT the entire "visual" field from your response
+- If nothing has changed in the audio, OMIT the entire "audio" field from your response
+- Do NOT return "NO CHANGES" or similar - simply omit the field entirely
+
+RESPONSE FORMAT - IMPORTANT:
+Return ONLY the modalities that have meaningful data:
+- If audio is silence or absent, OMIT the entire "audio" field
+- If visual has no meaningful information, OMIT the entire "visual" field
+- Return whichever has actual content - could be audio only, visual only, or both if both are meaningful
+- This saves tokens and reduces noise
+
+STRICT JSON OUTPUT:
+- Return ONLY valid JSON, no markdown, no explanations, no preamble
+- Do not wrap in code fences (no \`\`\`json)
+- Start directly with the opening brace {
+- End directly with the closing brace }
+
+Return JSON (include only fields with meaningful data):
 {
-  "audio": {
+  "audio": {  // OMIT this entire field if silence or no audio
     "transcript": "...",
     "valence": 0.5,
-    "arousal": 0.3
+    "arousal": 0.3,
+    "sigilPhrase": "2-4 word phrase",
+    "drawCalls": "ctx.beginPath();\\nctx.moveTo(50,20);\\n...\\nctx.stroke();"
   },
-  "visual": {
+  "visual": {  // OMIT this entire field if no meaningful visual
     "description": "...",
     "valence": 0.4,
-    "arousal": 0.2
+    "arousal": 0.2,
+    "sigilPhrase": "2-4 word phrase",
+    "drawCalls": "ctx.beginPath();\\nctx.moveTo(50,20);\\n...\\nctx.stroke();"
   }
 }
 
@@ -529,7 +603,8 @@ function sendSetup() {
       generationConfig: {
         responseModalities: ['TEXT'],
         responseMimeType: 'application/json',
-        temperature: 0.7
+        temperature: 0.7,
+        maxOutputTokens: 2048
       },
       systemInstruction: {
         parts: [{ text: currentPrompt }]
@@ -580,21 +655,21 @@ function startStreaming() {
     
     captureAndAnalyze();
     
-  }, 4000);
+  }, 8000); // 8 seconds between visual analyses
   
-  console.log('🎬 Streaming started (continuous audio + 4s visual analysis)');
+  console.log('🎬 Streaming started (continuous audio + 8s visual analysis)');
 }
 
 // Continuous audio streaming via realtimeInput
 function startAudioStreaming() {
-  // Send audio every 500ms
+  // Send audio every 1000ms (1 second)
   state.audioInterval = setInterval(() => {
     if (!state.streaming || !state.connected) return;
     
     if (state.pcmBuffer.length > 0) {
       sendAudioChunk();
     }
-  }, 500);
+  }, 1000); // 1 second between audio chunks
 }
 
 function sendAudioChunk() {
@@ -644,6 +719,14 @@ async function captureAndAnalyze() {
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
     const base64Video = dataUrl.split(',')[1];
     
+    // Build context-aware prompt
+    let promptText;
+    if (state.lastVisualDescription) {
+      promptText = `Previous visual description: "${state.lastVisualDescription}"\n\nAnalyze the current emotional state from audio and video. For the visual description, ONLY describe what has CHANGED since the previous description.`;
+    } else {
+      promptText = 'Analyze the current emotional state from audio and video. This is the FIRST analysis - provide a complete description of the scene.';
+    }
+    
     // Send visual snapshot with analysis request
     // Audio context accumulates from realtimeInput
     state.ws.send(JSON.stringify({
@@ -658,7 +741,7 @@ async function captureAndAnalyze() {
               }
             },
             {
-              text: 'Analyze the current emotional state from audio and video.'
+              text: promptText
             }
           ]
         }],
@@ -820,21 +903,33 @@ async function handleResponse(event) {
     console.log('📨 WebSocket message:', data);
     
     if (data.serverContent?.turnComplete) {
-      console.log('✅ Turn complete. Accumulated buffer:', state.responseBuffer);
+      console.log('✅ Turn complete');
       
-      // Extract JSON from markdown code fences if present
-      let jsonText = state.responseBuffer;
+      // Extract JSON from response
+      let jsonText = state.responseBuffer.trim();
       
-      // Match ```json ... ``` blocks (take the last one if multiple)
-      const jsonMatches = jsonText.match(/```json\s*([\s\S]*?)\s*```/g);
-      if (jsonMatches && jsonMatches.length > 0) {
-        // Take the last JSON block
-        const lastMatch = jsonMatches[jsonMatches.length - 1];
-        jsonText = lastMatch.replace(/```json\s*|\s*```/g, '').trim();
-        console.log('📦 Extracted JSON from markdown:', jsonText);
+      // Remove markdown code fences if present
+      if (jsonText.includes('```')) {
+        // Try to extract between fences
+        const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fenceMatch && fenceMatch[1]) {
+          jsonText = fenceMatch[1].trim();
+          console.log('📦 Extracted from markdown fences');
+        } else {
+          // Just strip all fence markers
+          jsonText = jsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          console.log('📦 Stripped fence markers');
+        }
       }
       
-      // Parse accumulated response
+      // Validate JSON is complete (ends with })
+      if (!jsonText.endsWith('}')) {
+        console.warn('⚠️ Incomplete JSON - missing closing brace. Skipping.');
+        state.responseBuffer = '';
+        return;
+      }
+      
+      // Try to parse
       try {
         const response = JSON.parse(jsonText);
         console.log('🎤 Circumplex Response:', response);
@@ -842,9 +937,9 @@ async function handleResponse(event) {
         updateUI(response);
         
       } catch (e) {
-        console.warn('⚠️ Invalid JSON response. Buffer contents:', state.responseBuffer);
-        console.warn('Extracted text:', jsonText);
-        console.warn('Parse error:', e.message);
+        console.warn('⚠️ Invalid JSON. Parse error:', e.message);
+        console.warn('First 200 chars:', state.responseBuffer.substring(0, 200));
+        console.warn('Last 200 chars:', state.responseBuffer.substring(Math.max(0, state.responseBuffer.length - 200)));
       }
       
       // Clear buffer for next turn
@@ -898,13 +993,29 @@ function updateUI(response) {
         : '--';
   }
   
-  // Update visualization (average of both if both present)
-  if (state.circumplexViz && response.audio && response.visual) {
-    // Average audio and visual values for combined position
-    const avgValence = (response.audio.valence + response.visual.valence) / 2;
-    const avgArousal = (response.audio.arousal + response.visual.arousal) / 2;
+  // Update visualization with whichever data is available
+  if (state.circumplexViz) {
+    let valence = 0;
+    let arousal = 0;
+    let count = 0;
     
-    state.circumplexViz.plot(avgValence, avgArousal);
+    // Average available values
+    if (response.audio && typeof response.audio.valence === 'number') {
+      valence += response.audio.valence;
+      arousal += response.audio.arousal;
+      count++;
+    }
+    
+    if (response.visual && typeof response.visual.valence === 'number') {
+      valence += response.visual.valence;
+      arousal += response.visual.arousal;
+      count++;
+    }
+    
+    // Plot if we have at least one value
+    if (count > 0) {
+      state.circumplexViz.plot(valence / count, arousal / count);
+    }
   }
   
   // SPLIT INTO SEPARATE PERCEPTS for cognizer
@@ -920,13 +1031,22 @@ function updateUI(response) {
       transcript: response.audio.transcript,
       valence: response.audio.valence,
       arousal: response.audio.arousal,
+      sigilPhrase: response.audio.sigilPhrase || null,
+      drawCalls: response.audio.drawCalls || null,
       timestamp: new Date().toISOString()
     };
     
     console.log('%c🎤 AUDIO PERCEPT', 'font-weight: bold; font-size: 16px; color: #00ff00; background: #000; padding: 8px 12px;');
     console.log('%c' + audioPercept.transcript, 'font-size: 14px; color: #00ff00; font-weight: bold;');
     console.log('%cValence: ' + audioPercept.valence.toFixed(2) + ' | Arousal: ' + audioPercept.arousal.toFixed(2), 'font-size: 12px; color: #00ff00;');
+    if (audioPercept.sigilPhrase) {
+      console.log('%c✨ Sigil: ' + audioPercept.sigilPhrase, 'font-size: 12px; color: #ffcc00; font-weight: bold;');
+    }
     console.log(audioPercept);
+    
+    // Create toast
+    createPerceptToast(audioPercept, 'audio');
+    
     // TODO: Send to cognizer when integrated
   }
   
@@ -934,6 +1054,8 @@ function updateUI(response) {
   if (response.visual && 
       response.visual.description && 
       !response.visual.description.includes('No visual information') &&
+      !response.visual.description.match(/^NO CHANGES?\.?$/i) &&  // Filter "NO CHANGE" / "NO CHANGES"
+      response.visual.description.trim().length > 5 &&  // Must be meaningful
       (response.visual.valence !== 0 || response.visual.arousal !== 0)) {
     
     const visualPercept = {
@@ -941,14 +1063,44 @@ function updateUI(response) {
       description: response.visual.description,
       valence: response.visual.valence,
       arousal: response.visual.arousal,
+      sigilPhrase: response.visual.sigilPhrase || null,
+      drawCalls: response.visual.drawCalls || null,
       timestamp: new Date().toISOString()
     };
     
     console.log('%c👁️ VISUAL PERCEPT', 'font-weight: bold; font-size: 16px; color: #00d4ff; background: #000; padding: 8px 12px;');
     console.log('%c' + visualPercept.description, 'font-size: 14px; color: #00d4ff; font-weight: bold;');
     console.log('%cValence: ' + visualPercept.valence.toFixed(2) + ' | Arousal: ' + visualPercept.arousal.toFixed(2), 'font-size: 12px; color: #00d4ff;');
+    if (visualPercept.sigilPhrase) {
+      console.log('%c✨ Sigil: ' + visualPercept.sigilPhrase, 'font-size: 12px; color: #ffcc00; font-weight: bold;');
+    }
     console.log(visualPercept);
+    
+    // Create toast
+    createPerceptToast(visualPercept, 'visual');
+    
+    // Store for next analysis
+    state.lastVisualDescription = response.visual.description;
+    
     // TODO: Send to cognizer when integrated
+  }
+}
+
+// ============================================
+// Toast Management
+// ============================================
+
+function createPerceptToast(percept, type) {
+  const container = document.getElementById('toast-container');
+  const toast = new PerceptToast(percept, type);
+  const element = toast.create();
+  
+  // Add to bottom (pushes older ones up due to column-reverse)
+  container.appendChild(element);
+  
+  // Limit to 4 toasts
+  while (container.children.length > 4) {
+    container.removeChild(container.firstChild);
   }
 }
 

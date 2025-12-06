@@ -149,3 +149,15 @@ video {
 #circumplex-canvas {
   display: block;
 }
+
+/* Toast Container - bottom left */
+#toast-container {
+  position: fixed;
+  bottom: var(--space-md);
+  left: var(--space-md);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse; /* New toasts appear at bottom */
+  gap: var(--space-sm);
+  max-width: 400px;
+}
