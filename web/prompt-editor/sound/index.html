@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎵 Sound Engine Prompt Editor</title>
+  <link rel="stylesheet" href="/web/shared/styles/base.css">
+  <link rel="stylesheet" href="/web/shared/styles/editor-base.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="editor">
+  <!-- Left Pane: Editor & Controls -->
+  <div class="left-pane">
+    <select id="prompt-select">
+      <option value="new">+ New Prompt</option>
+    </select>
+    
+    <div class="inline-fields">
+      <input type="text" id="name" placeholder="UNI Audio Instrument v1.0" maxlength="200">
+      <input type="text" id="slug" placeholder="uni-audio-instrument-v1-0" maxlength="100">
+    </div>
+    
+    <div class="actions">
+      <button id="save-btn" class="btn-secondary">💾 Save</button>
+      <button id="activate-btn" class="btn-success">✓ Set Active</button>
+      <button id="delete-btn" class="btn-danger">Delete</button>
+    </div>
+    
+    <label>System Prompt Template</label>
+    <textarea id="prompt" placeholder="You will control an audio software instrument..."></textarea>
+    <div class="char-count"><span id="char-count">0</span> chars</div>
+    
+    <!-- LLM Settings -->
+    <div class="generation-config">
+      <label>⚙️ LLM Settings</label>
+      
+      <div class="generation-config-grid">
+        <div>
+          <label>Provider</label>
+          <select id="llm-provider">
+            <option value="gemini">Google Gemini</option>
+            <option value="anthropic">Anthropic Claude</option>
+          </select>
+        </div>
+        <div>
+          <label>Model</label>
+          <select id="llm-model">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div>
+          <label>Temperature (0-1)</label>
+          <input type="number" id="llm-temperature" min="0" max="1" step="0.1" value="0.7">
+        </div>
+        <div id="top-p-group">
+          <label>Top P (0-1)</label>
+          <input type="number" id="llm-top-p" min="0" max="1" step="0.05" value="0.95">
+        </div>
+        <div id="top-k-group">
+          <label>Top K</label>
+          <input type="number" id="llm-top-k" min="1" max="100" step="1" value="40">
+        </div>
+        <div>
+          <label>Max Tokens</label>
+          <input type="number" id="llm-max-tokens" min="100" max="8000" step="100" value="500">
+        </div>
+      </div>
+      
+      <!-- Presets -->
+      <div class="preset-buttons">
+        <button type="button" class="preset-btn" data-preset="deterministic">Deterministic</button>
+        <button type="button" class="preset-btn" data-preset="balanced">Balanced</button>
+        <button type="button" class="preset-btn" data-preset="creative">Creative</button>
+      </div>
+    </div>
+    
+    <!-- CSV Files Section -->
+    <div class="csv-section">
+      <label>📁 Sample Files (CSV)</label>
+      
+      <div class="csv-file-info">
+        <div class="csv-file">
+          <span class="csv-label">Music Samples:</span>
+          <span id="music-csv-name" class="csv-filename">music_samples.csv (default)</span>
+        </div>
+        <div class="csv-file">
+          <span class="csv-label">Texture Samples:</span>
+          <span id="texture-csv-name" class="csv-filename">texture_samples.csv (default)</span>
+        </div>
+      </div>
+      
+      <div class="csv-actions">
+        <button id="reset-csv-btn" class="btn-reset">↺ Reset to Defaults</button>
+      </div>
+      
+      <div class="csv-note">
+        ℹ️ Custom CSV upload coming soon
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Pane: Test Input & Results -->
+  <div class="right-pane">
+    <div class="test-section">
+      <h2>🎵 Test Audio Generation</h2>
+      
+      <label>Test Input</label>
+      <textarea id="test-input" 
+                placeholder="Enter a creative paragraph describing a mood, scene, or feeling...
+Example: I feel melancholic today, watching rain fall on grey pavement. Everything feels slow and introspective."
+                rows="6"></textarea>
+      
+      <div class="test-actions">
+        <button id="random-btn" class="btn-secondary">🎲 Random Mind Moment</button>
+        <button id="generate-btn" class="btn-primary">⚡ Generate</button>
+      </div>
+    </div>
+    
+    <!-- Results Container (populated dynamically) -->
+    <div id="results-container" class="results-container hidden">
+      <!-- Results will be injected here by results-display.js -->
+    </div>
+  </div>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
