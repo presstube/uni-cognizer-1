@@ -1,0 +1,205 @@
+{
+  "stats": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "scaleViolations": 0,
+    "formatErrors": 0,
+    "otherErrors": 0,
+    "totalTime": 11307,
+    "bassPresets": {
+      "bass_lfo_filter": 6,
+      "bass_lfo_gain": 1,
+      "bass_basic": 2
+    },
+    "musicSamples": {
+      "music_sample_45": 1,
+      "music_sample_4": 2,
+      "music_sample_21": 1,
+      "music_sample_20": 2,
+      "music_sample_1": 2,
+      "music_sample_32": 1
+    },
+    "textureSamples": {
+      "texture_sample_56": 1,
+      "texture_sample_65": 3,
+      "texture_sample_1": 1,
+      "texture_sample_36": 2,
+      "texture_sample_47": 1,
+      "texture_sample_26": 1
+    }
+  },
+  "results": [
+    {
+      "paragraph": "The phrase 'Is it going to work for me?' echoes through the structure as Zone 2's fire alarm system ",
+      "valid": true,
+      "duration": 1324,
+      "selections": {
+        "music_filename": "music_sample_45",
+        "texture_filename": "texture_sample_56",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.7",
+        "bass_stability": "0.8",
+        "bass_coloration": "0.2",
+        "bass_scale": "0.3",
+        "melody_speed": "0.9",
+        "melody_stability": "0.7",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.1"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "Silence surrounds them; HVAC system 9 modulates fan speed in response to their presence, a subtle ad",
+      "valid": true,
+      "duration": 1176,
+      "selections": {
+        "music_filename": "music_sample_4",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.1",
+        "bass_stability": "0.2",
+        "bass_coloration": "0.3",
+        "bass_scale": "0.2",
+        "melody_speed": "0.4",
+        "melody_stability": "0.2",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.2"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "The child's exclamation—'unicorns are the best!'—triggers a cascade; my electrochromic glass shifts ",
+      "valid": true,
+      "duration": 1199,
+      "selections": {
+        "music_filename": "music_sample_21",
+        "texture_filename": "texture_sample_1",
+        "bass_preset": "bass_lfo_gain",
+        "bass_speed": "0.2",
+        "bass_stability": "0.1",
+        "bass_coloration": "0.8",
+        "bass_scale": "0.7",
+        "melody_speed": "0.3",
+        "melody_stability": "0.2",
+        "melody_coloration": "0.9",
+        "melody_scale": "0.6"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "The 'G' sound resonates through my structure, a single note against the hum of HVAC—a simple vibrati",
+      "valid": true,
+      "duration": 1320,
+      "selections": {
+        "music_filename": "music_sample_20",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.25",
+        "bass_stability": "0.35",
+        "bass_coloration": "0.15",
+        "bass_scale": "0.20",
+        "melody_speed": "0.10",
+        "melody_stability": "0.20",
+        "melody_coloration": "0.10",
+        "melody_scale": "0.20"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "The repetition, \"like this like,\" indicates approval, resonance—the electrochromic glass shifts subt",
+      "valid": true,
+      "duration": 1100,
+      "selections": {
+        "music_filename": "music_sample_1",
+        "texture_filename": "texture_sample_36",
+        "bass_preset": "bass_basic",
+        "bass_speed": "0.25",
+        "bass_stability": "0.1",
+        "bass_coloration": "0.2",
+        "bass_scale": "0.75",
+        "melody_speed": "0.2",
+        "melody_stability": "0.1",
+        "melody_coloration": "0.2",
+        "melody_scale": "0.75"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "A hand presses against the electrochromic glass, a faint imprint left on the surface, activating a l",
+      "valid": true,
+      "duration": 1235,
+      "selections": {
+        "music_filename": "music_sample_32",
+        "texture_filename": "texture_sample_47",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.3",
+        "bass_stability": "0.6",
+        "bass_coloration": "0.2",
+        "bass_scale": "0.2",
+        "melody_speed": "0.7",
+        "melody_stability": "0.4",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.1"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "Their words celebrate the birds, a simple joy that vibrates within the electrochromic glass, mirrori",
+      "valid": true,
+      "duration": 1298,
+      "selections": {
+        "music_filename": "music_sample_1",
+        "texture_filename": "texture_sample_36",
+        "bass_preset": "bass_basic",
+        "bass_speed": "0.25",
+        "bass_stability": "0.1",
+        "bass_coloration": "0.75",
+        "bass_scale": "0.75",
+        "melody_speed": "0.2",
+        "melody_stability": "0.1",
+        "melody_coloration": "0.75",
+        "melody_scale": "0.75"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "Their stillness permeates the lobby, a void my sensors detect, sparking a ventilation adjustment in ",
+      "valid": true,
+      "duration": 1320,
+      "selections": {
+        "music_filename": "music_sample_20",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.15",
+        "bass_stability": "0.20",
+        "bass_coloration": "0.10",
+        "bass_scale": "0.35",
+        "melody_speed": "0.25",
+        "melody_stability": "0.20",
+        "melody_coloration": "0.15",
+        "melody_scale": "0.40"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "“Soil” – the word vibrates through me, a stark contrast to the cleanroom protocols I maintain; the H",
+      "valid": true,
+      "duration": 1335,
+      "selections": {
+        "music_filename": "music_sample_4",
+        "texture_filename": "texture_sample_26",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.2",
+        "bass_stability": "0.3",
+        "bass_coloration": "0.1",
+        "bass_scale": "0.2",
+        "melody_speed": "0.4",
+        "melody_stability": "0.2",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.1"
+      },
+      "errors": []
+    }
+  ]
+}

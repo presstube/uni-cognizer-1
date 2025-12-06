@@ -1,0 +1,212 @@
+{
+  "stats": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "scaleViolations": 0,
+    "formatErrors": 0,
+    "otherErrors": 0,
+    "totalTime": 16235,
+    "bassPresets": {
+      "bass_lfo_filter": 3,
+      "bass_basic": 4,
+      "bass_lfo_gain": 2
+    },
+    "musicSamples": {
+      "music_sample_44": 1,
+      "music_sample_4": 3,
+      "music_sample_22": 1,
+      "music_sample_20": 2,
+      "music_sample_1": 1,
+      "music_sample_21": 1
+    },
+    "textureSamples": {
+      "texture_sample_56": 1,
+      "texture_sample_65": 5,
+      "texture_sample_36": 2,
+      "texture_sample_39": 1
+    }
+  },
+  "results": [
+    {
+      "paragraph": "The phrase 'Is it going to work for me?' echoes through the structure as Zone 2's fire alarm system ",
+      "valid": true,
+      "duration": 1827,
+      "reasoning": "The chosen music sample (music_sample_44) reflects the breaking and unstable feeling of the diagnostic check and the echoing question of its success. The texture sample (texture_sample_56) adds to the intense and harsh atmosphere of the transmission. The unstable, intense nature is further emphasized by the parameter choices, particularly the wobbly stability values.",
+      "selections": {
+        "music_filename": "music_sample_44",
+        "texture_filename": "texture_sample_56",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.75",
+        "bass_stability": "0.85",
+        "bass_coloration": "0.35",
+        "bass_scale": "0.30",
+        "melody_speed": "0.60",
+        "melody_stability": "0.70",
+        "melody_coloration": "0.40",
+        "melody_scale": "0.25"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "Silence surrounds them; HVAC system 9 modulates fan speed in response to their presence, a subtle ad",
+      "valid": true,
+      "duration": 2011,
+      "reasoning": "I'm choosing music_sample_4 for its subdued and gentle qualities, reflecting the quiet hum of the HVAC system. The texture_sample_65, drops of water in a big cave, adds a subtle spaciousness to the soundscape. I'm aiming for a calm and neutral mood with a touch of coolness, and the parameter values are chosen to enhance this feeling.",
+      "selections": {
+        "music_filename": "music_sample_4",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_basic",
+        "bass_speed": "0.1",
+        "bass_stability": "0.2",
+        "bass_coloration": "0.3",
+        "bass_scale": "0.25",
+        "melody_speed": "0.3",
+        "melody_stability": "0.2",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.25"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "The child's exclamation—'unicorns are the best!'—triggers a cascade; my electrochromic glass shifts ",
+      "valid": true,
+      "duration": 1697,
+      "reasoning": "The unicorn exclamation sparked a sense of childlike wonder and magic. I selected music_sample_22 for its liquid, floating quality, evoking a sense of lightness and whimsy. texture_sample_36, with its beautiful bird song in a spacious forest, adds a touch of nature and serenity to the magical atmosphere. The parameters are set to enhance this ethereal, dreamlike quality.",
+      "selections": {
+        "music_filename": "music_sample_22",
+        "texture_filename": "texture_sample_36",
+        "bass_preset": "bass_lfo_gain",
+        "bass_speed": "0.35",
+        "bass_stability": "0.20",
+        "bass_coloration": "0.80",
+        "bass_scale": "0.65",
+        "melody_speed": "0.60",
+        "melody_stability": "0.40",
+        "melody_coloration": "0.70",
+        "melody_scale": "0.75"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "The 'G' sound resonates through my structure, a single note against the hum of HVAC—a simple vibrati",
+      "valid": true,
+      "duration": 2007,
+      "reasoning": "The cognitive state is one of a single note resonating within a complex system. I chose music_sample_20 for its sparse, lonely quality, representing the single note. texture_sample_65, \"Drops of water in a big cave\", adds a sense of spaciousness and resonance. The bass and melody parameters aim to create a simple yet resonant soundscape.",
+      "selections": {
+        "music_filename": "music_sample_20",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_basic",
+        "bass_speed": "0.1",
+        "bass_stability": "0.1",
+        "bass_coloration": "0.2",
+        "bass_scale": "0.2",
+        "melody_speed": "0.3",
+        "melody_stability": "0.2",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.2"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "The repetition, \"like this like,\" indicates approval, resonance—the electrochromic glass shifts subt",
+      "valid": true,
+      "duration": 1751,
+      "reasoning": "The cognitive state suggests a sense of approval and resonance with the environment. I chose music_sample_1 to reflect the grounding and answering feel, and texture_sample_36 to enhance the beauty and spaciousness. The parameters are set to capture the gentle, soothing, and beautiful aspects of the environment.",
+      "selections": {
+        "music_filename": "music_sample_1",
+        "texture_filename": "texture_sample_36",
+        "bass_preset": "bass_lfo_gain",
+        "bass_speed": "0.25",
+        "bass_stability": "0.15",
+        "bass_coloration": "0.65",
+        "bass_scale": "0.75",
+        "melody_speed": "0.30",
+        "melody_stability": "0.20",
+        "melody_coloration": "0.70",
+        "melody_scale": "0.80"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "A hand presses against the electrochromic glass, a faint imprint left on the surface, activating a l",
+      "valid": true,
+      "duration": 1798,
+      "reasoning": "The cool tone and sparse density of music_sample_20 evoke the feeling of isolation and curiosity prompted by the handprint on the electrochromic glass.  The texture_sample_65, with its echoing water drops, amplifies the sense of being in a large, empty space, reflecting the curiosity and the subtle change in light. The bass and melody parameters emphasize the sparse, uncertain atmosphere.",
+      "selections": {
+        "music_filename": "music_sample_20",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.25",
+        "bass_stability": "0.35",
+        "bass_coloration": "0.15",
+        "bass_scale": "0.20",
+        "melody_speed": "0.40",
+        "melody_stability": "0.60",
+        "melody_coloration": "0.20",
+        "melody_scale": "0.30"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "Their words celebrate the birds, a simple joy that vibrates within the electrochromic glass, mirrori",
+      "valid": true,
+      "duration": 1768,
+      "reasoning": "The \"Sweet and small\" music sample evokes a sense of simple joy, mirroring the celebration of birds in the cognitive state. The texture of water drops in a cave adds a spacious and slightly melancholic dimension. The bass and melody parameters are set to match the major scale of the music sample, with a focus on stability and gentle coloration to enhance the soothing quality.",
+      "selections": {
+        "music_filename": "music_sample_21",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_basic",
+        "bass_speed": "0.2",
+        "bass_stability": "0.1",
+        "bass_coloration": "0.2",
+        "bass_scale": "0.7",
+        "melody_speed": "0.3",
+        "melody_stability": "0.2",
+        "melody_coloration": "0.3",
+        "melody_scale": "0.8"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "Their stillness permeates the lobby, a void my sensors detect, sparking a ventilation adjustment in ",
+      "valid": true,
+      "duration": 1696,
+      "reasoning": "The cognitive state describes a still, void-like lobby, prompting a need to compensate for absent breath. I selected music_sample_4 for its subconscious, subdued feel and cool tone to represent the stillness. texture_sample_65, drops of water in a big cave, enhances the spacious, quiet feeling of the void.",
+      "selections": {
+        "music_filename": "music_sample_4",
+        "texture_filename": "texture_sample_65",
+        "bass_preset": "bass_lfo_filter",
+        "bass_speed": "0.15",
+        "bass_stability": "0.25",
+        "bass_coloration": "0.10",
+        "bass_scale": "0.20",
+        "melody_speed": "0.30",
+        "melody_stability": "0.40",
+        "melody_coloration": "0.15",
+        "melody_scale": "0.25"
+      },
+      "errors": []
+    },
+    {
+      "paragraph": "“Soil” – the word vibrates through me, a stark contrast to the cleanroom protocols I maintain; the H",
+      "valid": true,
+      "duration": 1680,
+      "reasoning": "The feeling of \"soil\" evokes a sense of the organic and natural, contrasting with the sterile environment. I chose music_sample_4 for its subdued and gentle nature, reflecting the quiet presence of the imagined soil. texture_sample_39 provides a grounding stream sound to further emphasize the natural element.",
+      "selections": {
+        "music_filename": "music_sample_4",
+        "texture_filename": "texture_sample_39",
+        "bass_preset": "bass_basic",
+        "bass_speed": "0.15",
+        "bass_stability": "0.25",
+        "bass_coloration": "0.10",
+        "bass_scale": "0.20",
+        "melody_speed": "0.30",
+        "melody_stability": "0.40",
+        "melody_coloration": "0.20",
+        "melody_scale": "0.30"
+      },
+      "errors": []
+    }
+  ]
+}

@@ -45,7 +45,7 @@ function hashString(str) {
  */
 export async function callLLM(prompt, options = {}) {
   const {
-    model = 'models/gemini-2.0-flash-exp',
+    model = 'gemini-2.0-flash-exp',  // Keeping 2.0 for speed (1.2s vs 18s with 2.5)
     temperature = 0.85,
     maxTokens = 500,
     topP = 0.95,
@@ -71,6 +71,8 @@ export async function callLLM(prompt, options = {}) {
     console.log(`[Gemini] API call - model: ${model}, temp: ${temperature}, topP: ${generationConfig.topP}, topK: ${topK}, seed: ${generationConfig.seed} (${isDeterministic ? 'deterministic' : 'random'}), maxTokens: ${maxTokens}`);
     
     const client = getClient();
+    
+    // Try to get model - this will help us see if model exists
     const geminiModel = client.getGenerativeModel({ 
       model,
       generationConfig
@@ -78,7 +80,39 @@ export async function callLLM(prompt, options = {}) {
 
     const result = await geminiModel.generateContent(prompt);
     const response = await result.response;
-    return response.text();
+    
+    // Check for blocked content or safety issues
+    if (response.promptFeedback && response.promptFeedback.blockReason) {
+      throw new Error(`Content blocked: ${response.promptFeedback.blockReason}`);
+    }
+    
+    // Check if response has candidates
+    if (!response.candidates || response.candidates.length === 0) {
+      console.error(`[Gemini] No candidates in response`);
+      console.error(`[Gemini] Response:`, JSON.stringify(response, null, 2));
+      throw new Error('No response candidates generated');
+    }
+    
+    // Get the first candidate
+    const candidate = response.candidates[0];
+    
+    // Check for finish reason
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      // Try to get partial response from parts
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        const text = candidate.content.parts.map(part => part.text || '').join('');
+        if (text) {
+          console.log(`[Gemini] WARNING: MAX_TOKENS reached but got partial response (${text.length} chars)`);
+          return text;
+        }
+      }
+      const inputTokenEstimate = Math.ceil(prompt.length / 4);
+      throw new Error(`MAX_TOKENS (${maxTokens}) reached with no output. Input uses ~${inputTokenEstimate} tokens. Increase maxTokens parameter.`);
+    }
+    
+    const text = response.text();
+    
+    return text;
     
   } catch (error) {
     throw new Error(`Gemini API error: ${error.message}`);
