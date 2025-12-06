@@ -5,6 +5,7 @@
 
 import { generateSelections, getRandomMindMoment } from './generator.js';
 import { displayResults, clearResults, showError } from './results-display.js';
+import { handleFileUpload, getDefaultCSVs } from './csv-manager.js';
 
 const API_BASE = '/api';
 
@@ -51,6 +52,11 @@ const randomBtn = document.getElementById('random-btn');
 const generateBtn = document.getElementById('generate-btn');
 const resultsContainer = document.getElementById('results-container');
 const resetCsvBtn = document.getElementById('reset-csv-btn');
+const musicCsvUpload = document.getElementById('music-csv-upload');
+const textureCsvUpload = document.getElementById('texture-csv-upload');
+const musicCsvName = document.getElementById('music-csv-name');
+const textureCsvName = document.getElementById('texture-csv-name');
+const csvStatus = document.getElementById('csv-status');
 
 // LLM Settings DOM Elements
 const llmProviderSelect = document.getElementById('llm-provider');
@@ -64,6 +70,7 @@ const llmMaxTokensInput = document.getElementById('llm-max-tokens');
 async function init() {
   await loadPrompts();
   await autoLoadPrompt();
+  await loadActiveCSVs(); // Load system-wide active CSVs
   
   // Event listeners
   promptSelect.addEventListener('change', handlePromptChange);
@@ -75,6 +82,8 @@ async function init() {
   randomBtn.addEventListener('click', handleRandomMindMoment);
   generateBtn.addEventListener('click', handleGenerate);
   resetCsvBtn.addEventListener('click', handleResetCSV);
+  musicCsvUpload.addEventListener('change', handleMusicCsvUpload);
+  textureCsvUpload.addEventListener('change', handleTextureCsvUpload);
   
   // LLM settings listeners
   llmProviderSelect.addEventListener('change', handleProviderChange);
@@ -188,6 +197,7 @@ async function handlePromptChange() {
       topK: 40,
       maxTokens: 500
     };
+    
     updateLLMControls();
     updateCharCount();
     updateButtons();
@@ -371,6 +381,7 @@ async function handleGenerate() {
     generateBtn.disabled = true;
     clearResults(resultsContainer);
     
+    // System will use active CSVs automatically
     const result = await generateSelections({
       input,
       prompt,
@@ -390,7 +401,232 @@ async function handleGenerate() {
 
 // Handle CSV reset
 async function handleResetCSV() {
-  alert('CSV reset functionality coming soon');
+  if (!confirm('Reset to default CSV files system-wide? This will affect all prompts.')) {
+    return;
+  }
+  
+  try {
+    resetCsvBtn.classList.add('loading');
+    resetCsvBtn.disabled = true;
+    
+    // Set defaults as active
+    const response = await fetch(`${API_BASE}/sound-prompts/csvs/reset-defaults`, {
+      method: 'POST'
+    });
+    
+    if (!response.ok) throw new Error('Failed to reset');
+    
+    // Reload active CSVs
+    await loadActiveCSVs();
+    
+    showCsvStatus('✅ Reset to default CSV files', 'success');
+  } catch (error) {
+    console.error('Failed to reset CSV:', error);
+    showCsvStatus('❌ Failed to reset: ' + error.message, 'error');
+  } finally {
+    resetCsvBtn.classList.remove('loading');
+    resetCsvBtn.disabled = false;
+  }
+}
+
+// Load custom CSVs from sessionStorage (on page load)
+function loadCustomCSVs() {
+  // Load music CSV
+  const musicCSV = sessionStorage.getItem('customMusicCSV');
+  const musicName = sessionStorage.getItem('customMusicCSVName');
+  const musicCount = sessionStorage.getItem('customMusicCSVCount');
+  const musicId = sessionStorage.getItem('customMusicCSVId');
+  
+  if (musicCSV && musicName && musicCount) {
+    currentMusicCSV = musicCSV;
+    currentMusicCsvId = musicId;
+    musicCsvName.textContent = `${musicName} (custom, ${musicCount} samples)`;
+  }
+  
+  // Load texture CSV
+  const textureCSV = sessionStorage.getItem('customTextureCSV');
+  const textureName = sessionStorage.getItem('customTextureCSVName');
+  const textureCount = sessionStorage.getItem('customTextureCSVCount');
+  const textureId = sessionStorage.getItem('customTextureCsvId');
+  
+  if (textureCSV && textureName && textureCount) {
+    currentTextureCSV = textureCSV;
+    currentTextureCsvId = textureId;
+    textureCsvName.textContent = `${textureName} (custom, ${textureCount} samples)`;
+  }
+}
+
+// Load CSVs for a specific prompt (from database)
+async function loadPromptCSVs(musicCsvId, textureCsvId) {
+  try {
+    if (!musicCsvId && !textureCsvId) {
+      clearCustomCSVs();
+      return;
+    }
+    
+    // Fetch CSV details from database
+    const promises = [];
+    if (musicCsvId) {
+      promises.push(fetch(`${API_BASE}/sound-prompts/csv/${musicCsvId}`).then(r => r.json()));
+    }
+    if (textureCsvId) {
+      promises.push(fetch(`${API_BASE}/sound-prompts/csv/${textureCsvId}`).then(r => r.json()));
+    }
+    
+    const results = await Promise.all(promises);
+    
+    // Set music CSV if available
+    if (musicCsvId && results[0]) {
+      const musicData = results[0].csv;
+      currentMusicCSV = musicData.content;
+      currentMusicCsvId = musicData.id;
+      
+      // Count rows
+      const rows = currentMusicCSV.split('\n').length - 1;
+      musicCsvName.textContent = `${musicData.filename} (custom, ${rows} samples)`;
+      
+      // Save to sessionStorage
+      sessionStorage.setItem('customMusicCSV', currentMusicCSV);
+      sessionStorage.setItem('customMusicCSVName', musicData.filename);
+      sessionStorage.setItem('customMusicCSVCount', rows);
+      sessionStorage.setItem('customMusicCSVId', currentMusicCsvId);
+    } else {
+      // Clear music CSV
+      currentMusicCSV = null;
+      currentMusicCsvId = null;
+      musicCsvName.textContent = 'music_samples.csv (default)';
+      sessionStorage.removeItem('customMusicCSV');
+      sessionStorage.removeItem('customMusicCSVName');
+      sessionStorage.removeItem('customMusicCSVCount');
+      sessionStorage.removeItem('customMusicCSVId');
+    }
+    
+    // Set texture CSV if available
+    if (textureCsvId && results[musicCsvId ? 1 : 0]) {
+      const textureData = results[musicCsvId ? 1 : 0].csv;
+      currentTextureCSV = textureData.content;
+      currentTextureCsvId = textureData.id;
+      
+      // Count rows
+      const rows = currentTextureCSV.split('\n').length - 1;
+      textureCsvName.textContent = `${textureData.filename} (custom, ${rows} samples)`;
+      
+      // Save to sessionStorage
+      sessionStorage.setItem('customTextureCSV', currentTextureCSV);
+      sessionStorage.setItem('customTextureCSVName', textureData.filename);
+      sessionStorage.setItem('customTextureCSVCount', rows);
+      sessionStorage.setItem('customTextureCsvId', currentTextureCsvId);
+    } else {
+      // Clear texture CSV
+      currentTextureCSV = null;
+      currentTextureCsvId = null;
+      textureCsvName.textContent = 'texture_samples.csv (default)';
+      sessionStorage.removeItem('customTextureCSV');
+      sessionStorage.removeItem('customTextureCSVName');
+      sessionStorage.removeItem('customTextureCSVCount');
+      sessionStorage.removeItem('customTextureCsvId');
+    }
+  } catch (error) {
+    console.error('Failed to load prompt CSVs:', error);
+    clearCustomCSVs();
+  }
+}
+
+// Clear custom CSVs (show defaults)
+function clearCustomCSVs() {
+  currentMusicCSV = null;
+  currentTextureCSV = null;
+  currentMusicCsvId = null;
+  currentTextureCsvId = null;
+  
+  musicCsvName.textContent = 'music_samples.csv (default)';
+  textureCsvName.textContent = 'texture_samples.csv (default)';
+  
+  // Clear sessionStorage
+  sessionStorage.removeItem('customMusicCSV');
+  sessionStorage.removeItem('customMusicCSVName');
+  sessionStorage.removeItem('customMusicCSVCount');
+  sessionStorage.removeItem('customMusicCSVId');
+  sessionStorage.removeItem('customTextureCSV');
+  sessionStorage.removeItem('customTextureCSVName');
+  sessionStorage.removeItem('customTextureCSVCount');
+  sessionStorage.removeItem('customTextureCsvId');
+}
+
+// Handle music CSV upload
+async function handleMusicCsvUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  try {
+    const result = await handleFileUpload(file, 'music');
+    
+    // Upload sets it as active system-wide automatically
+    await loadActiveCSVs();
+    
+    showCsvStatus(`✅ Uploaded ${file.name} with ${result.rowCount} music samples (active system-wide)`, 'success');
+  } catch (error) {
+    console.error('Music CSV upload failed:', error);
+    showCsvStatus('❌ Upload failed: ' + error.message, 'error');
+    event.target.value = '';
+  }
+}
+
+// Handle texture CSV upload
+async function handleTextureCsvUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  try {
+    const result = await handleFileUpload(file, 'texture');
+    
+    // Upload sets it as active system-wide automatically
+    await loadActiveCSVs();
+    
+    showCsvStatus(`✅ Uploaded ${file.name} with ${result.rowCount} texture samples (active system-wide)`, 'success');
+  } catch (error) {
+    console.error('Texture CSV upload failed:', error);
+    showCsvStatus('❌ Upload failed: ' + error.message, 'error');
+    event.target.value = '';
+  }
+}
+
+// Show CSV status message
+function showCsvStatus(message, type) {
+  csvStatus.textContent = message;
+  csvStatus.className = `csv-status ${type}`;
+  
+  // Auto-hide success messages after 5 seconds
+  if (type === 'success') {
+    setTimeout(() => {
+      csvStatus.classList.add('hidden');
+    }, 5000);
+  }
+}
+
+// Load active CSVs (system-wide)
+async function loadActiveCSVs() {
+  try {
+    const response = await fetch(`${API_BASE}/sound-prompts/csvs/active`);
+    if (!response.ok) throw new Error('Failed to load active CSVs');
+    
+    const csvs = await response.json();
+    
+    // Update UI
+    if (csvs.music) {
+      const rows = csvs.music.content.split('\n').length - 1;
+      const label = csvs.music.is_default ? '(default)' : `(custom, ${rows} samples)`;
+      musicCsvName.textContent = `${csvs.music.filename} ${label}`;
+    }
+    
+    if (csvs.texture) {
+      const rows = csvs.texture.content.split('\n').length - 1;
+      const label = csvs.texture.is_default ? '(default)' : `(custom, ${rows} samples)`;
+      textureCsvName.textContent = `${csvs.texture.filename} ${label}`;
+    }
+  } catch (error) {
+    console.error('Failed to load active CSVs:', error);
+  }
 }
 
 // LLM Settings Handlers

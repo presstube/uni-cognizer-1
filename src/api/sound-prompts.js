@@ -117,14 +117,21 @@ export async function testSoundPrompt(req, res) {
       llmSettings = llmSettings || activePrompt.llm_settings || {};
     }
     
-    // Get CSVs from database if not provided
+    // Get active CSVs if not provided
     let music = musicCSV;
     let texture = textureCSV;
     
     if (!music || !texture) {
-      const csvs = await db.getDefaultCSVs();
+      const csvs = await db.getActiveCSVs();
       music = music || csvs.music?.content;
       texture = texture || csvs.texture?.content;
+    }
+    
+    // Fall back to defaults if no active CSVs
+    if (!music || !texture) {
+      const defaults = await db.getDefaultCSVs();
+      music = music || defaults.music?.content;
+      texture = texture || defaults.texture?.content;
     }
     
     if (!music || !texture) {
@@ -202,6 +209,37 @@ export async function getDefaultCSVs(req, res) {
   } catch (error) {
     console.error('Failed to get default CSVs:', error);
     res.status(500).json({ error: 'Failed to load default CSVs' });
+  }
+}
+
+// Get active CSVs (system-wide)
+export async function getActiveCSVs(req, res) {
+  try {
+    const csvs = await db.getActiveCSVs();
+    res.json(csvs);
+  } catch (error) {
+    console.error('Failed to get active CSVs:', error);
+    res.status(500).json({ error: 'Failed to load active CSVs' });
+  }
+}
+
+// Get single CSV by ID (kept for compatibility)
+export async function getCSVById(req, res) {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT * FROM sound_csv_files WHERE id = $1',
+      [req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'CSV not found' });
+    }
+    
+    res.json({ csv: result.rows[0] });
+  } catch (error) {
+    console.error('Failed to get CSV:', error);
+    res.status(500).json({ error: 'Failed to load CSV' });
   }
 }
 

@@ -57,6 +57,20 @@
 - [ ] Alert shows "✅ Prompt deleted!"
 - [ ] Dropdown returns to default
 
+### 7. CSV Upload ✓
+- [ ] Click "📁 Upload Music CSV"
+- [ ] Select a valid music CSV file
+- [ ] Status shows "✅ Uploaded filename with X samples"
+- [ ] Music CSV name updates to show "(custom, X samples)"
+- [ ] Click "📁 Upload Texture CSV"
+- [ ] Select a valid texture CSV file
+- [ ] Status shows success
+- [ ] Click "↺ Reset to Defaults"
+- [ ] Confirm reset
+- [ ] Both CSVs show "(default)" again
+- [ ] Try uploading invalid CSV (missing columns)
+- [ ] Should show error message
+
 ---
 
 ## Expected Results
@@ -165,14 +179,15 @@ This is expected if LLM makes a mistake:
 ## Files Created
 
 ```
-7 Frontend Files:
+8 Frontend Files (was 7):
 ├── index.html           (120 lines) - UI structure
-├── style.css            (400 lines) - Styling
-├── editor.js            (550 lines) - Main logic
+├── style.css            (450 lines) - Styling
+├── editor.js            (630 lines) - Main logic
 ├── generator.js         (70 lines)  - API wrapper
 ├── results-display.js   (170 lines) - Results rendering
 ├── parameter-viz.js     (80 lines)  - Parameter bars
-└── README.md            (200 lines) - Documentation
+├── csv-manager.js       (180 lines) - CSV upload/validation
+└── README.md            (250 lines) - Documentation
 
 6 Backend Files:
 ├── /src/db/migrations/017_sound_prompts.sql

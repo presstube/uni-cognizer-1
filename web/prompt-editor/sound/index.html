@@ -76,7 +76,7 @@
     
     <!-- CSV Files Section -->
     <div class="csv-section">
-      <label>📁 Sample Files (CSV)</label>
+      <label>📁 Sample Files (System-Wide)</label>
       
       <div class="csv-file-info">
         <div class="csv-file">
@@ -90,11 +90,25 @@
       </div>
       
       <div class="csv-actions">
+        <label for="music-csv-upload" class="btn-upload">📁 Upload Music CSV</label>
+        <input type="file" 
+               id="music-csv-upload" 
+               accept=".csv" 
+               style="display: none;">
+        
+        <label for="texture-csv-upload" class="btn-upload">📁 Upload Texture CSV</label>
+        <input type="file" 
+               id="texture-csv-upload" 
+               accept=".csv" 
+               style="display: none;">
+        
         <button id="reset-csv-btn" class="btn-reset">↺ Reset to Defaults</button>
       </div>
       
+      <div id="csv-status" class="csv-status hidden"></div>
+      
       <div class="csv-note">
-        ℹ️ Custom CSV upload coming soon
+        ℹ️ Uploaded CSVs are active for ALL prompts system-wide
       </div>
     </div>
   </div>

@@ -86,6 +86,43 @@ A real-time prompt editor for testing and refining the UNI Audio Instrument syst
 - **Balanced**: Medium temperature (0.7), good default
 - **Creative**: High temperature (0.9), more varied outputs
 
+### CSV Management
+
+**Default CSVs:**
+The editor starts with default music and texture sample CSVs loaded from the database.
+
+**Upload Custom CSVs:**
+1. Click "📁 Upload Music CSV" or "📁 Upload Texture CSV"
+2. Select a CSV file from your computer
+3. File is validated:
+   - Music CSV must have: filename, description, tone, density, mood, scale, rhythm
+   - Texture CSV must have: filename, description, tone, density, mood, category
+   - Scale values must be "major" or "minor"
+4. If valid, uploaded CSV replaces the default for this session
+5. Filename and sample count displayed
+
+**Reset to Defaults:**
+Click "↺ Reset to Defaults" to discard custom CSVs and use defaults again.
+
+**CSV Format Example (Music):**
+```csv
+filename,description,tone,density,mood,scale,rhythm
+music_sample_1,Ethereal pad with gentle movement,warm,sparse,soothing,minor,arhythmic
+music_sample_2,Uplifting melody with bright tones,warm,moderate,soothing,major,strong pulse
+```
+
+**CSV Format Example (Texture):**
+```csv
+filename,description,tone,density,mood,category
+texture_sample_1,Ocean waves on a rocky shore,cool,moderate,soothing,Nature
+texture_sample_2,Mechanical clock ticking steadily,neutral,sparse,neutral,Technological
+```
+
+**Notes:**
+- Custom CSVs are session-only (not saved to database)
+- Each generation uses the currently loaded CSVs
+- You can mix custom music with default texture (or vice versa)
+
 ### Understanding Results
 
 **Reasoning Section:**

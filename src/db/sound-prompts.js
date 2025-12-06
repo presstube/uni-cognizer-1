@@ -121,7 +121,20 @@ export async function seedDefaultCSVs() {
   console.log('✅ Default CSV files seeded');
 }
 
-// Get default CSVs
+// Get active CSVs (system-wide)
+export async function getActiveCSVs() {
+  const pool = getPool();
+  const result = await pool.query(
+    'SELECT * FROM sound_csv_files WHERE active = true'
+  );
+  
+  return {
+    music: result.rows.find(r => r.type === 'music'),
+    texture: result.rows.find(r => r.type === 'texture')
+  };
+}
+
+// Get default CSVs (fallback)
 export async function getDefaultCSVs() {
   const pool = getPool();
   const result = await pool.query(
@@ -134,14 +147,31 @@ export async function getDefaultCSVs() {
   };
 }
 
-// Upload custom CSV
+// Upload custom CSV (and set as active)
 export async function uploadCSV(type, filename, content) {
   const pool = getPool();
-  const result = await pool.query(`
-    INSERT INTO sound_csv_files (type, filename, content, is_default)
-    VALUES ($1, $2, $3, false)
-    RETURNING *
-  `, [type, filename, content]);
-  return result.rows[0];
+  
+  await pool.query('BEGIN');
+  
+  try {
+    // Deactivate all CSVs of this type
+    await pool.query(
+      'UPDATE sound_csv_files SET active = false WHERE type = $1',
+      [type]
+    );
+    
+    // Insert new CSV as active
+    const result = await pool.query(`
+      INSERT INTO sound_csv_files (type, filename, content, is_default, active)
+      VALUES ($1, $2, $3, false, true)
+      RETURNING *
+    `, [type, filename, content]);
+    
+    await pool.query('COMMIT');
+    return result.rows[0];
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    throw error;
+  }
 }
 

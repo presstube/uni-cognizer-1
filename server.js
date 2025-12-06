@@ -152,6 +152,8 @@ app.delete('/api/audio-prompts/:id', editorAuth, audioPrompts.deleteAudioPromptA
 app.get('/api/sound-prompts', editorAuth, soundPrompts.listSoundPrompts);
 app.get('/api/sound-prompts/active', editorAuth, soundPrompts.getActiveSoundPromptAPI);
 app.get('/api/sound-prompts/csvs/defaults', editorAuth, soundPrompts.getDefaultCSVs);
+app.get('/api/sound-prompts/csvs/active', editorAuth, soundPrompts.getActiveCSVs);
+app.get('/api/sound-prompts/csv/:id', editorAuth, soundPrompts.getCSVById);
 app.get('/api/sound-prompts/random-mind-moment', editorAuth, soundPrompts.getRandomMindMoment);
 app.get('/api/sound-prompts/:id', editorAuth, soundPrompts.getSoundPromptAPI);
 app.post('/api/sound-prompts', editorAuth, soundPrompts.saveSoundPrompt);

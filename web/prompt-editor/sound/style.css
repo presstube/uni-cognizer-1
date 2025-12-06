@@ -68,6 +68,46 @@
 .csv-actions {
   display: flex;
   gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.btn-upload {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  background: #2a2a2a;
+  color: var(--color-text-editor);
+  font-size: var(--font-size-md);
+  border-radius: var(--border-radius);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover {
+  background: #333;
+}
+
+.csv-status {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--border-radius);
+  font-size: 12px;
+}
+
+.csv-status.hidden {
+  display: none;
+}
+
+.csv-status.success {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #8bc34a;
+}
+
+.csv-status.error {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #f44336;
 }
 
 .csv-note {
