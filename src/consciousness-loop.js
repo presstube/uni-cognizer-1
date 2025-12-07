@@ -9,7 +9,7 @@
  */
 
 import { CognitiveState } from './cognitive-states.js';
-import { cognize, onMindMoment, onSigil, onStateEvent, clearListeners, getCurrentCycleIndex } from './real-cog.js';
+import { cognize, onMindMoment, onSigil, onSoundBrief, onStateEvent, clearListeners, getCurrentCycleIndex } from './real-cog.js';
 import { getPool } from './db/index.js';
 import { normalizeMindMoment } from './types/mind-moment.js';
 
@@ -139,7 +139,8 @@ export class ConsciousnessLoop {
               cycle, mind_moment, sigil_phrase, sigil_code,
               kinetic, lighting,
               visual_percepts, audio_percepts,
-              sigil_png_data, sigil_png_width, sigil_png_height
+              sigil_png_data, sigil_png_width, sigil_png_height,
+              sound_brief
             FROM mind_moments
             WHERE cycle = $1
           `, [selectedCycle]);
@@ -172,6 +173,7 @@ export class ConsciousnessLoop {
               audioPercepts: Array.isArray(row.audio_percepts) ? row.audio_percepts : [],
               priorMoments: [],
               png,
+              soundBrief: row.sound_brief || null,
               isDream: false,
               isPlaceholder: true,
               timestamp: new Date().toISOString()
@@ -624,6 +626,7 @@ export class ConsciousnessLoop {
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           sigil_png_data, sigil_png_width, sigil_png_height,
+          sound_brief,
           created_at
         FROM mind_moments
         WHERE cycle = $1
@@ -694,6 +697,7 @@ export class ConsciousnessLoop {
         prior_moments: priorMoments, // Pass the fetched moment objects, not IDs
         sdf,
         png,
+        sound_brief: row.sound_brief,
         isDream: true
       });
     } catch (error) {
@@ -716,6 +720,7 @@ export class ConsciousnessLoop {
       visualPercepts: moment.visualPercepts,
       audioPercepts: moment.audioPercepts,
       priorMoments: moment.priorMoments,
+      soundBrief: moment.soundBrief,
       isDream: moment.isDream,
       timestamp: moment.timestamp || new Date().toISOString()
     });
@@ -811,6 +816,21 @@ export class ConsciousnessLoop {
         this.currentState = CognitiveState.IDLE;
         this.io.emit('cognitiveState', { state: CognitiveState.IDLE });
         console.log('💤 Transitioned to IDLE after in-flight operations');
+      }
+    });
+    
+    // Sound brief listener
+    onSoundBrief((cycle, soundBrief) => {
+      // Add sound brief to processing result
+      if (processingCycle === cycle && processingResult.cycle === cycle) {
+        processingResult.soundBrief = soundBrief;
+        
+        // Update ready buffer with sound brief
+        if (this.cycleBuffer.ready && this.cycleBuffer.ready.cycle === cycle) {
+          this.cycleBuffer.ready.soundBrief = soundBrief;
+        }
+        
+        console.log(`  🎵 [Cycle ${cycle}] Sound brief added`);
       }
     });
     
@@ -933,6 +953,7 @@ export class ConsciousnessLoop {
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           sigil_png_data, sigil_png_width, sigil_png_height,
+          sound_brief,
           created_at
         FROM mind_moments
         WHERE sigil_code IS NOT NULL 
@@ -1004,6 +1025,7 @@ export class ConsciousnessLoop {
         prior_moments: priorMoments,
         sdf,
         png,
+        sound_brief: row.sound_brief,
         isDream: true
       });
     } catch (error) {

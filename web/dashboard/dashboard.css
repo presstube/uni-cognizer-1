@@ -359,3 +359,145 @@ body.exploring-mode .far-right {
   image-rendering: crisp-edges;
 }
 
+
+/* ========================================
+   Sound Brief Display
+   ======================================== */
+
+.sound-brief-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.sound-brief-display {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Reasoning text - subtle, italic */
+.sound-brief-reasoning {
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+/* Sample info section */
+.sound-samples {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sound-sample-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.sound-sample-icon {
+  font-size: 16px;
+  opacity: 0.7;
+  width: 20px;
+  text-align: center;
+}
+
+.sound-sample-label {
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 60px;
+}
+
+.sound-sample-value {
+  color: var(--color-text-bright);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  flex: 1;
+}
+
+.sound-sample-meta {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+/* Parameter groups (Bass/Melody) */
+.sound-param-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sound-param-group-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-dim);
+  margin-bottom: 4px;
+}
+
+/* Preset display - simple badge */
+.sound-preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-mono);
+  margin-bottom: 8px;
+}
+
+/* Parameter with visual bar */
+.sound-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sound-param-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.sound-param-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: capitalize;
+}
+
+.sound-param-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Visual bar for parameter values (0.0-1.0) */
+.sound-param-bar {
+  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sound-param-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+

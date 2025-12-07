@@ -9,6 +9,7 @@ const cognitiveHistory = {};
 let cycleIndex = 0;
 let mindMomentListeners = [];
 let sigilListeners = [];
+let soundBriefListeners = [];
 let stateListeners = [];
 
 // Personality management
@@ -122,6 +123,88 @@ Respond with ONLY valid JSON, nothing else.`;
   }
 }
 
+/**
+ * Generate sound brief for a mind moment (with retry logic)
+ * @param {string} mindMomentText - The mind moment text to generate sound for
+ * @param {number} maxRetries - Maximum retry attempts (default: 2)
+ * @returns {Promise<Object|null>} Sound brief result or null if failed/disabled
+ */
+async function generateSoundBrief(mindMomentText, maxRetries = 2) {
+  try {
+    const { getActiveSoundPrompt, getActiveCSVs, getDefaultCSVs } = 
+      await import('./db/sound-prompts.js');
+    const { generateAudioSelections } = 
+      await import('./sound/generator.js');
+    
+    // Get active sound prompt
+    const activePrompt = await getActiveSoundPrompt();
+    if (!activePrompt) {
+      console.log('⚠️  No active sound prompt, skipping sound generation');
+      return null;
+    }
+    
+    // Get CSV files (active or defaults)
+    const csvs = await getActiveCSVs();
+    const defaults = await getDefaultCSVs();
+    const musicCSV = csvs.music?.content || defaults.music?.content;
+    const textureCSV = csvs.texture?.content || defaults.texture?.content;
+    
+    if (!musicCSV || !textureCSV) {
+      console.log('⚠️  Missing CSV files, skipping sound generation');
+      return null;
+    }
+    
+    // Retry loop
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Generate sound selections using Gemini Flash Exp
+        const result = await generateAudioSelections({
+          input: mindMomentText,
+          prompt: activePrompt.prompt,
+          llmSettings: activePrompt.llm_settings || {},
+          musicCSV,
+          textureCSV
+        });
+        
+        // Check if valid
+        if (result.valid) {
+          if (attempt > 1) {
+            console.log(`🎵 Sound brief generated on attempt ${attempt} (${result.duration}ms)`);
+          } else {
+            console.log(`🎵 Sound brief generated (${result.duration}ms)`);
+          }
+          return result;
+        } else {
+          console.warn(`⚠️  Sound validation failed (attempt ${attempt}/${maxRetries}):`, result.errors);
+          
+          // If not the last attempt, retry
+          if (attempt < maxRetries) {
+            console.log('   Retrying with different seed...');
+            // Brief delay before retry (allows different random seed)
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      } catch (genError) {
+        console.error(`❌ Sound generation error (attempt ${attempt}/${maxRetries}):`, genError.message);
+        
+        // If not the last attempt, retry
+        if (attempt < maxRetries) {
+          console.log('   Retrying...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+    }
+    
+    // All retries exhausted
+    console.error('❌ Sound generation failed after all retry attempts');
+    return null;
+    
+  } catch (error) {
+    console.error('❌ Sound generation setup failed:', error.message);
+    return null;
+  }
+}
+
 function timestamp() {
   return new Date().toLocaleTimeString('en-US', { 
     hour12: false, 
@@ -191,15 +274,26 @@ export function onSigil(listener) {
   sigilListeners.push(listener);
 }
 
+export function onSoundBrief(listener) {
+  soundBriefListeners.push(listener);
+}
+
 function dispatchSigil(cycle, sigilCode, sigilPhrase, sigilPNG) {
   sigilListeners.forEach(listener => {
     listener(cycle, sigilCode, sigilPhrase, sigilPNG);
   });
 }
 
+function dispatchSoundBrief(cycle, soundBrief) {
+  soundBriefListeners.forEach(listener => {
+    listener(cycle, soundBrief);
+  });
+}
+
 export function clearListeners() {
   mindMomentListeners = [];
   sigilListeners = [];
+  soundBriefListeners = [];
   stateListeners = [];
 }
 
@@ -321,13 +415,18 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
       // Emit mind moment event (early notification)
       dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.kinetic, result.lighting);
       
-      // STEP 2: Generate sigil if we have a phrase
+      // STEP 2 & 3: Generate sigil AND sound brief IN PARALLEL
+      // This ensures sound brief completes in time for SPOOL phase
+      const generationPromises = [];
+      
+      // Sigil generation (if we have a phrase)
       if (result.sigilPhrase) {
         console.log(`🎨 Generating sigil for: "${result.sigilPhrase}"`);
         const sigilStartTime = Date.now();
         
-        try {
-          const { sigilCode, sigilPromptId } = await generateSigil(result.sigilPhrase);
+        const sigilPromise = (async () => {
+          try {
+            const { sigilCode, sigilPromptId } = await generateSigil(result.sigilPhrase);
           
           // Generate PNG directly from canvas code
           let sigilPNG = null;
@@ -407,7 +506,6 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
           
           // Emit sigil event (include PNG if available)
           dispatchSigil(thisCycle, sigilCode, result.sigilPhrase, sigilPNG);
-          
         } catch (sigilError) {
           console.error(`❌ Sigil generation failed:`, sigilError.message);
           cognitiveHistory[thisCycle].sigilCode = null;
@@ -435,11 +533,62 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
             sigilPhrase: result.sigilPhrase
           });
         }
-      } else {
-        cognitiveHistory[thisCycle].sigilCode = null;
-        // cognitiveHistory[thisCycle].sigilSVG = null; // Commented out - not generating SVG
-        cognitiveHistory[thisCycle].sigilSDF = null;
+        })();
+        
+        generationPromises.push(sigilPromise);
       }
+      
+      // Sound brief generation (in parallel with sigil)
+      console.log(`🎵 Generating sound brief for mind moment...`);
+      const soundStartTime = Date.now();
+      
+      const soundPromise = (async () => {
+        try {
+          const soundBrief = await generateSoundBrief(result.mindMoment);
+          
+          if (soundBrief) {
+            const soundDuration = Date.now() - soundStartTime;
+            
+            // Update history
+            cognitiveHistory[thisCycle].soundBrief = soundBrief;
+            
+            // Update database
+            if (process.env.DATABASE_ENABLED === 'true' && cognitiveHistory[thisCycle].id) {
+              try {
+                const { getPool } = await import('./db/index.js');
+                const pool = getPool();
+                
+                await pool.query(
+                  'UPDATE mind_moments SET sound_brief = $1 WHERE id = $2',
+                  [JSON.stringify(soundBrief), cognitiveHistory[thisCycle].id]
+                );
+                
+                console.log(`✓ Sound brief saved to database`);
+              } catch (dbError) {
+                console.error('❌ Failed to update sound brief in database:', dbError.message);
+              }
+            }
+            
+            console.log(`✓ Sound brief generated (${soundDuration}ms)`);
+            console.log(`  Music: ${soundBrief.selections.music_filename}`);
+            console.log(`  Texture: ${soundBrief.selections.texture_filename}`);
+            console.log('');
+            
+            // Dispatch sound brief event
+            dispatchSoundBrief(thisCycle, soundBrief);
+          } else {
+            console.log(`⚠️  Sound brief generation skipped (no active prompt or failed)`);
+          }
+        } catch (soundError) {
+          console.error(`❌ Sound brief generation failed:`, soundError.message);
+          cognitiveHistory[thisCycle].soundBrief = null;
+        }
+      })();
+      
+      generationPromises.push(soundPromise);
+      
+      // Wait for both to complete
+      await Promise.all(generationPromises);
       
       const totalDuration = Date.now() - startTime;
       

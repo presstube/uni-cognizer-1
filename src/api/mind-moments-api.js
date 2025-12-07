@@ -28,6 +28,7 @@ router.get('/mind-moments/recent', async (req, res) => {
         mm.visual_percepts,
         mm.audio_percepts,
         mm.prior_moment_ids,
+        mm.sound_brief,
         mm.created_at,
         p.name AS personality_name,
         sp.name AS sigil_prompt_name
@@ -69,6 +70,7 @@ router.get('/mind-moments/all', async (req, res) => {
         mm.visual_percepts,
         mm.audio_percepts,
         mm.prior_moment_ids,
+        mm.sound_brief,
         mm.created_at,
         p.name AS personality_name,
         sp.name AS sigil_prompt_name
@@ -145,6 +147,7 @@ router.get('/mind-moments/:id', async (req, res) => {
         mm.visual_percepts,
         mm.audio_percepts,
         mm.prior_moment_ids,
+        mm.sound_brief,
         mm.created_at,
         p.name AS personality_name,
         sp.name AS sigil_prompt_name

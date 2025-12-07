@@ -18,6 +18,7 @@
  * @property {Array} priorMoments - Array of prior moment references
  * @property {Object|null} sdf - Signed distance field data (optional)
  * @property {Object|null} png - PNG image data (optional)
+ * @property {Object|null} soundBrief - Sound generation result (optional)
  * @property {boolean} isDream - Whether this is a dream (replayed) moment
  * @property {string} timestamp - ISO timestamp of emission
  */
@@ -58,6 +59,7 @@ export function normalizeMindMoment(data) {
     priorMoments: data.priorMoments || data.prior_moments || data.priorMomentIds || data.prior_moment_ids || [],
     sdf: data.sdf || null,
     png: data.png || null,
+    soundBrief: data.soundBrief || data.sound_brief || null,
     isDream: data.isDream || false,
     timestamp: data.timestamp || new Date().toISOString()
   };

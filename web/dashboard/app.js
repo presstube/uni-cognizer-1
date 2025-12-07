@@ -166,6 +166,9 @@ function onHistoryMomentClick(moment) {
   // Sigil Prompt
   $sigilPromptName.textContent = moment.sigil_prompt_name || '—';
   
+  // Display sound brief
+  displaySoundBrief(moment.sound_brief);
+  
   // Update sigil formats (SVG/SDF) and percept PNG grid
   updateSigilFormats(moment.id, visualPercepts, audioPercepts);
 }
@@ -658,6 +661,9 @@ function connect() {
     $personalityName.textContent = '—';
     $sigilPromptName.textContent = '—';
     
+    // Display sound brief (if available)
+    displaySoundBrief(data.soundBrief);
+    
     // Clear PNG display (will be populated after sigil generation)
     $pngStatus.textContent = 'Generating...';
     if ($pngDisplay) {
@@ -941,6 +947,106 @@ function updateLightingDisplay(lighting) {
     <span class="color-swatch" style="background-color: ${cssColor};"></span>
     <span class="lighting-text">${pattern} <span class="lighting-speed">(${speed.toFixed(1)})</span></span>
   `;
+}
+
+/**
+ * Display sound brief in dashboard
+ * @param {Object|null} soundBrief - Sound generation result
+ */
+function displaySoundBrief(soundBrief) {
+  const $section = document.getElementById('sound-brief-section');
+  const $display = document.getElementById('sound-brief-display');
+  
+  if (!soundBrief || !soundBrief.valid) {
+    $section.style.display = 'none';
+    return;
+  }
+  
+  const { selections, reasoning, musicSample, textureSample } = soundBrief;
+  
+  let html = '';
+  
+  // Reasoning (if present)
+  if (reasoning) {
+    html += `<div class="sound-brief-reasoning">${reasoning}</div>`;
+  }
+  
+  // Samples section
+  html += `<div class="sound-samples">`;
+  
+  // Music sample
+  html += `
+    <div class="sound-sample-row">
+      <span class="sound-sample-icon">🎵</span>
+      <span class="sound-sample-label">Music</span>
+      <span class="sound-sample-value">${selections.music_filename}</span>
+  `;
+  if (musicSample && musicSample.scale) {
+    const keyInfo = musicSample.key ? ` · ${musicSample.key}` : '';
+    html += `<span class="sound-sample-meta">${musicSample.scale}${keyInfo}</span>`;
+  }
+  html += `</div>`;
+  
+  // Texture sample
+  html += `
+    <div class="sound-sample-row">
+      <span class="sound-sample-icon">🌊</span>
+      <span class="sound-sample-label">Texture</span>
+      <span class="sound-sample-value">${selections.texture_filename}</span>
+    </div>
+  `;
+  
+  html += `</div>`; // Close sound-samples
+  
+  // Bass parameters
+  html += `<div class="sound-param-group">`;
+  html += `<div class="sound-param-group-title">Bass</div>`;
+  html += `<div class="sound-preset">🎚️ ${selections.bass_preset}</div>`;
+  
+  ['speed', 'stability', 'coloration', 'scale'].forEach(param => {
+    const value = parseFloat(selections[`bass_${param}`]);
+    const percentage = (value * 100).toFixed(0);
+    
+    html += `
+      <div class="sound-param" data-param="${param}">
+        <div class="sound-param-header">
+          <span class="sound-param-label">${param}</span>
+          <span class="sound-param-value">${value.toFixed(2)}</span>
+        </div>
+        <div class="sound-param-bar">
+          <div class="sound-param-bar-fill" style="width: ${percentage}%"></div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`; // Close bass group
+  
+  // Melody parameters
+  html += `<div class="sound-param-group">`;
+  html += `<div class="sound-param-group-title">Melody</div>`;
+  
+  ['speed', 'stability', 'coloration', 'scale'].forEach(param => {
+    const value = parseFloat(selections[`melody_${param}`]);
+    const percentage = (value * 100).toFixed(0);
+    
+    html += `
+      <div class="sound-param" data-param="${param}">
+        <div class="sound-param-header">
+          <span class="sound-param-label">${param}</span>
+          <span class="sound-param-value">${value.toFixed(2)}</span>
+        </div>
+        <div class="sound-param-bar">
+          <div class="sound-param-bar-fill" style="width: ${percentage}%"></div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`; // Close melody group
+  
+  $display.innerHTML = html;
+  $section.style.display = 'flex';
 }
 
 /**
