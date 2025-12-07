@@ -39,7 +39,12 @@ const state = {
   circumplexViz: null,
   
   // Context tracking
-  lastVisualDescription: null
+  lastVisualDescription: null,
+  
+  // Cognizer integration
+  cognizerSocket: null,
+  cognizerConnected: false,
+  sessionId: null
 };
 
 // ============================================
@@ -52,11 +57,13 @@ const SYSTEM_PROMPTS = {
     prompt: `You are analyzing a real-time audio and video stream.
 
 For AUDIO, provide:
+- emoji: Single emoji representing the sonic/emotional moment
 - transcript: What you hear (speech, humming, singing, sounds, or "silence")
 - valence: -1 (negative) to +1 (positive) emotional tone
 - arousal: -1 (calm) to +1 (energized) energy level
 
 For VISUAL, provide:
+- emoji: Single emoji representing the visual/emotional moment
 - description: What you see the person doing
 - valence: -1 (negative) to +1 (positive) emotional tone
 - arousal: -1 (calm) to +1 (energized) energy level
@@ -64,11 +71,13 @@ For VISUAL, provide:
 Return JSON:
 {
   "audio": {
+    "emoji": "🎵",
     "transcript": "...",
     "valence": 0.5,
     "arousal": 0.3
   },
   "visual": {
+    "emoji": "😊",
     "description": "...",
     "valence": 0.4,
     "arousal": 0.2
@@ -176,6 +185,7 @@ STRICT JSON OUTPUT:
 Return JSON (include only fields with meaningful data):
 {
   "audio": {  // OMIT this entire field if silence or no audio
+    "emoji": "🎵",
     "transcript": "...",
     "valence": 0.5,
     "arousal": 0.3,
@@ -183,6 +193,7 @@ Return JSON (include only fields with meaningful data):
     "drawCalls": "ctx.beginPath();\\nctx.moveTo(50,20);\\n...\\nctx.stroke();"
   },
   "visual": {  // OMIT this entire field if no meaningful visual
+    "emoji": "😊",
     "description": "...",
     "valence": 0.4,
     "arousal": 0.2,
@@ -243,11 +254,13 @@ CALIBRATION:
 Return JSON:
 {
   "audio": {
+    "emoji": "🎵",
     "transcript": "...",
     "valence": 0.5,
     "arousal": 0.3
   },
   "visual": {
+    "emoji": "😊",
     "description": "...",
     "valence": 0.4,
     "arousal": 0.2
@@ -291,11 +304,13 @@ AROUSAL is the emotional intensity:
 Return JSON:
 {
   "audio": {
+    "emoji": "🎵",
     "transcript": "...",
     "valence": 0.5,
     "arousal": 0.3
   },
   "visual": {
+    "emoji": "😊",
     "description": "...",
     "valence": 0.4,
     "arousal": 0.2
@@ -356,6 +371,7 @@ function init() {
   loadPromptProfile();
   setupEventListeners();
   initializeVisualization();
+  connectToCognizer();
 }
 
 function initializeVisualization() {
@@ -537,6 +553,81 @@ function stopHardware() {
 }
 
 // ============================================
+// SECTION 5.5: Cognizer Integration
+// ============================================
+
+function connectToCognizer() {
+  const url = window.location.origin;
+  
+  console.log('🔌 Connecting to Cognizer...', url);
+  
+  state.cognizerSocket = io(url, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000
+  });
+  
+  state.cognizerSocket.on('connect', () => {
+    console.log('✅ Cognizer socket connected');
+  });
+  
+  state.cognizerSocket.on('sessionStarted', (data) => {
+    console.log('✅ Cognizer session started:', state.sessionId);
+    state.cognizerConnected = true;
+  });
+  
+  state.cognizerSocket.on('perceptReceived', (data) => {
+    console.log('✅ Cognizer acknowledged percept');
+  });
+  
+  state.cognizerSocket.on('disconnect', () => {
+    console.log('⚫ Cognizer disconnected');
+    state.cognizerConnected = false;
+  });
+  
+  state.cognizerSocket.on('connect_error', (error) => {
+    console.error('❌ Cognizer connection error:', error.message);
+  });
+}
+
+function startCognizerSession() {
+  if (!state.cognizerSocket || !state.cognizerSocket.connected) {
+    console.error('❌ Cannot start session: Cognizer not connected');
+    return;
+  }
+  
+  state.sessionId = `perceptor-circumplex-${Date.now()}`;
+  state.cognizerSocket.emit('startSession', { sessionId: state.sessionId });
+  console.log('📤 Starting Cognizer session:', state.sessionId);
+}
+
+function endCognizerSession() {
+  if (state.cognizerSocket && state.sessionId) {
+    state.cognizerSocket.emit('endSession', { sessionId: state.sessionId });
+    console.log('📤 Ended Cognizer session:', state.sessionId);
+    state.cognizerConnected = false;
+    state.sessionId = null;
+  }
+}
+
+function forwardPercept(percept, type) {
+  if (!state.cognizerConnected || !state.cognizerSocket) {
+    console.warn('⚠️ Cognizer not connected, skipping percept');
+    return;
+  }
+  
+  state.cognizerSocket.emit('percept', {
+    sessionId: state.sessionId,
+    type,
+    data: percept,
+    timestamp: new Date().toISOString()
+  });
+  
+  console.log(`→ Forwarded ${type} percept to Cognizer`);
+}
+
+// ============================================
 // SECTION 6: WebSocket Connection
 // ============================================
 
@@ -645,6 +736,9 @@ function requestAnalysis() {
 
 function startStreaming() {
   state.streaming = true;
+  
+  // Start Cognizer session
+  startCognizerSession();
   
   // Start continuous audio streaming
   startAudioStreaming();
@@ -835,6 +929,9 @@ function sendVideoFrame() {
 
 function stopStreaming() {
   state.streaming = false;
+  
+  // End Cognizer session
+  endCognizerSession();
   
   if (state.streamInterval) {
     clearInterval(state.streamInterval);
@@ -1047,7 +1144,8 @@ function updateUI(response) {
     // Create toast
     createPerceptToast(audioPercept, 'audio');
     
-    // TODO: Send to cognizer when integrated
+    // Forward to cognizer
+    forwardPercept(audioPercept, 'audio');
   }
   
   // Send visual percept if we have real visual data
@@ -1082,7 +1180,8 @@ function updateUI(response) {
     // Store for next analysis
     state.lastVisualDescription = response.visual.description;
     
-    // TODO: Send to cognizer when integrated
+    // Forward to cognizer
+    forwardPercept(visualPercept, 'visual');
   }
 }
 
