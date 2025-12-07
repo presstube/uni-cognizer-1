@@ -32,6 +32,13 @@ const DREAM_CYCLE_MS = CYCLE_MS;
 // Prior context depth for LLM
 const PRIOR_CONTEXT_DEPTH = 3;
 
+// Phase offsets (for setTimeout scheduling)
+const SPOOL_OFFSET_MS = PERCEPTS_PHASE_MS;
+const SIGILIN_OFFSET_MS = PERCEPTS_PHASE_MS + SPOOL_PHASE_MS;
+const SIGILHOLD_OFFSET_MS = SIGILIN_OFFSET_MS + SIGILIN_PHASE_MS;
+const SIGILOUT_OFFSET_MS = SIGILHOLD_OFFSET_MS + SIGILHOLD_PHASE_MS;
+const RESET_OFFSET_MS = SIGILOUT_OFFSET_MS + SIGILOUT_PHASE_MS;
+
 export class ConsciousnessLoop {
   constructor(io) {
     this.io = io;
@@ -61,6 +68,13 @@ export class ConsciousnessLoop {
     
     // Track scheduled timeouts for cleanup
     this.phaseTimeouts = [];
+    
+    // Dream cycle cache (for fast random selection)
+    this.dreamCycleCache = [];
+    this.dreamCacheInitialized = false;
+    
+    // Dream loader interval (background loader)
+    this.dreamLoaderInterval = null;
   }
   
   /**
@@ -109,54 +123,63 @@ export class ConsciousnessLoop {
       // Try to load a random mind moment from database
       if (process.env.DATABASE_ENABLED === 'true') {
         const pool = getPool();
-        const result = await pool.query(`
-          SELECT 
-            cycle, mind_moment, sigil_phrase, sigil_code,
-            kinetic, lighting,
-            visual_percepts, audio_percepts,
-            sigil_png_data, sigil_png_width, sigil_png_height
-          FROM mind_moments
-          WHERE sigil_code IS NOT NULL 
-            AND cycle >= 48
-          ORDER BY RANDOM()
-          LIMIT 1
-        `);
         
-        if (result.rows.length > 0) {
-          const row = result.rows[0];
+        // Initialize cache if not already done
+        if (!this.dreamCacheInitialized) {
+          await this.initializeDreamCache();
+        }
+        
+        // Use fast cache approach if available
+        if (this.dreamCycleCache.length > 0) {
+          const randomIndex = Math.floor(Math.random() * this.dreamCycleCache.length);
+          const selectedCycle = this.dreamCycleCache[randomIndex];
           
-          // Convert PNG Buffer if present
-          let png = null;
-          if (row.sigil_png_data) {
-            png = {
-              width: row.sigil_png_width,
-              height: row.sigil_png_height,
-              data: row.sigil_png_data
+          const result = await pool.query(`
+            SELECT 
+              cycle, mind_moment, sigil_phrase, sigil_code,
+              kinetic, lighting,
+              visual_percepts, audio_percepts,
+              sigil_png_data, sigil_png_width, sigil_png_height
+            FROM mind_moments
+            WHERE cycle = $1
+          `, [selectedCycle]);
+          
+          if (result.rows.length > 0) {
+            const row = result.rows[0];
+            
+            // Convert PNG Buffer if present
+            let png = null;
+            if (row.sigil_png_data) {
+              png = {
+                width: row.sigil_png_width,
+                height: row.sigil_png_height,
+                data: row.sigil_png_data
+              };
+            }
+            
+            this.cycleBuffer.placeholder = {
+              cycle: 0, // Always cycle 0 for placeholder
+              mindMoment: row.mind_moment,
+              sigilPhrase: row.sigil_phrase,
+              sigilCode: row.sigil_code,
+              kinetic: row.kinetic || 'SLOW_SWAY',
+              lighting: row.lighting || {
+                color: [100, 150, 200],
+                pattern: "SMOOTH_WAVES",
+                speed: 0.5
+              },
+              visualPercepts: Array.isArray(row.visual_percepts) ? row.visual_percepts : [],
+              audioPercepts: Array.isArray(row.audio_percepts) ? row.audio_percepts : [],
+              priorMoments: [],
+              png,
+              isDream: false,
+              isPlaceholder: true,
+              timestamp: new Date().toISOString()
             };
+            
+            console.log(`🌅 Loaded placeholder from cycle ${row.cycle}: "${row.sigil_phrase}"`);
+            return;
           }
-          
-          this.cycleBuffer.placeholder = {
-            cycle: 0, // Always cycle 0 for placeholder
-            mindMoment: row.mind_moment,
-            sigilPhrase: row.sigil_phrase,
-            sigilCode: row.sigil_code,
-            kinetic: row.kinetic || 'SLOW_SWAY',
-            lighting: row.lighting || {
-              color: [100, 150, 200],
-              pattern: "SMOOTH_WAVES",
-              speed: 0.5
-            },
-            visualPercepts: Array.isArray(row.visual_percepts) ? row.visual_percepts : [],
-            audioPercepts: Array.isArray(row.audio_percepts) ? row.audio_percepts : [],
-            priorMoments: [],
-            png,
-            isDream: false,
-            isPlaceholder: true,
-            timestamp: new Date().toISOString()
-          };
-          
-          console.log(`🌅 Loaded placeholder from cycle ${row.cycle}: "${row.sigil_phrase}"`);
-          return;
         }
       }
       
@@ -204,6 +227,12 @@ export class ConsciousnessLoop {
       // Clear dream dispersal timeouts
       this.dreamTimeouts.forEach(timeout => clearTimeout(timeout));
       this.dreamTimeouts = [];
+      
+      // Clear dream loader interval
+      if (this.dreamLoaderInterval) {
+        clearInterval(this.dreamLoaderInterval);
+        this.dreamLoaderInterval = null;
+      }
       
       // Clear listeners if in LIVE mode
       if (this.mode === 'LIVE') {
@@ -264,8 +293,12 @@ export class ConsciousnessLoop {
     console.log(`💭 Cycle starting: ${dream.cycle} "${dream.sigilPhrase}"`);
     
     // Rotate buffer: current dream is done, next becomes current
-    this.dreamBuffer.current = this.dreamBuffer.next;
-    this.dreamBuffer.next = null;
+    // Only rotate if we have a next dream ready
+    if (this.dreamBuffer.next) {
+      this.dreamBuffer.current = this.dreamBuffer.next;
+      this.dreamBuffer.next = null;
+    }
+    // Otherwise keep current and hope next cycle has next ready
     
     // Schedule all 6 phases with fixed timing (no async, no dependencies)
     
@@ -280,33 +313,33 @@ export class ConsciousnessLoop {
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SPOOL', SPOOL_PHASE_MS, dream.cycle, true);
       console.log(`  💭 SPOOL (${SPOOL_PHASE_MS/1000}s)`);
-    }, PERCEPTS_PHASE_MS));
+    }, SPOOL_OFFSET_MS));
     
     // PHASE 3: SIGILIN at 37s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILIN', SIGILIN_PHASE_MS, dream.cycle, true);
       console.log(`  💭 SIGILIN (${SIGILIN_PHASE_MS/1000}s) - emitting`);
       this.broadcastMoment(dream);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS));
+    }, SIGILIN_OFFSET_MS));
     
     // PHASE 4: SIGILHOLD at 40s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILHOLD', SIGILHOLD_PHASE_MS, dream.cycle, true);
       console.log(`  💭 SIGILHOLD (${SIGILHOLD_PHASE_MS/1000}s)`);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS));
+    }, SIGILHOLD_OFFSET_MS));
     
     // PHASE 5: SIGILOUT at 55s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILOUT', SIGILOUT_PHASE_MS, dream.cycle, true);
       console.log(`  💭 SIGILOUT (${SIGILOUT_PHASE_MS/1000}s)`);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS + SIGILHOLD_PHASE_MS));
+    }, SIGILOUT_OFFSET_MS));
     
     // PHASE 6: RESET at 58s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('RESET', RESET_PHASE_MS, dream.cycle, true);
       console.log(`  💭 RESET (${RESET_PHASE_MS/1000}s)`);
       console.log(`  ✅ Cycle ${dream.cycle} complete`);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS + SIGILHOLD_PHASE_MS + SIGILOUT_PHASE_MS));
+    }, RESET_OFFSET_MS));
   }
   
   /**
@@ -327,14 +360,14 @@ export class ConsciousnessLoop {
       return;
     }
     
-    // Sort chronologically
+    // Sort chronologically (graceful fallback if timestamps invalid)
     try {
       allPercepts.sort((a, b) => 
         new Date(a.timestamp) - new Date(b.timestamp)
       );
     } catch (error) {
-      console.error('⚠️  Failed to sort percepts:', error.message);
-      return;
+      console.warn('⚠️  Failed to sort percepts, using arrival order:', error.message);
+      // Continue with unsorted percepts - still usable
     }
     
     // Calculate timing scale
@@ -371,10 +404,13 @@ export class ConsciousnessLoop {
    * Background dream loader - keeps buffer full
    */
   startDreamLoader() {
+    if (this.dreamLoaderInterval) return; // Already running
+    
     // Check buffer every 5 seconds
-    const loaderInterval = setInterval(() => {
+    this.dreamLoaderInterval = setInterval(() => {
       if (this.mode !== 'DREAM' || !this.intervalId) {
-        clearInterval(loaderInterval);
+        clearInterval(this.dreamLoaderInterval);
+        this.dreamLoaderInterval = null;
         return;
       }
       
@@ -455,49 +491,35 @@ export class ConsciousnessLoop {
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SPOOL', SPOOL_PHASE_MS, moment.cycle, false);
       console.log(`  🧠 SPOOL (${SPOOL_PHASE_MS/1000}s)`);
-    }, PERCEPTS_PHASE_MS));
+    }, SPOOL_OFFSET_MS));
     
     // PHASE 3: SIGILIN at 37s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILIN', SIGILIN_PHASE_MS, moment.cycle, false);
       console.log(`  🧠 SIGILIN (${SIGILIN_PHASE_MS/1000}s) - emitting`);
       this.broadcastMoment(moment);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS));
+    }, SIGILIN_OFFSET_MS));
     
     // PHASE 4: SIGILHOLD at 40s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILHOLD', SIGILHOLD_PHASE_MS, moment.cycle, false);
       console.log(`  🧠 SIGILHOLD (${SIGILHOLD_PHASE_MS/1000}s)`);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS));
+    }, SIGILHOLD_OFFSET_MS));
     
     // PHASE 5: SIGILOUT at 55s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILOUT', SIGILOUT_PHASE_MS, moment.cycle, false);
       console.log(`  🧠 SIGILOUT (${SIGILOUT_PHASE_MS/1000}s)`);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS + SIGILHOLD_PHASE_MS));
+    }, SIGILOUT_OFFSET_MS));
     
     // PHASE 6: RESET at 58s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('RESET', RESET_PHASE_MS, moment.cycle, false);
       console.log(`  🧠 RESET (${RESET_PHASE_MS/1000}s)`);
       console.log(`  ✅ Cycle ${nextCycle} complete`);
-    }, PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS + SIGILHOLD_PHASE_MS + SIGILOUT_PHASE_MS));
+    }, RESET_OFFSET_MS));
   }
   
-  /**
-   * PERCEPTS phase for LIVE mode: Display incoming percepts in real-time
-   */
-  async livePerceptsPhase(globalCycle) {
-    this.emitPhase('PERCEPTS', PERCEPTS_PHASE_MS, globalCycle, false);
-    
-    console.log(`  🧠 PERCEPTS phase (${PERCEPTS_PHASE_MS/1000}s) - accumulating`);
-    
-    // Percepts arrive via WebSocket and queue automatically
-    // Just wait for the phase duration
-    await this.sleep(PERCEPTS_PHASE_MS);
-    
-    console.log(`  🧠 PERCEPTS phase complete`);
-  }
   
   /**
    * Start background LLM processing (fire and forget)
@@ -511,8 +533,9 @@ export class ConsciousnessLoop {
         const predictedCycle = getCurrentCycleIndex() + 1;
         console.log(`  🧠 [Cycle ${predictedCycle}] LLM pipeline starting...`);
         
-        // Call existing cognize() function
-        // Note: Results come via setupLiveListeners() callbacks
+        // Fire-and-forget: cognize() triggers LLM calls that emit events
+        // Results captured by setupLiveListeners() and stored in cycleBuffer.ready
+        // They'll be displayed in the NEXT cycle (interleaved A/B pattern)
         await cognize(
           percepts.visual,
           percepts.audio,
@@ -860,13 +883,6 @@ export class ConsciousnessLoop {
       cycleNumber,
       isDream
     });
-  }
-  
-  /**
-   * Sleep helper (returns promise)
-   */
-  sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
   
   /**

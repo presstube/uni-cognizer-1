@@ -8,12 +8,13 @@ WebSocket-based cognitive loop for UNI. Processes visual/audio percepts, generat
 
 ```bash
 npm install
-npm run client:fake    # Mock LLM (no cost)
-# or
-npm run client:local   # Real LLM (costs money)
+npm start
 ```
 
-Opens test client at `http://localhost:8081` connecting to local server.
+Then open your browser to:
+- **Dashboard**: `http://localhost:3001/dashboard`
+- **Perceptor Remote**: `http://localhost:3001/perceptor-remote`
+- **Prompt Editors**: `http://localhost:3001/prompt-editor/personality`
 
 ---
 
@@ -21,11 +22,7 @@ Opens test client at `http://localhost:8081` connecting to local server.
 
 | Command | Purpose |
 |---------|---------|
-| `npm start` | Production server only |
-| `npm run client:fake` | Fake server + test client (mock LLM) |
-| `npm run client:local` | Real server + test client (real LLM) |
-| `npm run client:render` | Test client only (connects to Render) |
-| `npm run test-fake` | Standalone cognitive loop test (terminal) |
+| `npm start` | Start server (all web apps included) |
 | `npm run db:query` | Query mind moments from database |
 | `npm run migrate` | Run database migrations |
 | `npm run db:setup` | Alias for migrate |
@@ -67,20 +64,15 @@ DATABASE_ENABLED=true
 
 **Backend** (Port 3001):
 - WebSocket server (`server.js`)
-- Cognitive loop (`src/main.js` → `src/real-cog.js`)
+- Cognitive loop (`src/consciousness-loop.js`)
 - Database persistence (`src/db/`)
 - Session management (60s timeout)
 
-**Test Client** (`test-client/index.html`):
-- Interactive UI for sending percepts
-- Real-time mind moment display
-- Sigil visualization
-- Cognitive state indicators
-
-**Fake Server** (`src/fake/server.js`):
-- Identical API, mock LLM responses
-- No API costs
-- Full database support
+**Web Apps** (served by backend):
+- `/dashboard` - Read-only cognizer monitor
+- `/perceptor-remote` - User-facing sensing station
+- `/perceptor-circumplex` - Multimodal emotion analysis
+- `/prompt-editor/*` - LLM prompt editors (personality, sigil, visual, audio, sound)
 
 ---
 
@@ -181,26 +173,29 @@ Every mind moment includes:
 ## Key Files
 
 ```
-server.js                  # WebSocket server
+server.js                       # WebSocket server + web app host
 src/
-├── main.js               # Cognitive loop orchestration
-├── real-cog.js           # Real LLM cognition
-├── fake/
-│   ├── server.js         # Fake WebSocket server
-│   ├── cog.js            # Mock cognition
-│   └── main.js           # Standalone test runner
-├── db/                   # Database layer
-│   ├── index.js          # Connection pool
-│   ├── migrate.js        # Migration runner
-│   ├── mind-moments.js   # Repository
-│   └── sessions.js       # Session tracking
-├── cognitive-states.js   # State constants
-├── session-manager.js    # Session lifecycle
-├── personality-uni-v2.js # UNI's tripartite consciousness
-├── providers/            # LLM abstraction
-└── sigil/                # Sigil generation
-test-client/
-└── index.html            # Test client UI
+├── consciousness-loop.js       # 60s consciousness cycle (LIVE/DREAM modes)
+├── real-cog.js                 # LLM cognition pipeline
+├── db/                         # Database layer
+│   ├── index.js                # Connection pool
+│   ├── migrate.js              # Migration runner
+│   ├── mind-moments.js         # Repository
+│   └── sessions.js             # Session tracking
+├── cognitive-states.js         # State constants
+├── session-manager.js          # Session lifecycle
+├── personality-uni-v2.js       # UNI's tripartite consciousness
+├── providers/                  # LLM abstraction (OpenAI, Anthropic, Gemini)
+├── sigil/                      # Sigil generation
+├── sound/                      # Sound generation
+├── percepts/                   # Percept processing
+└── api/                        # REST API endpoints
+web/
+├── dashboard/                  # Main monitor UI
+├── perceptor-remote/           # Sensing station
+├── perceptor-circumplex/       # Emotion analysis
+├── prompt-editor/              # LLM prompt editors
+└── shared/                     # Shared UI components
 ```
 
 ---
@@ -214,10 +209,9 @@ Deployed on Render with:
 - Automatic migrations
 - WebSocket (WSS) support
 
-**Local → Production:**
-```bash
-npm run client:render  # Connects to Render
-```
+**Access Production Web Apps:**
+- Dashboard: `https://uni-cognizer-1.onrender.com/dashboard`
+- Perceptor: `https://uni-cognizer-1.onrender.com/perceptor-remote`
 
 ---
 

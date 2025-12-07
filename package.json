@@ -6,10 +6,6 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test-fake": "node src/fake/main.js",
-    "client:render": "./scripts/client-render.sh",
-    "client:local": "./scripts/client-local.sh",
-    "client:fake": "./scripts/client-fake.sh",
     "db:query": "node scripts/query-mind-moments.js",
     "db:check-priors": "node scripts/check-prior-moments.js",
     "migrate": "node src/db/migrate.js",
