@@ -491,6 +491,84 @@ function connect() {
     updateStateDisplay(state);
   });
   
+  // Phase transitions (new 60s cycle system)
+  socket.on('phase', ({ phase, duration, cycleNumber, isDream }) => {
+    // Guard: ignore in EXPLORING mode
+    if (exploringMode) {
+      console.log('🔒 EXPLORING mode - ignoring phase transition');
+      return;
+    }
+    
+    const durationSec = (duration / 1000).toFixed(1);
+    const modeLabel = isDream ? '💭 DREAM' : '🧠 LIVE';
+    const cycleLabel = `Cycle ${cycleNumber}`;
+    
+    console.log(`┌─────────────────────────────────────────────────`);
+    console.log(`│ ${modeLabel} ${cycleLabel}`);
+    console.log(`│ PHASE: ${phase} (${durationSec}s)`);
+    console.log(`└─────────────────────────────────────────────────`);
+    
+    // Handle phase-specific UI transitions
+    switch (phase) {
+      case 'PERCEPTS':
+        // Percepts will flow in via perceptReceived events
+        // Just ensure we're in collecting state
+        showCollectingState();
+        break;
+        
+      case 'SPOOL':
+        // Systems preparing - no action needed
+        break;
+        
+      case 'SIGILIN':
+        // Clear percept toast pane (percepts move to mind moment display)
+        $percepts.innerHTML = '';
+        console.log('  🧹 Cleared percept toast pane');
+        break;
+        
+      case 'SIGILHOLD':
+        // Sigil should already be drawn (comes via mindMoment/sigil events)
+        // This phase just holds the display
+        break;
+        
+      case 'SIGILOUT':
+        // Clear sigil from main moment card
+        if (currentMomentCard && currentMomentCard.sigil) {
+          currentMomentCard.sigil.clear();
+          console.log('  🧹 Cleared sigil from moment card');
+        }
+        break;
+        
+      case 'RESET':
+        // Clear entire mind moment pane
+        $momentCardContainer.innerHTML = '';
+        $perceptsList.innerHTML = '';
+        $priorMomentsList.innerHTML = '';
+        $lighting.innerHTML = '<span class="lighting-text">—</span>';
+        $timestamp.textContent = '—';
+        $personalityName.textContent = '—';
+        $sigilPromptName.textContent = '—';
+        
+        // Clear PNG display
+        if ($pngDisplay) {
+          $pngDisplay.innerHTML = '';
+          $pngDisplay.classList.add('empty');
+        }
+        $pngStatus.textContent = '—';
+        
+        // Clear percept PNG grid
+        if ($perceptPngsSection) {
+          $perceptPngsSection.style.display = 'none';
+        }
+        
+        currentMomentCard = null;
+        currentSigilCode = null;
+        
+        console.log('  🧹 Cleared mind moment pane');
+        break;
+    }
+  });
+  
   // Session tracking - shows which clients are actively observing
   socket.on('sessionsUpdate', ({ count, sessions }) => {
     console.log('📊 Sessions:', { count, sessions });

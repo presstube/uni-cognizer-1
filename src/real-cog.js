@@ -34,6 +34,11 @@ export async function initializeCycleIndex() {
   }
 }
 
+// Get current cycle index (for phase event coordination)
+export function getCurrentCycleIndex() {
+  return cycleIndex;
+}
+
 // Initialize personality from database
 export async function initializePersonality() {
   if (process.env.DATABASE_ENABLED === 'true') {

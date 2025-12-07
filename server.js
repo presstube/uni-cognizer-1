@@ -216,26 +216,32 @@ class LoopManager {
   sessionStarted(sessionId) {
     this.activeSessions.add(sessionId);
     if (this.activeSessions.size === 1) {
-      this.transitionToLive();
+      this.transitionToLive().catch(err => 
+        console.error('❌ Failed to transition to LIVE:', err)
+      );
     }
   }
   
   sessionEnded(sessionId) {
     this.activeSessions.delete(sessionId);
     if (this.activeSessions.size === 0) {
-      setTimeout(() => this.transitionToDream(), 1000);
+      setTimeout(() => {
+        this.transitionToDream().catch(err =>
+          console.error('❌ Failed to transition to DREAM:', err)
+        );
+      }, 1000);
     }
   }
   
-  transitionToLive() {
+  async transitionToLive() {
     console.log('🚀 FIRST SESSION - STARTING COGNITIVE LOOP');
     process.stdout.write('🚀 COGNITIVE LOOP STARTING NOW\n');
-    this.consciousness.switchMode(ConsciousnessMode.LIVE);
+    await this.consciousness.switchMode(ConsciousnessMode.LIVE);
   }
   
-  transitionToDream() {
+  async transitionToDream() {
     console.log('💭 Returning to dream state (no active sessions)');
-    this.consciousness.switchMode(ConsciousnessMode.DREAM);
+    await this.consciousness.switchMode(ConsciousnessMode.DREAM);
   }
   
   addPercept(percept) {
