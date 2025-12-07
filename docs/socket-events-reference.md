@@ -1,298 +1,334 @@
 # Socket Events Reference
 
-Comprehensive reference for all WebSocket events in Cognizer-1.
+Complete reference for Cognizer-1 WebSocket events.
+
+---
+
+## Architecture
+
+**Unified 60-second consciousness cycle** with 6 phases:
+
+```
+PERCEPTS   (0-35s)   → Sensory input window
+SPOOL      (35-37s)  → Transition buffer
+SIGILIN    (37-40s)  → Emit mind moment + sigil
+SIGILHOLD  (40-55s)  → Display pause
+SIGILOUT   (55-58s)  → Fade out
+RESET      (58-60s)  → Cleanup
+```
+
+**Two modes, identical timing:**
+- **LIVE**: Real-time LLM processing of percepts
+- **DREAM**: Replay historical mind moments from database
+
+---
+
+## Connection
+
+```javascript
+const socket = io('wss://server:3001');
+// Read-only clients: just listen to broadcasts
+// Interactive clients: emit percepts + listen
+```
 
 ---
 
 ## Client → Server Events
 
 ### `startSession`
-**When**: Client wants to start a cognitive session  
-**Payload**:
+Start a cognitive session (interactive clients only).
+
 ```javascript
-{ sessionId: string }
+socket.emit('startSession', { sessionId: 'unique-id' });
 ```
-**Response**: `sessionStarted` event
+
+**Response**: `sessionStarted`
 
 ---
 
 ### `percept`
-**When**: Client submits a percept (visual or audio)  
-**Payload**:
+Submit sensory input (visual or audio).
+
 ```javascript
-{
-  sessionId: string,
+socket.emit('percept', {
+  sessionId: 'unique-id',
   type: 'visual' | 'audio',
   data: {
-    // Visual percept fields:
-    emoji: string,
-    action: string,
-    description: string,
-    sigilPhrase: string,
-    drawCalls: string,              // Canvas drawing code
-    timestamp: string,
+    // Visual fields:
+    emoji, action, description, sigilPhrase, drawCalls, timestamp
     
-    // Audio percept fields:
-    emoji: string,
-    transcript: string,
-    analysis: string,
-    tone: string,
-    sentiment: string,
-    confidence: number,
-    sigilPhrase: string,
-    sigilDrawCalls: string,         // Canvas drawing code
-    timestamp: string
+    // Audio fields:
+    emoji, transcript, analysis, tone, sentiment, 
+    confidence, sigilPhrase, sigilDrawCalls, timestamp
   }
-}
+});
 ```
-**Server Processing**: 
-- Generates 256×256px PNG from drawCalls/sigilDrawCalls
-- Embeds PNG as base64 in percept object
-- Broadcasts `perceptReceived` event with PNG included
+
+Server auto-generates 256×256px PNG from `drawCalls`/`sigilDrawCalls`.
 
 ---
 
 ### `endSession`
-**When**: Client ends their session  
-**Payload**:
+End your session.
+
 ```javascript
-{ sessionId: string }
+socket.emit('endSession', { sessionId: 'unique-id' });
 ```
-**Response**: `sessionEnded` event
 
 ---
 
 ### `ping`
-**When**: Client keepalive  
-**Payload**:
+Keepalive.
+
 ```javascript
-{ sessionId: string }
+socket.emit('ping', { sessionId: 'unique-id' });
 ```
-**Response**: `pong` event
 
----
-
-### `getHistory`
-**When**: Client requests mind moment history  
-**Payload**: None  
-**Response**: `history` event with array of mind moments
+**Response**: `pong`
 
 ---
 
 ### `getCycleStatus`
-**When**: Client requests current cognitive cycle status  
-**Payload**: None  
-**Response**: `cycleStatus` event
+Request current cycle info.
+
+```javascript
+socket.emit('getCycleStatus');
+```
+
+**Response**: `cycleStatus`
 
 ---
 
 ### `getSessionStatus`
-**When**: Client requests active session info  
-**Payload**: None  
-**Response**: `sessionsUpdate` event
+Request active sessions count.
+
+```javascript
+socket.emit('getSessionStatus');
+```
+
+**Response**: `sessionsUpdate`
 
 ---
 
-## Server → Client Events (Broadcasts)
+### `getHistory`
+Request mind moment history.
 
-### `perceptReceived`
-**When**: Server receives and processes a percept  
-**Broadcast**: All clients  
-**Payload**:
 ```javascript
-{
-  sessionId: string,            // 'dream' in DREAMING mode
-  type: 'visual' | 'audio',
-  data: {
-    // All original percept fields, PLUS:
-    pngData: string,            // Base64 PNG (256×256px, white-on-transparent)
-    pngWidth: number,           // 256
-    pngHeight: number           // 256
-  },
-  timestamp: string,
-  originalTimestamp: string,    // Only in dream replay
-  isDream: boolean              // true in DREAMING mode
-}
+socket.emit('getHistory');
 ```
+
+**Response**: `history`
 
 ---
 
-### `mindMoment`
-**When**: Cognitive cycle generates a mind moment  
-**Broadcast**: All clients  
-**Payload**:
-```javascript
-{
-  cycle: number,
-  sessionId: string,
-  mindMoment: string,           // LLM-generated observation
-  sigilPhrase: string,
-  kinetic: object,              // Movement parameters
-  lighting: object,             // Color/brightness
-  visualPercepts: array,        // Array with PNG data embedded
-  audioPercepts: array,         // Array with PNG data embedded
-  priorMoments: array,          // Context from previous cycles
-  timestamp: string,
-  personalityName: string,
-  sigilPromptName: string,
-  llmProvider: string,
-  processingDuration: number,
-  isDream: boolean              // true in DREAMING mode
-}
-```
+## Server → Client Broadcasts
+
+All connected clients receive these events.
 
 ---
 
-### `sigil`
-**When**: Sigil visualization is generated  
-**Broadcast**: All clients  
-**Payload**:
+### `phase`
+**NEW** - Emitted at start of each cycle phase.
+
 ```javascript
 {
-  cycle: number,
-  sessionId: string,
-  sigilCode: string,            // Canvas drawing code
-  sigilPhrase: string,
-  svg: {
-    data: string,               // SVG XML
-    width: number,              // 512
-    height: number              // 512
-  },
-  sdf: {
-    data: array,                // Float32Array SDF field
-    width: number,              // 256
-    height: number              // 256
-  },
-  png: {
-    data: string,               // Base64 PNG (512×512px)
-    width: number,              // 512
-    height: number              // 512
-  },
-  timestamp: string,
-  isDream: boolean              // true in DREAMING mode
+  phase: 'PERCEPTS' | 'SPOOL' | 'SIGILIN' | 'SIGILHOLD' | 'SIGILOUT' | 'RESET',
+  startTime: '2025-12-07T...',
+  duration: 35000,        // milliseconds
+  cycleNumber: 142,
+  isDream: false
 }
 ```
+
+**Use for**: UI timing, animations, progress bars.
 
 ---
 
 ### `cognitiveState`
-**When**: Cognitive state changes  
-**Broadcast**: All clients  
-**Payload**:
+State machine transitions.
+
 ```javascript
 {
   state: 'IDLE' | 'AGGREGATING' | 'COGNIZING' | 'VISUALIZING' | 'DREAMING'
 }
 ```
 
-**State Meanings**:
-- `IDLE` - No active sessions, not dreaming
-- `AGGREGATING` - Waiting for cognitive cycle, collecting percepts
-- `COGNIZING` - LLM processing in progress
-- `VISUALIZING` - Generating sigil visualization
-- `DREAMING` - Replaying historical mind moments (no active sessions)
+**States:**
+- `IDLE` - No sessions, not dreaming
+- `DREAMING` - Replaying historical moments
+- `AGGREGATING` - LIVE mode, collecting percepts
+- `COGNIZING` - LIVE mode, LLM processing
+- `VISUALIZING` - LIVE mode, sigil generation
+
+---
+
+### `perceptReceived`
+Percept acknowledged and processed.
+
+```javascript
+{
+  sessionId: 'abc123' | 'dream',
+  type: 'visual' | 'audio',
+  data: {
+    emoji: '🎨',
+    description: '...',
+    sigilPhrase: '...',
+    pngData: 'base64...',   // 256×256px PNG
+    pngWidth: 256,
+    pngHeight: 256,
+    timestamp: '...',
+    // ... other percept fields
+  },
+  timestamp: '2025-12-07T...',
+  originalTimestamp: '...',  // Only in DREAM mode
+  isDream: false
+}
+```
+
+---
+
+### `mindMoment`
+**Core output** - LLM-generated consciousness reflection.
+
+Emitted during **SIGILIN phase** (37s mark).
+
+```javascript
+{
+  cycle: 142,
+  mindMoment: "I observe shifting patterns...",
+  sigilPhrase: "Emergent harmony in chaos",
+  kinetic: "SLOW_SWAY",
+  lighting: {
+    color: [100, 150, 200],
+    pattern: "SMOOTH_WAVES",
+    speed: 0.5
+  },
+  visualPercepts: [...],   // Includes PNG data
+  audioPercepts: [...],    // Includes PNG data
+  priorMoments: [...],     // 3 recent mind moments
+  timestamp: '2025-12-07T...',
+  isDream: false
+}
+```
+
+---
+
+### `sigil`
+Visual representation of mind moment.
+
+Emitted immediately after `mindMoment`.
+
+```javascript
+{
+  cycle: 142,
+  sigilCode: "ctx.fillStyle='#fff';ctx.arc(256,256,100,0,Math.PI*2);...",
+  sigilPhrase: "Emergent harmony in chaos",
+  png: {
+    data: 'base64...',     // 512×512px PNG
+    width: 512,
+    height: 512
+  },
+  sdf: {                   // Signed distance field (optional)
+    data: 'base64...',     // Float32Array
+    width: 256,
+    height: 256
+  },
+  timestamp: '2025-12-07T...',
+  isDream: false
+}
+```
 
 ---
 
 ### `cycleStarted`
-**When**: New cognitive cycle begins  
-**Broadcast**: All clients  
-**Payload**:
+New cognitive cycle begins.
+
 ```javascript
 {
-  cycle: number,
-  visualPerceptCount: number,
-  audioPerceptCount: number,
-  timestamp: string
+  cycle: 142,
+  visualPerceptCount: 3,
+  audioPerceptCount: 2,
+  timestamp: '2025-12-07T...'
 }
 ```
 
 ---
 
 ### `cycleCompleted`
-**When**: Cognitive cycle finishes successfully  
-**Broadcast**: All clients  
-**Payload**:
+Cycle finished successfully.
+
 ```javascript
 {
-  cycle: number,
-  duration: number,             // milliseconds
-  mindMomentLength: number,     // characters
-  sigilPhraseLength: number,
-  timestamp: string
+  cycle: 142,
+  duration: 4500,           // milliseconds
+  mindMomentLength: 234,    // characters
+  sigilPhraseLength: 24,
+  timestamp: '2025-12-07T...'
 }
 ```
 
 ---
 
 ### `cycleFailed`
-**When**: Cognitive cycle encounters error  
-**Broadcast**: All clients  
-**Payload**:
+Cycle encountered error.
+
 ```javascript
 {
-  cycle: number,
-  error: string,
-  timestamp: string
+  cycle: 142,
+  error: "LLM timeout",
+  timestamp: '2025-12-07T...'
 }
 ```
 
 ---
 
 ### `sigilFailed`
-**When**: Sigil generation fails  
-**Broadcast**: All clients  
-**Payload**:
+Sigil generation failed.
+
 ```javascript
 {
-  cycle: number,
-  error: string,
-  timestamp: string
+  cycle: 142,
+  error: "Canvas rendering error",
+  timestamp: '2025-12-07T...'
 }
 ```
 
 ---
 
 ### `clearDisplay`
-**When**: Dream lifecycle clears UI (DREAMING mode only)  
-**Broadcast**: All clients  
-**Payload**:
+**DREAM mode only** - Clear UI elements.
+
 ```javascript
 {
-  clearPercepts: boolean,       // Clear percept displays
-  clearMindMoment: boolean,     // Clear mind moment display
-  clearSigil: boolean           // Clear sigil display
+  clearPercepts: true,
+  clearMindMoment: true,
+  clearSigil: true
 }
 ```
 
 ---
 
 ### `sessionsUpdate`
-**When**: Active session count changes  
-**Broadcast**: All clients  
-**Payload**:
+Active session count changed.
+
 ```javascript
 {
-  activeSessions: number,
-  sessions: {
-    [sessionId]: {
-      startTime: string,
-      lastActivity: string,
-      perceptCount: number
-    }
-  }
+  count: 2,
+  sessions: [
+    { id: 'session1', status: 'active' },
+    { id: 'session2', status: 'active' }
+  ]
 }
 ```
 
 ---
 
 ### `sessionTimeout`
-**When**: Session expires due to inactivity  
-**Broadcast**: All clients  
-**Payload**:
+Session expired due to inactivity.
+
 ```javascript
 {
-  sessionId: string
+  sessionId: 'abc123'
 }
 ```
 
@@ -300,60 +336,66 @@ Comprehensive reference for all WebSocket events in Cognizer-1.
 
 ## Client-Specific Responses
 
+These only go to the requesting client.
+
+---
+
 ### `sessionStarted`
-**When**: Response to `startSession`  
-**To**: Requesting client only  
-**Payload**:
 ```javascript
 {
-  sessionId: string,
-  startTime: string
+  sessionId: 'unique-id',
+  startTime: '2025-12-07T...'
 }
 ```
 
 ---
 
 ### `sessionEnded`
-**When**: Response to `endSession`  
-**To**: Requesting client only  
-**Payload**:
 ```javascript
 {
-  sessionId: string,
-  endTime: string,
-  perceptCount: number
+  sessionId: 'unique-id',
+  endTime: '2025-12-07T...',
+  perceptCount: 15
 }
 ```
 
 ---
 
 ### `pong`
-**When**: Response to `ping`  
-**To**: Requesting client only  
-**Payload**:
 ```javascript
 {
-  sessionId: string,
-  timestamp: string
+  sessionId: 'unique-id',
+  timestamp: '2025-12-07T...'
+}
+```
+
+---
+
+### `cycleStatus`
+```javascript
+{
+  isRunning: true,
+  mode: 'LIVE' | 'DREAM',
+  intervalMs: 60000,
+  state: 'AGGREGATING',
+  nextCycleAt: '2025-12-07T...' | null,
+  msUntilNextCycle: 45000 | null
 }
 ```
 
 ---
 
 ### `history`
-**When**: Response to `getHistory`  
-**To**: Requesting client only  
-**Payload**:
 ```javascript
 {
-  sessionId: string,
+  sessionId: 'request-id',
   history: [
     {
-      cycle: number,
-      mindMoment: string,
-      sigilPhrase: string,
-      timestamp: string,
-      // ... other mind moment fields
+      cycle: 140,
+      mindMoment: '...',
+      sigilPhrase: '...',
+      timestamp: '...'
+      // ... other fields
     }
   ]
 }
@@ -361,30 +403,10 @@ Comprehensive reference for all WebSocket events in Cognizer-1.
 
 ---
 
-### `cycleStatus`
-**When**: Response to `getCycleStatus`  
-**To**: Requesting client only  
-**Payload**:
-```javascript
-{
-  isRunning: boolean,
-  intervalMs: number,
-  nextCycleAt: string | null,
-  msUntilNextCycle: number | null,
-  state: string,
-  mode: 'LIVE' | 'DREAM'
-}
-```
-
----
-
 ### `error`
-**When**: Client request fails  
-**To**: Requesting client only  
-**Payload**:
 ```javascript
 {
-  message: string
+  message: 'Invalid session'
 }
 ```
 
@@ -392,91 +414,103 @@ Comprehensive reference for all WebSocket events in Cognizer-1.
 
 ## Event Flow Examples
 
-### LIVE Mode Cognitive Cycle
+### DREAM Mode (60s cycle)
+
 ```
-Client → startSession
-Server → sessionStarted
-Server → cognitiveState { state: 'AGGREGATING' }
-
-Client → percept (visual)
-Server → perceptReceived (with PNG)
-
-Client → percept (audio)
-Server → perceptReceived (with PNG)
-
-[5 seconds pass]
-
-Server → cognitiveState { state: 'COGNIZING' }
-Server → cycleStarted
-Server → mindMoment (with percepts including PNGs)
-Server → cognitiveState { state: 'VISUALIZING' }
-Server → sigil (with PNG)
-Server → cognitiveState { state: 'AGGREGATING' }
-Server → cycleCompleted
+0s:   phase { PERCEPTS, 35000ms }
+      → perceptReceived (multiple, dispersed)
+35s:  phase { SPOOL, 2000ms }
+37s:  phase { SIGILIN, 3000ms }
+      → mindMoment { isDream: true }
+      → sigil { isDream: true }
+40s:  phase { SIGILHOLD, 15000ms }
+55s:  phase { SIGILOUT, 3000ms }
+58s:  phase { RESET, 2000ms }
+60s:  [repeat]
 ```
+
+### LIVE Mode (60s cycle with A/B buffering)
+
+```
+0s:   phase { PERCEPTS, 35000ms }
+      [percepts accumulate]
+35s:  [Dump percepts → LLM processing starts]
+      phase { SPOOL, 2000ms }
+37s:  phase { SIGILIN, 3000ms }
+      → mindMoment { cycle: N-1 }   // Previous cycle
+      → sigil { cycle: N-1 }
+40s:  phase { SIGILHOLD, 15000ms }
+55s:  phase { SIGILOUT, 3000ms }
+58s:  phase { RESET, 2000ms }
+60s:  [repeat with cycle N ready]
+```
+
+**Key**: LIVE displays **previous cycle's result** while **current cycle processes in background**.
 
 ---
 
-### DREAM Mode Lifecycle
+## Implementation Notes
+
+### For Read-Only Clients
+
+```javascript
+const socket = io('wss://server:3001');
+
+socket.on('phase', ({ phase, duration }) => {
+  updatePhaseUI(phase, duration);
+});
+
+socket.on('perceptReceived', ({ data }) => {
+  displayPercept(data.pngData);
+});
+
+socket.on('mindMoment', ({ mindMoment, sigilPhrase }) => {
+  displayText(mindMoment, sigilPhrase);
+});
+
+socket.on('sigil', ({ png }) => {
+  displaySigil(png.data);
+});
 ```
-Server → cognitiveState { state: 'DREAMING' }
 
-[Dream starts, 20s cycle]
+### For Interactive Clients
 
-Server → clearDisplay { clearPercepts: true, clearMindMoment: true, clearSigil: true }
-Server → perceptReceived { isDream: true } (multiple, 0-18s)
-Server → mindMoment { isDream: true } (at 20s)
-Server → sigil { isDream: true } (at 20s)
+Same as read-only, plus:
 
-[Dream ends, next cycle starts]
+```javascript
+// Start session
+socket.emit('startSession', { sessionId: generateId() });
+
+// Send percepts
+socket.emit('percept', {
+  sessionId: mySessionId,
+  type: 'visual',
+  data: { /* percept data */ }
+});
+
+// Keepalive every 30s
+setInterval(() => {
+  socket.emit('ping', { sessionId: mySessionId });
+}, 30000);
+
+// End session on disconnect
+window.addEventListener('beforeunload', () => {
+  socket.emit('endSession', { sessionId: mySessionId });
+});
 ```
 
 ---
 
 ## Key Concepts
 
-### Broadcast vs Point-to-Point
-- **Broadcast** (`io.emit()`): All connected clients receive
-- **Point-to-point** (`socket.emit()`): Only requesting client receives
-
-### PNG Generation
-- **Percept PNGs**: Generated on arrival (256×256px)
-- **Sigil PNGs**: Generated after LLM (512×512px)
-- **Format**: Base64-encoded, white-on-transparent
-- **Embedded**: PNGs included in event payloads
-
-### Dream Mode
-- Replays historical mind moments when no sessions active
-- Uses `isDream: true` flag in events
-- SessionId is `'dream'` for dream percepts
-- Follows 20-second lifecycle with timed percept replay
-
-### State Machine
-```
-IDLE ←→ DREAMING (no sessions)
-  ↓
-AGGREGATING (session starts)
-  ↓
-COGNIZING (LLM processing)
-  ↓
-VISUALIZING (sigil generation)
-  ↓
-AGGREGATING (cycle complete)
-```
+- **Static Timing**: Phases run on fixed schedule regardless of LLM speed
+- **Broadcast Everything**: All clients see all events from all sessions
+- **PNG Embedded**: Images pre-rendered as base64, ready to display
+- **`isDream` Flag**: Distinguish between LIVE and DREAM events
+- **No Auth for Read-Only**: Connect and listen without authentication
+- **60s Rhythm**: Sync UI to 6-phase cycle for smooth experience
 
 ---
 
-## Implementation Notes
-
-- All timestamps are ISO 8601 strings
-- PNG data is base64-encoded string
-- Canvas code is JavaScript string (executable with `new Function()`)
-- SDF data is Float32Array serialized to JSON array
-- Session IDs are client-generated unique strings
-- Cycle numbers increment sequentially from database
-- Dream mode uses same event types with `isDream` flag
-
----
-
-**Last Updated**: December 5, 2025  
-**Version**: Cognizer-1 (includes percept PNG feature)
+**Last Updated**: December 7, 2025  
+**Version**: Cognizer-1 (unified consciousness loop with static timing)
