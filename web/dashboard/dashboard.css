@@ -210,10 +210,37 @@ body.exploring-mode .far-right {
   overflow-y: auto;
 }
 
-/* Countdown */
-.countdown {
+/* ============================================
+   Top Strip Value Styling - Unified
+   ============================================ */
+
+/* All top strip values: white, uppercase, not bold */
+.top-status-strip .value {
   font-size: var(--font-size-md);
-  color: var(--color-text-bright);
+  color: #ffffff;
+  text-transform: uppercase;
+  font-weight: normal;
+}
+
+/* Connection status - exception for color (red/green) */
+.value.connection {
+  text-transform: uppercase;
+  font-weight: normal;
+}
+
+.value.connection.connected {
+  color: var(--color-connected);
+}
+
+.value.connection.disconnected {
+  color: var(--color-disconnected);
+}
+
+/* Remove all individual color overrides for mode/phase */
+.value.mode,
+.value.phase,
+.value.next-phase {
+  /* Inherits white color from .top-status-strip .value */
 }
 
 /* Moment Section */

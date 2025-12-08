@@ -128,28 +128,43 @@ All connected clients receive these events.
 ---
 
 ### `phase`
-**NEW** - Emitted at start of each cycle phase.
+**Primary state event** - Emitted at start of each cycle phase.
 
 ```javascript
 {
   phase: 'PERCEPTS' | 'SPOOL' | 'SIGILIN' | 'SIGILHOLD' | 'SIGILOUT' | 'RESET',
-  startTime: '2025-12-07T...',
-  duration: 35000,        // milliseconds
+  mode: 'LIVE' | 'DREAM',     // NEW: Consciousness mode
+  nextPhase: 'SPOOL',          // NEW: Next phase in sequence
+  startTime: '2025-12-08T...',
+  duration: 35000,             // milliseconds
   cycleNumber: 142,
-  isDream: false
+  isDream: false               // DEPRECATED: use 'mode' instead
 }
 ```
 
-**Use for**: UI timing, animations, progress bars.
+**Use for**: 
+- **State display**: `mode` + `phase` = complete consciousness state
+- **Next phase countdown**: Use `nextPhase` and `duration` for "Next: SPOOL (12s)" display
+- **UI timing**: Phase-specific animations and transitions
+- **Data preparation**: SPOOL phase signals data is ready in buffer
 
 **Key phases**:
-- **SPOOL**: Data is ready in buffer - time to preload sound samples, prepare canvases, etc.
-- **SIGILIN**: Broadcast happens - display the fully prepared moment
+- **PERCEPTS** (0-35s): Sensory input collection window
+- **SPOOL** (35-37s): Data ready in buffer - preload resources
+- **SIGILIN** (37-40s): Broadcast complete moment (fully hydrated)
+- **SIGILHOLD** (40-55s): Display pause
+- **SIGILOUT** (55-58s): Fade out
+- **RESET** (58-60s): Cleanup
+
+**State Model**: Mode + Phase = Complete State
+- Display as: `Mode: LIVE | Phase: PERCEPTS | Next: SPOOL (12s)`
 
 ---
 
-### `cognitiveState`
-State machine transitions.
+### `cognitiveState` (DEPRECATED)
+**⚠️ DEPRECATED** - Use `phase` event's `mode` and `phase` fields instead.
+
+State machine transitions (legacy event, kept for backward compatibility).
 
 ```javascript
 {
@@ -157,12 +172,14 @@ State machine transitions.
 }
 ```
 
-**States:**
-- `IDLE` - No sessions, not dreaming
-- `DREAMING` - Replaying historical moments
-- `AGGREGATING` - LIVE mode, collecting percepts
-- `COGNIZING` - LIVE mode, LLM processing
-- `VISUALIZING` - LIVE mode, sigil generation
+**Migration Guide**:
+- `state: 'DREAMING'` → Use `phase` event with `mode: 'DREAM'`
+- `state: 'AGGREGATING'` → Use `phase` event with `mode: 'LIVE'` + `phase: 'PERCEPTS'`
+- `state: 'COGNIZING'` → Background processing detail, not needed for UI
+- `state: 'VISUALIZING'` → Background processing detail, not needed for UI
+- `state: 'IDLE'` → Check if loop is running via `cycleStatus`
+
+**Why deprecated**: The phase system provides more accurate, deterministic state information. The old cognitive states mixed mode (LIVE/DREAM) with internal processing stages (COGNIZING, VISUALIZING) that don't need to be exposed to clients.
 
 ---
 

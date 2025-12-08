@@ -66,15 +66,21 @@ socket.on('mindMoment', (data) => {
 
 ---
 
-### 2. `phase` - Timing & Preparation Events
+### 2. `phase` - Timing & State Display
 
 **When**: Every phase transition (6 times per cycle)
-**Why**: Coordinate timing and preparation across the system
+**Why**: Track consciousness state and coordinate timing
 **Frequency**: 6x per 60s cycle
 
 ```javascript
-socket.on('phase', ({ phase, duration, cycleNumber, isDream }) => {
+socket.on('phase', ({ phase, mode, nextPhase, duration, cycleNumber, isDream }) => {
   // Phases: PERCEPTS → SPOOL → SIGILIN → SIGILHOLD → SIGILOUT → RESET
+  // Mode: 'LIVE' or 'DREAM'
+  
+  // Update state display
+  displayMode(mode);                    // "LIVE" or "DREAM"
+  displayPhase(phase);                  // "PERCEPTS", "SPOOL", etc.
+  displayNextPhase(nextPhase, duration); // "SPOOL (12s)"
   
   switch(phase) {
     case 'SPOOL':
@@ -96,9 +102,17 @@ socket.on('phase', ({ phase, duration, cycleNumber, isDream }) => {
 ```
 
 **Purpose**: 
+- **State display**: Mode + Phase = complete consciousness state
+- **Next phase countdown**: Show "Next: SPOOL (12s)" countdown
 - **SPOOL phase** signals "data is ready, load what you need"
 - Other phases provide visual feedback and timing coordination
 - Makes the system's breathing rhythm visible to users
+
+**Recommended Display**:
+```
+Mode: LIVE | Phase: PERCEPTS | Next: SPOOL (12s)
+Mode: DREAM | Phase: SIGILHOLD | Next: SIGILOUT (8s)
+```
 
 ---
 
@@ -124,25 +138,41 @@ socket.on('perceptReceived', (percept) => {
 
 ---
 
-### 4. `cognitiveState` - State Machine Tracking
+### 4. `cognitiveState` - ⚠️ DEPRECATED
+
+**⚠️ This event is deprecated. Use `phase` event instead.**
 
 **When**: State transitions (less frequent)
-**Why**: Track high-level cognitive state
-**Frequency**: 2-4x per cycle
+**Why**: Legacy state tracking
+**Frequency**: Variable
 
 ```javascript
+// DEPRECATED - use phase event instead
 socket.on('cognitiveState', ({ state }) => {
   // States: IDLE, AGGREGATING, COGNIZING, VISUALIZING, DREAMING
   
-  // Example:
-  // AGGREGATING → percepts accumulating
-  // COGNIZING → LLM call in flight
-  // VISUALIZING → sigil + sound generation
-  // DREAMING → replaying historical moments
+  // Migration:
+  // - DREAMING → use phase.mode === 'DREAM'
+  // - AGGREGATING → use phase.mode === 'LIVE' && phase.phase === 'PERCEPTS'
+  // - COGNIZING/VISUALIZING → background processing, not needed for UI
 });
 ```
 
-**Purpose**: Show users what the cognitive engine is doing. Good for status indicators.
+**Migration**: Use the `phase` event's `mode` and `phase` fields:
+
+```javascript
+socket.on('phase', ({ mode, phase }) => {
+  // Old: state === 'DREAMING'
+  // New: mode === 'DREAM'
+  
+  // Old: state === 'AGGREGATING'
+  // New: mode === 'LIVE' && phase === 'PERCEPTS'
+  
+  // Display: `Mode: ${mode} | Phase: ${phase}`
+});
+```
+
+**Why deprecated**: The phase system provides more accurate, deterministic state. The old states mixed operational mode (LIVE/DREAM) with internal processing stages that don't need UI exposure.
 
 ---
 

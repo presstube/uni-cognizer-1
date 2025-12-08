@@ -8,18 +8,18 @@
  * Both modes produce identical output structure and broadcast identically.
  */
 
-import { CognitiveState } from './cognitive-states.js';
+import { ConsciousnessMode, Phase, PhaseTiming, getNextPhase, CognitiveState } from './cognitive-states.js';
 import { cognize, onMindMoment, onSigil, onSoundBrief, onStateEvent, clearListeners, getCurrentCycleIndex } from './real-cog.js';
 import { getPool } from './db/index.js';
 import { normalizeMindMoment } from './types/mind-moment.js';
 
-// Phase timing constants (for 60s cycle)
-const PERCEPTS_PHASE_MS = 35000;  // 35s
-const SPOOL_PHASE_MS = 2000;      // 2s
-const SIGILIN_PHASE_MS = 3000;    // 3s
-const SIGILHOLD_PHASE_MS = 15000; // 15s
-const SIGILOUT_PHASE_MS = 3000;   // 3s
-const RESET_PHASE_MS = 2000;      // 2s
+// Phase timing constants (for 60s cycle) - use centralized constants
+const PERCEPTS_PHASE_MS = PhaseTiming.PERCEPTS_MS;
+const SPOOL_PHASE_MS = PhaseTiming.SPOOL_MS;
+const SIGILIN_PHASE_MS = PhaseTiming.SIGILIN_MS;
+const SIGILHOLD_PHASE_MS = PhaseTiming.SIGILHOLD_MS;
+const SIGILOUT_PHASE_MS = PhaseTiming.SIGILOUT_MS;
+const RESET_PHASE_MS = PhaseTiming.RESET_MS;
 
 // Total cycle duration (sum of all phases = 60s)
 const CYCLE_MS = PERCEPTS_PHASE_MS + SPOOL_PHASE_MS + SIGILIN_PHASE_MS + 
@@ -44,7 +44,8 @@ export class ConsciousnessLoop {
     this.io = io;
     this.mode = 'DREAM';  // Start in dream mode
     this.intervalId = null;
-    this.currentState = CognitiveState.IDLE;
+    this.currentPhase = null;  // Track current phase
+    this.phaseStartTime = null;  // Track when phase started
     this.dreamTimeouts = [];  // Track dream dispersal timeouts
     
     // Cycle buffer system for LIVE mode (interleaved A/B buffering)
@@ -767,8 +768,6 @@ export class ConsciousnessLoop {
     
     // Mind moment listener
     onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
-      this.currentState = CognitiveState.VISUALIZING;
-      
       // Store partial result
       processingCycle = cycle;
       processingResult = {
@@ -783,9 +782,6 @@ export class ConsciousnessLoop {
         isDream: false,
         isPlaceholder: false
       };
-      
-      // Emit state change
-      this.io.emit('cognitiveState', { state: CognitiveState.VISUALIZING });
     });
     
     // Sigil listener
@@ -810,13 +806,6 @@ export class ConsciousnessLoop {
         
         console.log(`  ✅ [Cycle ${cycle}] Ready for display`);
       }
-      
-      // If loop has stopped, transition to IDLE
-      if (!this.intervalId) {
-        this.currentState = CognitiveState.IDLE;
-        this.io.emit('cognitiveState', { state: CognitiveState.IDLE });
-        console.log('💤 Transitioned to IDLE after in-flight operations');
-      }
     });
     
     // Sound brief listener
@@ -834,29 +823,14 @@ export class ConsciousnessLoop {
       }
     });
     
-    // State event listener
+    // State event listener (keep for cycle events, remove state emissions)
     onStateEvent((eventType, data) => {
       if (eventType === 'cycleStarted') {
-        this.currentState = CognitiveState.COGNIZING;
-        this.io.emit('cognitiveState', { state: CognitiveState.COGNIZING });
         this.io.emit('cycleStarted', data);
       } else if (eventType === 'cycleCompleted') {
-        if (!this.intervalId) {
-          this.currentState = CognitiveState.IDLE;
-          this.io.emit('cognitiveState', { state: CognitiveState.IDLE });
-        } else {
-          this.currentState = CognitiveState.AGGREGATING;
-          this.io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
-        }
         this.io.emit('cycleCompleted', data);
       } else if (eventType === 'cycleFailed') {
-        this.currentState = CognitiveState.AGGREGATING;
-        this.io.emit('cognitiveState', { state: CognitiveState.AGGREGATING });
         this.io.emit('cycleFailed', data);
-      } else if (eventType === 'transitionToIdle') {
-        this.currentState = CognitiveState.IDLE;
-        this.io.emit('cognitiveState', { state: CognitiveState.IDLE });
-        console.log('💤 Transitioned to IDLE after in-flight operations');
       } else if (eventType === 'sigilFailed') {
         this.io.emit('sigilFailed', data);
       }
@@ -896,22 +870,35 @@ export class ConsciousnessLoop {
    * Emit phase event
    */
   emitPhase(phase, duration, cycleNumber, isDream) {
+    const now = new Date().toISOString();
+    const mode = isDream ? ConsciousnessMode.DREAM : ConsciousnessMode.LIVE;
+    const nextPhase = getNextPhase(phase);
+    
+    // Track current phase and start time
+    this.currentPhase = phase;
+    this.phaseStartTime = Date.now();
+    
     this.io.emit('phase', {
       phase,
-      startTime: new Date().toISOString(),
+      mode,              // NEW: Mode field
+      nextPhase,         // NEW: Next phase in sequence
+      startTime: now,
       duration,
       cycleNumber,
-      isDream
+      isDream            // Keep for backward compatibility
     });
   }
   
   /**
-   * Emit current cognitive state
+   * DEPRECATED: Emit current cognitive state
+   * This method is kept for backward compatibility but no longer used internally.
+   * State is now represented by mode + phase combination.
    */
   emitState() {
+    // DEPRECATED - keeping for backward compatibility only
     const state = this.mode === 'DREAM' 
       ? CognitiveState.DREAMING 
-      : this.currentState;
+      : CognitiveState.AGGREGATING;
     
     this.io.emit('cognitiveState', { state });
   }
@@ -933,8 +920,9 @@ export class ConsciousnessLoop {
     return {
       isRunning,
       mode: this.mode,
+      phase: this.currentPhase,
+      phaseStartTime: this.phaseStartTime,
       intervalMs,
-      state: this.mode === 'DREAM' ? CognitiveState.DREAMING : this.currentState,
       nextCycleAt: null,  // Could calculate based on last cycle time if needed
       msUntilNextCycle: null
     };

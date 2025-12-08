@@ -28,13 +28,15 @@ const CONFIG = {
 
 let socket = null;
 let cycleMs = CONFIG.DEFAULT_CYCLE_MS;
-let nextCycleTime = null;
-let countdownInterval = null;
 let currentMomentCard = null;
 let currentSigilCode = null;
 let historyGrid = null;
 let currentPerceptExpanded = null;
-let currentState = 'IDLE';
+let currentMode = 'LIVE';
+let currentPhase = null;
+let phaseStartTime = null;
+let phaseDuration = null;
+let nextPhaseCountdownInterval = null;
 let exploringMode = false; // false = LIVE, true = EXPLORING
 
 // ============================================
@@ -43,8 +45,9 @@ let exploringMode = false; // false = LIVE, true = EXPLORING
 
 const $connection = document.getElementById('connection');
 const $sessions = document.getElementById('sessions');
-const $state = document.getElementById('state');
-const $countdown = document.getElementById('countdown');
+const $mode = document.getElementById('mode');
+const $phase = document.getElementById('phase');
+const $nextPhase = document.getElementById('next-phase');
 const $cycle = document.getElementById('cycle');
 const $center = document.querySelector('.center');
 const $collectingState = document.getElementById('collecting-state');
@@ -364,21 +367,68 @@ window.exitExploringMode = exitExploringMode;
 // ============================================
 
 /**
- * Update cognitive state display with proper styling
+ * Update mode display
  */
-function updateStateDisplay(state) {
-  currentState = state;
-  $state.textContent = state;
-  $state.className = `value state ${state.toLowerCase()}`;
+function updateModeDisplay(mode) {
+  currentMode = mode;
+  $mode.textContent = mode;
+  $mode.className = `value mode ${mode.toLowerCase()}`;
   
-  // Update collecting message based on state
+  // Update collecting message based on mode
   if ($collectingMessage) {
-    if (state === 'DREAMING') {
+    if (mode === 'DREAM') {
       $collectingMessage.textContent = 'Collecting Dream Percepts...';
     } else {
       $collectingMessage.textContent = 'Collecting Percepts...';
     }
   }
+}
+
+/**
+ * Update phase display
+ */
+function updatePhaseDisplay(phase) {
+  currentPhase = phase;
+  $phase.textContent = phase;
+  $phase.className = `value phase ${phase.toLowerCase()}`;
+}
+
+/**
+ * Update next phase countdown display
+ */
+function updateNextPhaseDisplay(nextPhase, timeRemaining) {
+  if (!nextPhase) {
+    $nextPhase.textContent = '—';
+    return;
+  }
+  
+  const seconds = Math.ceil(timeRemaining / 1000);
+  $nextPhase.textContent = `${nextPhase} (${seconds}s)`;
+  $nextPhase.className = `value next-phase ${nextPhase.toLowerCase()}`;
+}
+
+/**
+ * Start next phase countdown
+ */
+function startNextPhaseCountdown(nextPhase, duration) {
+  if (nextPhaseCountdownInterval) {
+    clearInterval(nextPhaseCountdownInterval);
+  }
+  
+  phaseStartTime = Date.now();
+  phaseDuration = duration;
+  
+  nextPhaseCountdownInterval = setInterval(() => {
+    const elapsed = Date.now() - phaseStartTime;
+    const remaining = Math.max(0, phaseDuration - elapsed);
+    
+    updateNextPhaseDisplay(nextPhase, remaining);
+    
+    if (remaining <= 0) {
+      clearInterval(nextPhaseCountdownInterval);
+      nextPhaseCountdownInterval = null;
+    }
+  }, 100);
 }
 
 /**
@@ -398,23 +448,10 @@ function showContentState() {
 }
 
 /**
- * Clear countdown timer and display
- */
-function clearCountdown() {
-  nextCycleTime = null;
-  $countdown.textContent = '—';
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-}
-
-/**
  * Handle the case when no sessions are active
  */
 function handleNoActiveSessions() {
   $sessions.textContent = 'none';
-  clearCountdown();
   
   // Show history when no active session
   document.body.classList.remove('active-session');
@@ -432,7 +469,7 @@ function handleActiveSessions(sessions) {
   }
   
   $sessions.textContent = sessions.map(s => s.id).join(', ');
-  // Request fresh cycle status to sync countdown
+  // Request fresh cycle status to sync displays
   socket.emit('getCycleStatus');
   
   // Hide history when active session
@@ -466,20 +503,14 @@ function connect() {
     historyGrid.loadHistory();
   });
   
-  // Cycle status response - initial sync of countdown and state
-  socket.on('cycleStatus', ({ isRunning, intervalMs, nextCycleAt, state }) => {
-    console.log('📊 Cycle status:', { isRunning, intervalMs, state });
+  // Cycle status response - initial sync of displays
+  socket.on('cycleStatus', ({ isRunning, intervalMs, mode, phase }) => {
+    console.log('📊 Cycle status:', { isRunning, intervalMs, mode, phase });
     cycleMs = intervalMs;
     
-    // Update state display
-    updateStateDisplay(state);
-    
-    if (isRunning && nextCycleAt) {
-      nextCycleTime = nextCycleAt;
-      startCountdown();
-    } else {
-      clearCountdown();
-    }
+    // Update displays
+    if (mode) updateModeDisplay(mode);
+    if (phase) updatePhaseDisplay(phase);
   });
   
   socket.on('disconnect', () => {
@@ -488,14 +519,8 @@ function connect() {
     $connection.className = 'value connection disconnected';
   });
   
-  // Cognitive state updates (from cognitive engine events)
-  socket.on('cognitiveState', ({ state }) => {
-    console.log('🧠 State:', state);
-    updateStateDisplay(state);
-  });
-  
-  // Phase transitions (new 60s cycle system)
-  socket.on('phase', ({ phase, duration, cycleNumber, isDream }) => {
+  // Phase transitions (new 60s cycle system with enhanced fields)
+  socket.on('phase', ({ phase, mode, nextPhase, duration, cycleNumber, isDream }) => {
     // Guard: ignore in EXPLORING mode
     if (exploringMode) {
       console.log('🔒 EXPLORING mode - ignoring phase transition');
@@ -508,8 +533,13 @@ function connect() {
     
     console.log(`┌─────────────────────────────────────────────────`);
     console.log(`│ ${modeLabel} ${cycleLabel}`);
-    console.log(`│ PHASE: ${phase} (${durationSec}s)`);
+    console.log(`│ PHASE: ${phase} (${durationSec}s) → ${nextPhase}`);
     console.log(`└─────────────────────────────────────────────────`);
+    
+    // Update displays
+    updateModeDisplay(mode || (isDream ? 'DREAM' : 'LIVE'));
+    updatePhaseDisplay(phase);
+    startNextPhaseCountdown(nextPhase, duration);
     
     // Handle phase-specific UI transitions
     switch (phase) {
@@ -583,7 +613,7 @@ function connect() {
     }
   });
   
-  // Cycle started - reset countdown and clear old percepts
+  // Cycle started event (kept for compatibility)
   socket.on('cycleStarted', ({ cycle, cognitiveCycleMs }) => {
     console.log('🔄 Cycle started:', cycle);
     
@@ -592,12 +622,9 @@ function connect() {
       cycleMs = parseInt(cognitiveCycleMs, 10) || CONFIG.DEFAULT_CYCLE_MS;
     }
     
-    nextCycleTime = Date.now() + cycleMs;
-    
-    // Don't clear percepts or update countdown in EXPLORING mode
+    // Don't clear percepts in EXPLORING mode
     if (!exploringMode) {
       clearPercepts();
-      startCountdown();
     }
   });
   
@@ -682,8 +709,8 @@ function connect() {
     
     console.log('🎨 Sigil received');
     
-    // In DREAMING mode, clear Latest Percept when sigil arrives
-    if (currentState === 'DREAMING' && currentPerceptExpanded) {
+    // In DREAM mode, clear Latest Percept when sigil arrives
+    if (currentMode === 'DREAM' && currentPerceptExpanded) {
       console.log('💭 Dream sigil: clearing Latest Percept');
       currentPerceptExpanded.remove();
       currentPerceptExpanded = null;
@@ -1141,10 +1168,10 @@ function clearPercepts() {
     currentPerceptExpanded = null;
   }
   
-  // Show waiting message in expanded container based on state
+  // Show waiting message in expanded container based on mode
   const waitingMessage = document.createElement('div');
   waitingMessage.className = 'percept-expanded-waiting';
-  if (currentState === 'DREAMING') {
+  if (currentMode === 'DREAM') {
     waitingMessage.textContent = 'Collecting Dream Percepts...';
   } else {
     waitingMessage.textContent = 'Waiting for percepts...';
