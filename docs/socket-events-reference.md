@@ -10,8 +10,8 @@ Complete reference for Cognizer-1 WebSocket events.
 
 ```
 PERCEPTS   (0-35s)   → Sensory input window
-SPOOL      (35-37s)  → Transition buffer
-SIGILIN    (37-40s)  → Emit mind moment + sigil
+SPOOL      (35-37s)  → Load/prepare phase (data ready in buffer)
+SIGILIN    (37-40s)  → Broadcast mind moment + sigil + sound
 SIGILHOLD  (40-55s)  → Display pause
 SIGILOUT   (55-58s)  → Fade out
 RESET      (58-60s)  → Cleanup
@@ -142,6 +142,10 @@ All connected clients receive these events.
 
 **Use for**: UI timing, animations, progress bars.
 
+**Key phases**:
+- **SPOOL**: Data is ready in buffer - time to preload sound samples, prepare canvases, etc.
+- **SIGILIN**: Broadcast happens - display the fully prepared moment
+
 ---
 
 ### `cognitiveState`
@@ -190,33 +194,70 @@ Percept acknowledged and processed.
 ### `mindMoment`
 **Core output** - LLM-generated consciousness reflection.
 
-Emitted during **SIGILIN phase** (37s mark).
+Emitted during **SIGILIN phase** (37s mark). This is the **fully hydrated** moment including sigil code and sound brief, prepared during the previous cycle's background processing.
 
 ```javascript
 {
   cycle: 142,
   mindMoment: "I observe shifting patterns...",
   sigilPhrase: "Emergent harmony in chaos",
-  kinetic: "SLOW_SWAY",
+  kinetic: {
+    pattern: "SLOW_SWAY",
+    intensity: 0.3
+  },
   lighting: {
-    color: [100, 150, 200],
+    color: "0x6496c8",      // Hex color
     pattern: "SMOOTH_WAVES",
     speed: 0.5
   },
   visualPercepts: [...],   // Includes PNG data
   audioPercepts: [...],    // Includes PNG data
   priorMoments: [...],     // 3 recent mind moments
+  soundBrief: {            // 🆕 Sound generation result
+    valid: true,
+    selections: {
+      music_filename: "music_sample_42",
+      texture_filename: "texture_sample_17",
+      music_volume: 0.7,
+      texture_volume: 0.3,
+      crossfade_duration: 2.0,
+      preset_name: "ambient-reflection"
+    },
+    musicSample: {
+      filename: "music_sample_42",
+      key: "C",
+      scale: "major",
+      bpm: 120,
+      duration: 180,
+      character: "calm"
+    },
+    textureSample: {
+      filename: "texture_sample_17",
+      character: "soft",
+      intensity: 0.4,
+      duration: 60
+    },
+    parameters: {
+      bass_scale: 0.3,
+      melody_scale: 0.6,
+      density: 0.5,
+      sparsity: 0.4
+    },
+    reasoning: "Calm visitor presence suggests gentle ambient soundscape..."
+  },
   timestamp: '2025-12-07T...',
   isDream: false
 }
 ```
+
+**Note**: In LIVE mode, this event broadcasts the **previous cycle's** fully-processed moment (N-1), while the current cycle (N) processes in the background.
 
 ---
 
 ### `sigil`
 Visual representation of mind moment.
 
-Emitted immediately after `mindMoment`.
+Emitted immediately after `mindMoment`. **Note**: The sigil code is also included in the `mindMoment` event, so this event is somewhat redundant for most clients.
 
 ```javascript
 {
@@ -228,7 +269,7 @@ Emitted immediately after `mindMoment`.
     width: 512,
     height: 512
   },
-  sdf: {                   // Signed distance field (optional)
+  sdf: {                   // Signed distance field (optional, not currently generated)
     data: 'base64...',     // Float32Array
     width: 256,
     height: 256
@@ -434,18 +475,22 @@ These only go to the requesting client.
 ```
 0s:   phase { PERCEPTS, 35000ms }
       [percepts accumulate]
-35s:  [Dump percepts → LLM processing starts]
+35s:  [Dump percepts → Background processing starts for cycle N]
       phase { SPOOL, 2000ms }
+      → Cycle N-1 fully ready in buffer (mind moment, sigil, sound brief)
+      → Time to preload/prepare
 37s:  phase { SIGILIN, 3000ms }
-      → mindMoment { cycle: N-1 }   // Previous cycle
+      → mindMoment { cycle: N-1, soundBrief: {...} }   // Previous cycle, complete
       → sigil { cycle: N-1 }
 40s:  phase { SIGILHOLD, 15000ms }
 55s:  phase { SIGILOUT, 3000ms }
 58s:  phase { RESET, 2000ms }
-60s:  [repeat with cycle N ready]
+60s:  [repeat with cycle N now in buffer]
 ```
 
-**Key**: LIVE displays **previous cycle's result** while **current cycle processes in background**.
+**Key**: LIVE displays **previous cycle's result** (N-1) while **current cycle (N) processes in background**. By the time SPOOL fires, the displayed moment is fully hydrated with mind moment, sigil code, and sound brief - all prepared during cycle N-2's background processing.
+
+**Background Processing**: LLM call (~2s) + Sigil generation (~15s) + Sound generation (~2s) = ~17s total. Sigil and sound run in **parallel**, completing well before the next cycle's SPOOL phase.
 
 ---
 
@@ -464,8 +509,13 @@ socket.on('perceptReceived', ({ data }) => {
   displayPercept(data.pngData);
 });
 
-socket.on('mindMoment', ({ mindMoment, sigilPhrase }) => {
+socket.on('mindMoment', ({ mindMoment, sigilPhrase, soundBrief }) => {
   displayText(mindMoment, sigilPhrase);
+  
+  if (soundBrief && soundBrief.valid) {
+    displaySoundBrief(soundBrief);
+    preloadSoundSamples(soundBrief.selections);
+  }
 });
 
 socket.on('sigil', ({ png }) => {
@@ -504,6 +554,9 @@ window.addEventListener('beforeunload', () => {
 ## Key Concepts
 
 - **Static Timing**: Phases run on fixed schedule regardless of LLM speed
+- **Interleaved Processing**: Display cycle N-1 while processing cycle N in background
+- **Fully Hydrated at SPOOL**: Mind moment, sigil, and sound brief all ready by 35s mark
+- **Parallel Generation**: Sigil and sound brief generate simultaneously (~15s max)
 - **Broadcast Everything**: All clients see all events from all sessions
 - **PNG Embedded**: Images pre-rendered as base64, ready to display
 - **`isDream` Flag**: Distinguish between LIVE and DREAM events
@@ -513,4 +566,4 @@ window.addEventListener('beforeunload', () => {
 ---
 
 **Last Updated**: December 7, 2025  
-**Version**: Cognizer-1 (unified consciousness loop with static timing)
+**Version**: Cognizer-1 (unified consciousness loop with static timing + sound brief integration)
