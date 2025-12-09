@@ -711,6 +711,7 @@ export class ConsciousnessLoop {
       sigilCode: moment.sigilCode || null,
       
       circumplex: moment.circumplex,
+      color: moment.color,
       visualPercepts: moment.visualPercepts,
       audioPercepts: moment.audioPercepts,
       priorMoments: moment.priorMoments,
