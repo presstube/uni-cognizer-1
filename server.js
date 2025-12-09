@@ -75,6 +75,9 @@ app.use('/perceptor-circumplex', express.static('web/perceptor-circumplex'));
 // Serve Dashboard (read-only cognizer monitor)
 app.use('/dashboard', express.static('web/dashboard'));
 
+// Serve Test Client (minimal phase-driven test)
+app.use('/test-client', express.static('web/test-client'));
+
 // Serve node_modules for client-side imports
 app.use('/node_modules', express.static('node_modules'));
 

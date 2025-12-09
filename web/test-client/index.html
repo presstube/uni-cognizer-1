@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Client</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../shared/components/sigil-and-phrase/sigil-and-phrase.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #000; 
+      width: 100vw; 
+      height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      overflow: hidden;
+    }
+    #container { 
+      width: 400px; 
+      height: 400px; 
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module">
+    import { SigilAndPhrase } from '../shared/sigil-and-phrase.js';
+    
+    console.log('🟢 Test Client Started');
+    
+    const socket = io();
+    const sap = new SigilAndPhrase({ container: '#container' });
+    
+    let currentPercept = null;
+    let currentMoment = null;
+    let currentPhase = null;
+    
+    socket.on('connect', () => {
+      console.log('🔌 Connected to server');
+    });
+    
+    socket.on('perceptReceived', (data) => {
+      console.log('👁️ perceptReceived:', {
+        type: data.type,
+        phrase: data.data?.sigilPhrase,
+        hasDrawCalls: !!data.data?.drawCalls,
+        isDream: data.isDream
+      });
+      
+      currentPercept = { 
+        phrase: data.data.sigilPhrase, 
+        drawCalls: data.data.drawCalls 
+      };
+      
+      console.log('  ✅ Cached percept:', currentPercept.phrase);
+      
+      // Render immediately if we're in PERCEPTS phase
+      if (currentPhase === 'PERCEPTS' && currentPercept.drawCalls) {
+        console.log('  → Rendering percept NOW (in PERCEPTS phase)');
+        sap.render(currentPercept);
+      } else if (!currentPercept.drawCalls) {
+        console.log('  ⚠️  No drawCalls (audio percept?)');
+      }
+    });
+    
+    socket.on('mindMoment', (data) => {
+      console.log('🧠 mindMoment:', {
+        cycle: data.cycle,
+        phrase: data.sigilPhrase,
+        hasCode: !!data.sigilCode,
+        isDream: data.isDream
+      });
+      
+      currentMoment = { 
+        phrase: data.sigilPhrase, 
+        drawCalls: data.sigilCode 
+      };
+      
+      console.log('  ✅ Cached moment:', currentMoment.phrase);
+    });
+    
+    socket.on('phase', ({ phase, mode, cycleNumber }) => {
+      currentPhase = phase;
+      console.log(`⏱️  PHASE: ${phase} | Mode: ${mode} | Cycle: ${cycleNumber}`);
+      
+      switch(phase) {
+        case 'PERCEPTS':
+          console.log('  → Entered PERCEPTS phase (waiting for percepts...)');
+          break;
+        case 'SPOOL':
+          console.log('  → Clearing (awaiting)');
+          sap.awaiting();
+          break;
+        case 'SIGILIN':
+          if (currentMoment) {
+            console.log('  → Rendering moment:', currentMoment.phrase);
+            sap.render(currentMoment);
+          } else {
+            console.log('  ⚠️  No moment to render');
+          }
+          break;
+        case 'SIGILOUT':
+          console.log('  → Clearing (awaiting)');
+          sap.awaiting();
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
