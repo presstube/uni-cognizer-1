@@ -36,46 +36,6 @@ video {
   gap: 6px;
 }
 
-.prompt-profile-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.prompt-profile-group label {
-  font-size: var(--font-size-xs);
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-#prompt-profile-select {
-  background: rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: var(--space-sm);
-  font-size: var(--font-size-sm);
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-#prompt-profile-select:hover {
-  background: rgba(0, 0, 0, 0.9);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-#prompt-profile-select:focus {
-  outline: none;
-  border-color: rgba(0, 128, 255, 0.75);
-}
-
-#prompt-profile-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 #toggle-btn {
   background: rgba(0, 0, 0, 0.75);
   border: none;

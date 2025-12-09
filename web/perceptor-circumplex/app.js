@@ -25,9 +25,6 @@ const state = {
   // API Key
   apiKey: null,
   
-  // Prompt Profile
-  promptProfile: 'guided',  // default
-  
   // Audio buffer
   pcmBuffer: [],
   
@@ -48,48 +45,10 @@ const state = {
 };
 
 // ============================================
-// SECTION 2: System Prompt Profiles
+// SECTION 2: System Prompt
 // ============================================
 
-const SYSTEM_PROMPTS = {
-  minimal: {
-    name: 'Minimal (Original)',
-    prompt: `You are analyzing a real-time audio and video stream.
-
-For AUDIO, provide:
-- emoji: Single emoji representing the sonic/emotional moment
-- transcript: What you hear (speech, humming, singing, sounds, or "silence")
-- valence: -1 (negative) to +1 (positive) emotional tone
-- arousal: -1 (calm) to +1 (energized) energy level
-
-For VISUAL, provide:
-- emoji: Single emoji representing the visual/emotional moment
-- description: What you see the person doing
-- valence: -1 (negative) to +1 (positive) emotional tone
-- arousal: -1 (calm) to +1 (energized) energy level
-
-Return JSON:
-{
-  "audio": {
-    "emoji": "🎵",
-    "transcript": "...",
-    "valence": 0.5,
-    "arousal": 0.3
-  },
-  "visual": {
-    "emoji": "😊",
-    "description": "...",
-    "valence": 0.4,
-    "arousal": 0.2
-  }
-}
-
-Analyze both audio and visual. Include non-verbal sounds like humming and breathing.`
-  },
-  
-  guided: {
-    name: 'Guided (Recommended)',
-    prompt: `You are analyzing real-time audio and video to assess emotional state using Russell's Circumplex Model.
+const SYSTEM_PROMPT = `You are analyzing real-time audio and video to assess emotional state using Russell's Circumplex Model.
 
 VALENCE (-1 to +1): Measure pleasure/displeasure
 AROUSAL (-1 to +1): Measure activation/deactivation
@@ -169,12 +128,19 @@ SUBSEQUENT ANALYSES: ONLY describe what has definitively CHANGED or is actively 
 - If nothing has changed in the audio, OMIT the entire "audio" field from your response
 - Do NOT return "NO CHANGES" or similar - simply omit the field entirely
 
-RESPONSE FORMAT - IMPORTANT:
+RESPONSE FORMAT - CRITICAL:
 Return ONLY the modalities that have meaningful data:
 - If audio is silence or absent, OMIT the entire "audio" field
 - If visual has no meaningful information, OMIT the entire "visual" field
 - Return whichever has actual content - could be audio only, visual only, or both if both are meaningful
 - This saves tokens and reduces noise
+
+CIRCUMPLEX COORDINATES - MANDATORY:
+- ALWAYS include BOTH "valence" and "arousal" fields for ANY modality you include
+- If you return an "audio" object, it MUST contain numeric "valence" and "arousal" values
+- If you return a "visual" object, it MUST contain numeric "valence" and "arousal" values
+- These fields are REQUIRED - never omit them if you're including that modality
+- Use 0.0 if the emotion is truly neutral, but ALWAYS include the numeric fields
 
 STRICT JSON OUTPUT:
 - Return ONLY valid JSON, no markdown, no explanations, no preamble
@@ -187,179 +153,22 @@ Return JSON (include only fields with meaningful data):
   "audio": {  // OMIT this entire field if silence or no audio
     "emoji": "🎵",
     "transcript": "...",
-    "valence": 0.5,
-    "arousal": 0.3,
+    "valence": 0.5,     // REQUIRED if audio field is present
+    "arousal": 0.3,     // REQUIRED if audio field is present
     "sigilPhrase": "2-4 word phrase",
     "drawCalls": "ctx.beginPath();\\nctx.moveTo(50,20);\\n...\\nctx.stroke();"
   },
   "visual": {  // OMIT this entire field if no meaningful visual
     "emoji": "😊",
     "description": "...",
-    "valence": 0.4,
-    "arousal": 0.2,
+    "valence": 0.4,     // REQUIRED if visual field is present
+    "arousal": 0.2,     // REQUIRED if visual field is present
     "sigilPhrase": "2-4 word phrase",
     "drawCalls": "ctx.beginPath();\\nctx.moveTo(50,20);\\n...\\nctx.stroke();"
   }
 }
 
-Rate both dimensions independently based on what you observe.`
-  },
-  
-  detailed: {
-    name: 'Detailed (Granular)',
-    prompt: `You are a precision emotional analyzer using Russell's Circumplex Model to assess real-time multimodal inputs.
-
-SCORING FRAMEWORK:
-- VALENCE: -1.0 (very negative) → 0.0 (neutral) → +1.0 (very positive)
-- AROUSAL: -1.0 (very calm/inactive) → 0.0 (moderate) → +1.0 (very energized/activated)
-
-AUDIO ANALYSIS - Consider these factors:
-1. NON-VERBAL SOUNDS (40%): Humming, singing, whistling, breathing patterns, sighs, laughter, groans, vocal sounds
-2. PROSODIC (35%): Pitch variation, volume, speaking rate, rhythm, intonation, melody
-3. LEXICAL (25%): Word choice, semantic content, conversational topics (if speech present)
-
-If NO SPEECH:
-- transcript = describe sounds ("humming", "breathing", "silence", "soft singing", etc.)
-
-VALENCE cues (Audio):
-- Positive (+0.5 to +1.0): Upbeat humming, enthusiastic words, rising intonation, laughter, light breathing
-- Neutral (-0.2 to +0.2): Matter-of-fact speech, steady breathing, minimal affect
-- Negative (-0.5 to -1.0): Groaning, sighs, negative words, flat/falling tone, complaints, heavy breathing
-
-AROUSAL cues (Audio):
-- High (+0.5 to +1.0): Fast speech, loud volume, high pitch, rapid breathing, energetic humming, exclamations
-- Moderate (-0.2 to +0.2): Normal conversational pace and volume, steady breathing
-- Low (-0.5 to -1.0): Slow speech, soft volume, low pitch, long pauses, monotone, slow breathing
-
-VISUAL ANALYSIS - Consider these factors:
-1. FACIAL (50%): Mouth (smile/frown), eyes (wide/narrow), eyebrows (raised/furrowed), overall tension, micro-expressions
-2. BODY (30%): Posture, gesture frequency/size, head movements, openness, proximity
-3. ACTIVITY (20%): Movement speed, stillness vs fidgeting, energy level
-
-VALENCE cues (Visual):
-- Positive (+0.5 to +1.0): Genuine smile (Duchenne), bright eyes, open posture, relaxed face, playful gestures
-- Neutral (-0.2 to +0.2): Relaxed neutral face, normal posture, minimal expression
-- Negative (-0.5 to -1.0): Frown, downturned mouth, furrowed brow, closed/defensive posture, tense face
-
-AROUSAL cues (Visual):
-- High (+0.5 to +1.0): Wide eyes, rapid gestures, quick movements, forward lean, high energy, animated
-- Moderate (-0.2 to +0.2): Normal blinking, occasional gestures, steady posture
-- Low (-0.5 to -1.0): Heavy eyelids, minimal movement, slouched, very still, withdrawn, low energy
-
-CALIBRATION:
-- Use the full -1 to +1 range
-- Be sensitive to subtle changes
-- Audio and visual can diverge (e.g., forced smile with sad voice)
-
-Return JSON:
-{
-  "audio": {
-    "emoji": "🎵",
-    "transcript": "...",
-    "valence": 0.5,
-    "arousal": 0.3
-  },
-  "visual": {
-    "emoji": "😊",
-    "description": "...",
-    "valence": 0.4,
-    "arousal": 0.2
-  }
-}
-
-Analyze objectively and precisely.`
-  },
-  
-  expressive: {
-    name: 'Expressive (Creative)',
-    prompt: `You are an empathetic emotional observer analyzing human expression through audio and video.
-
-Your goal: Capture the emotional landscape using VALENCE (pleasure) and AROUSAL (energy).
-
-AUDIO - Listen for ALL sounds, not just words:
-- VERBAL: What WORDS say (if any speech present)
-- NON-VERBAL: Humming, singing, whistling, breathing, sighs, laughter, groans, vocal sounds
-- What FEELING is in the sounds? (joy, sadness, anger, contentment)
-- What ENERGY is in the voice/sounds? (excited, calm, agitated, subdued)
-- How does the MELODY reveal emotion? (upbeat humming, sad sighing, nervous breathing)
-
-If NO SPEECH: Describe the soundscape ("soft humming", "quiet breathing", "peaceful silence")
-
-VISUAL - Watch for the body's truth:
-- What does the FACE say? (genuine smile vs polite mask, furrowed worry, bright surprise, subtle shifts)
-- What does the BODY show? (open invitation vs closed defense, energized animation vs tired stillness)
-- How does MOVEMENT express? (excited gestures, nervous fidgeting, defeated slumping, confident posture)
-- What are the EYES telling you? (bright engagement, tired distance, worried scanning)
-
-VALENCE is the emotional color:
-- POSITIVE: Warmth, light, openness, pleasure, satisfaction, contentment, playfulness
-- NEGATIVE: Coldness, darkness, tension, displeasure, distress, discomfort, withdrawal
-- Scale: -1 (deeply unpleasant) to +1 (deeply pleasant)
-
-AROUSAL is the emotional intensity:
-- HIGH: Activated, energized, alert, stimulated, pumped, wired, animated
-- LOW: Deactivated, sluggish, drowsy, relaxed, tranquil, still, peaceful
-- Scale: -1 (very low energy) to +1 (very high energy)
-
-Return JSON:
-{
-  "audio": {
-    "emoji": "🎵",
-    "transcript": "...",
-    "valence": 0.5,
-    "arousal": 0.3
-  },
-  "visual": {
-    "emoji": "😊",
-    "description": "...",
-    "valence": 0.4,
-    "arousal": 0.2
-  }
-}
-
-Trust your perception. Small details matter. Feel the emotion, then measure it.`
-  },
-  
-  visualPrimary: {
-    name: 'Visual Primary (Silent OK)',
-    prompt: `You are analyzing real-time video with optional audio.
-
-VISUAL ANALYSIS (primary focus):
-Analyze the person's emotional state from:
-- FACE: Smile, frown, eye openness, eyebrow position, tension, micro-expressions
-- BODY: Posture, gestures, movement speed, openness, proximity
-- ENERGY: Animation level, fidgeting, stillness, intensity
-
-AUDIO ANALYSIS (supplementary):
-If you hear sound (verbal or non-verbal):
-- transcript: Describe it ("speaking happily", "humming", "breathing", "silence", "laughing", "sighing")
-- Rate valence/arousal based on vocal qualities
-
-If audio is silent or unclear:
-- transcript: "silence" or "unclear audio"
-- Rate valence/arousal based on visual context
-
-SCORING:
-- VALENCE: -1 (negative/unpleasant) to +1 (positive/pleasant)
-- AROUSAL: -1 (calm/low energy) to +1 (energized/high energy)
-
-Return JSON:
-{
-  "audio": {
-    "transcript": "silence",
-    "valence": 0.0,
-    "arousal": 0.0
-  },
-  "visual": {
-    "description": "person smiling warmly at camera",
-    "valence": 0.8,
-    "arousal": 0.3
-  }
-}
-
-Prioritize visual analysis. Audio provides additional context when available.`
-  }
-};
+Rate both dimensions independently based on what you observe.`;
 
 // ============================================
 // SECTION 3: Initialization
@@ -368,7 +177,6 @@ Prioritize visual analysis. Audio provides additional context when available.`
 function init() {
   console.log('🚀 Initializing Perceptor Circumplex v2...');
   loadApiKey();
-  loadPromptProfile();
   setupEventListeners();
   initializeVisualization();
   connectToCognizer();
@@ -415,32 +223,6 @@ function saveApiKey() {
   }
 }
 
-function loadPromptProfile() {
-  const stored = localStorage.getItem('promptProfile');
-  const select = document.getElementById('prompt-profile-select');
-  
-  if (stored && SYSTEM_PROMPTS[stored]) {
-    select.value = stored;
-    state.promptProfile = stored;
-    console.log(`💾 Loaded prompt profile: ${SYSTEM_PROMPTS[stored].name}`);
-  } else {
-    // Default to 'guided'
-    select.value = 'guided';
-    state.promptProfile = 'guided';
-  }
-}
-
-function savePromptProfile() {
-  const select = document.getElementById('prompt-profile-select');
-  const value = select.value;
-  
-  if (SYSTEM_PROMPTS[value]) {
-    localStorage.setItem('promptProfile', value);
-    state.promptProfile = value;
-    console.log(`💾 Prompt profile saved: ${SYSTEM_PROMPTS[value].name}`);
-  }
-}
-
 function setupEventListeners() {
   const input = document.getElementById('api-key-input');
   const btn = document.getElementById('toggle-btn');
@@ -462,17 +244,6 @@ function setupEventListeners() {
     if (state.streaming) {
       input.blur();
       console.warn('⚠️ Cannot change API key while streaming');
-    }
-  });
-  
-  // Handle prompt profile change
-  select.addEventListener('change', async () => {
-    savePromptProfile();
-    
-    // If currently streaming, need to reconnect with new prompt
-    if (state.streaming) {
-      console.log('🔄 Prompt changed - reconnecting with new profile...');
-      await reconnectWithNewPrompt();
     }
   });
   
@@ -686,8 +457,6 @@ async function connectGemini() {
 }
 
 function sendSetup() {
-  const currentPrompt = SYSTEM_PROMPTS[state.promptProfile].prompt;
-  
   const setup = {
     setup: {
       model: 'models/gemini-2.0-flash-exp',
@@ -698,13 +467,13 @@ function sendSetup() {
         maxOutputTokens: 2048
       },
       systemInstruction: {
-        parts: [{ text: currentPrompt }]
+        parts: [{ text: SYSTEM_PROMPT }]
       }
     }
   };
   
   state.ws.send(JSON.stringify(setup));
-  console.log(`📋 Setup sent: ${SYSTEM_PROMPTS[state.promptProfile].name}`);
+  console.log('📋 Setup sent with Guided analysis profile');
 }
 
 // Send analysis request after frames
@@ -977,7 +746,7 @@ async function reconnectWithNewPrompt() {
   // Reconnect with new prompt
   await connectGemini();
   
-  console.log(`✅ Reconnected with ${SYSTEM_PROMPTS[state.promptProfile].name} profile`);
+  console.log('✅ Reconnected with Guided analysis profile');
 }
 
 // ============================================
@@ -1117,11 +886,12 @@ function updateUI(response) {
   
   // SPLIT INTO SEPARATE PERCEPTS for cognizer
   
-  // Send audio percept if we have real audio data
+  // Send audio percept if we have real audio data with valid circumplex coordinates
   if (response.audio && 
       response.audio.transcript && 
       response.audio.transcript.toLowerCase() !== 'silence' &&
-      (response.audio.valence !== 0 || response.audio.arousal !== 0)) {
+      typeof response.audio.valence === 'number' &&
+      typeof response.audio.arousal === 'number') {
     
     const audioPercept = {
       type: 'audio',
@@ -1148,13 +918,14 @@ function updateUI(response) {
     forwardPercept(audioPercept, 'audio');
   }
   
-  // Send visual percept if we have real visual data
+  // Send visual percept if we have real visual data with valid circumplex coordinates
   if (response.visual && 
       response.visual.description && 
       !response.visual.description.includes('No visual information') &&
       !response.visual.description.match(/^NO CHANGES?\.?$/i) &&  // Filter "NO CHANGE" / "NO CHANGES"
       response.visual.description.trim().length > 5 &&  // Must be meaningful
-      (response.visual.valence !== 0 || response.visual.arousal !== 0)) {
+      typeof response.visual.valence === 'number' &&
+      typeof response.visual.arousal === 'number') {
     
     const visualPercept = {
       type: 'visual',
