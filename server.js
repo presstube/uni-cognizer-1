@@ -272,6 +272,23 @@ const sessionManager = new SessionManager(SESSION_TIMEOUT_MS, (sessionId) => {
 
 io.on('connection', (socket) => {
   console.log(`🔌 Client connected: ${socket.id}`);
+  
+  // Immediately send current cycle status to newly connected client
+  const status = loopManager.consciousness.getCycleStatus();
+  socket.emit('cycleStatus', status);
+  
+  // Also send current phase if available
+  if (status.phase) {
+    socket.emit('phase', {
+      phase: status.phase,
+      mode: status.mode,
+      nextPhase: null, // Will be updated on next phase transition
+      startTime: new Date(status.phaseStartTime).toISOString(),
+      duration: status.phaseDuration,
+      cycleNumber: null, // Not tracked in status
+      isDream: status.mode === 'DREAM'
+    });
+  }
 
   // Cycle status - available to any client, no session required
   socket.on('getCycleStatus', () => {

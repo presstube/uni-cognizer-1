@@ -1,16 +1,28 @@
 # Client Events Guide - What Clients Should Listen For
 
-## TL;DR - The One Event That Matters
+## TL;DR - The Two Events That Matter
 
-**Clients should primarily listen to the `mindMoment` event at SIGILIN phase (37s mark).**
+**For rendering clients (Unity, web apps):**
+- Listen to `mindMoment` at SPOOL (35s) - get everything in one payload
+- Listen to `phase` for timing/display triggers
 
-**Everything is ready by SPOOL (35s)** - that's when systems should load what they need from the buffer.
-**SIGILIN (37s)** is when the complete moment gets broadcast to clients.
+**For monitoring clients (dashboard):**
+- Listen to `mindMomentInit` (~37s) - get mind moment text ASAP
+- Optional: Listen to `mindMoment` at SPOOL (next cycle) for complete data
 
-At this point, the mind moment is **fully hydrated** with:
+---
+
+## The Two-Event Model
+
+**Everything is ready by SPOOL (35s)** - that's when the complete moment gets broadcast.
+**SIGILIN (37s)** is when you should start displaying/animating the content.
+
+The `mindMoment` event at SPOOL is **fully hydrated** with:
 - ✅ Mind moment text
 - ✅ Sigil phrase
-- ✅ Sigil draw code
+- ✅ **Sigil draw code** (canvas code)
+- ✅ **Sigil PNG** (base64 image)
+- ✅ **Sigil SDF** (optional, for advanced rendering)
 - ✅ Kinetic state
 - ✅ Lighting state
 - ✅ Visual percepts
@@ -24,9 +36,10 @@ At this point, the mind moment is **fully hydrated** with:
 
 ### 1. `mindMoment` - **THE BIG ONE** 🎯
 
-**When**: SIGILIN phase (37s into 60s cycle)
-**Why**: Fully hydrated, complete moment ready for display
+**When**: SPOOL phase (35s into 60s cycle)
+**Why**: Fully hydrated, complete moment ready for preloading/display
 **Frequency**: Once per 60s cycle
+**Modes**: Both LIVE and DREAM
 
 ```javascript
 socket.on('mindMoment', (data) => {
@@ -35,13 +48,27 @@ socket.on('mindMoment', (data) => {
     cycle: 123,
     mindMoment: "UNI observes...",
     sigilPhrase: "ethereal presence",
+    
+    // ✅ SIGIL DATA (complete, ready to render)
     sigilCode: "ctx.beginPath()...",
+    sigilPNG: {
+      width: 512,
+      height: 512,
+      data: "base64..."  // ready for <img> or canvas
+    },
+    sigilSDF: {  // optional, for advanced rendering
+      width: 512,
+      height: 512,
+      data: "base64..."
+    },
+    
     kinetic: { pattern: "gentle", intensity: 0.3 },
     lighting: { color: "#4a90e2", pattern: "pulse", speed: 0.5 },
     visualPercepts: [...],
     audioPercepts: [...],
     priorMoments: [...],
-    soundBrief: {  // 🆕 Now included!
+    
+    soundBrief: {
       selections: {
         music_filename: "music_sample_42",
         texture_filename: "texture_sample_17",
@@ -54,15 +81,60 @@ socket.on('mindMoment', (data) => {
       texture_sample: { character: "soft", ... },
       reasoning: "Calm visitor presence suggests..."
     },
+    
     isDream: false,
-    timestamp: "2025-12-07T..."
+    timestamp: "2025-12-08T..."
   }
   
-  // Now display everything!
+  // Preload everything during SPOOL window
+  preloadAudio(data.soundBrief.selections.music_filename);
+  prepareSigil(data.sigilCode, data.sigilPNG);
 });
 ```
 
-**Purpose**: This is the complete "cognitive moment" ready for any client to render. All parts (mind moment, sigil, sound brief) have been generated and are included.
+**Purpose**: This is the complete "cognitive moment" ready for any client to render. All parts (mind moment, sigil, sound brief, images) are included in one atomic payload.
+
+---
+
+### 1b. `mindMomentInit` - **EARLY NOTIFICATION** 📡
+
+**When**: Immediately when LLM completes (~37s after percepts dump, during previous cycle)
+**Why**: Dashboard gets mind moment text ASAP, before sigil/sound generation
+**Frequency**: Once per cycle
+**Modes**: LIVE only (not in DREAM mode)
+
+```javascript
+socket.on('mindMomentInit', (data) => {
+  // Lightweight early notification:
+  {
+    cycle: 123,
+    mindMoment: "UNI observes...",
+    sigilPhrase: "ethereal presence",
+    kinetic: { pattern: "gentle", intensity: 0.3 },
+    lighting: { color: "#4a90e2", pattern: "pulse", speed: 0.5 },
+    visualPercepts: [...],      // shallow, no PNGs
+    audioPercepts: [...],       // shallow
+    priorMoments: [...],
+    timestamp: "2025-12-08T...",
+    
+    // Status indicators
+    status: {
+      sigilReady: false,        // sigil still generating
+      soundBriefReady: false    // sound brief still generating
+    }
+  }
+  
+  // Show text immediately
+  displayMindMomentText(data.mindMoment);
+  showLoadingIndicators(data.status);
+});
+```
+
+**Purpose**: Gives monitoring tools (dashboard) immediate feedback when LLM completes, without waiting for sigil/sound generation. Rendering clients can ignore this event.
+
+**Who should use this:**
+- ✅ Dashboard / monitoring tools (want early feedback)
+- ❌ Rendering clients (wait for complete `mindMoment` instead)
 
 ---
 
@@ -84,13 +156,13 @@ socket.on('phase', ({ phase, mode, nextPhase, duration, cycleNumber, isDream }) 
   
   switch(phase) {
     case 'SPOOL':
-      // Data is ready in buffer - load what you need!
-      preloadSoundSamples(cycleNumber);
-      prepareCanvasContext();
+      // mindMoment event fires at SPOOL with full data
+      // Use the 2-second SPOOL window to preload resources
       break;
       
     case 'SIGILIN':
-      // Now display/broadcast (mindMoment event will fire)
+      // Now display the content you preloaded during SPOOL
+      displayMindMoment();
       break;
       
     default:
@@ -104,7 +176,8 @@ socket.on('phase', ({ phase, mode, nextPhase, duration, cycleNumber, isDream }) 
 **Purpose**: 
 - **State display**: Mode + Phase = complete consciousness state
 - **Next phase countdown**: Show "Next: SPOOL (12s)" countdown
-- **SPOOL phase** signals "data is ready, load what you need"
+- **SPOOL phase** is when `mindMoment` broadcasts with full data
+- **SIGILIN phase** is when you should start displaying/animating
 - Other phases provide visual feedback and timing coordination
 - Makes the system's breathing rhythm visible to users
 
@@ -138,7 +211,37 @@ socket.on('perceptReceived', (percept) => {
 
 ---
 
-### 4. `cognitiveState` - ⚠️ DEPRECATED
+### 4. `cycleStatus` - Initial State Sync
+
+**When**: Immediately on connection
+**Why**: Get current phase and remaining time when joining mid-cycle
+**Frequency**: Once on connection, or on request via `getCycleStatus` emit
+
+```javascript
+socket.on('cycleStatus', (status) => {
+  // status contains:
+  {
+    isRunning: true,
+    mode: 'LIVE',                // LIVE or DREAM
+    phase: 'SIGILHOLD',          // Current phase
+    phaseStartTime: 1234567890,  // Timestamp when phase started
+    phaseDuration: 15000,        // Total phase duration (ms)
+    msRemainingInPhase: 8234,    // Time left in current phase (ms)
+    intervalMs: 60000            // Total cycle duration
+  }
+  
+  // Start countdown with remaining time
+  if (status.msRemainingInPhase > 0) {
+    startCountdownAt(status.phaseDuration, status.msRemainingInPhase);
+  }
+});
+```
+
+**Purpose**: Allows clients to sync immediately when connecting mid-cycle, showing accurate phase and countdown instead of waiting for next phase transition.
+
+---
+
+### 5. `cognitiveState` - ⚠️ DEPRECATED
 
 **⚠️ This event is deprecated. Use `phase` event instead.**
 
@@ -176,14 +279,16 @@ socket.on('phase', ({ mode, phase }) => {
 
 ---
 
-## Secondary Events (Usually Ignored)
+## Secondary Events
 
-### `sigil` - Redundant (Already in `mindMoment`)
+### `sigil` - **DEPRECATED** ⚠️
+
+**Status**: This event is deprecated. Use `mindMoment` instead which includes all sigil data.
 
 **Why it exists**: Legacy from before unified broadcasting.
 **Should you use it?**: No, use `mindMoment` instead.
 
-The sigil data (code, phrase, PNG) is already included in the `mindMoment` event. This separate event is fired at the same time (SIGILIN) but is redundant for most clients.
+The sigil data (code, phrase, PNG, SDF) is already included in the `mindMoment` event. This separate event is fired at the same time (SPOOL) but is redundant for all clients.
 
 ```javascript
 // ❌ Don't do this (redundant):
@@ -193,9 +298,11 @@ socket.on('sigil', (data) => {
 
 // ✅ Do this instead:
 socket.on('mindMoment', (data) => {
-  displaySigil(data.sigilCode);
+  displaySigil(data.sigilCode, data.sigilPNG);
 });
 ```
+
+**Backward compatibility**: This event is kept for existing clients but will be removed in a future version.
 
 ---
 
@@ -281,25 +388,42 @@ socket.on('mindMoment', (data) => {
 ```javascript
 const socket = io('http://localhost:3456');
 
-// Phase tracking (UI candy)
-socket.on('phase', ({ phase, duration }) => {
-  showPhaseIndicator(phase);
-  startCountdown(duration);
+let currentMoment = null;
+
+// Early notification (optional, for monitoring)
+socket.on('mindMomentInit', (data) => {
+  console.log(`Mind moment ${data.cycle} ready:`, data.mindMoment);
 });
 
-// Live percepts (shows what UNI sees)
+// The main event (complete moment) - fires at SPOOL
+socket.on('mindMoment', (data) => {
+  currentMoment = data;
+  
+  // Preload resources immediately
+  preloadAudio(data.soundBrief.selections.music_filename);
+  preloadAudio(data.soundBrief.selections.texture_filename);
+  prepareSigilCanvas(data.sigilCode);
+  
+  // Could also preload PNG as image
+  if (data.sigilPNG) {
+    preloadImage(`data:image/png;base64,${data.sigilPNG.data}`);
+  }
+});
+
+// Phase tracking (UI candy + display trigger)
+socket.on('phase', ({ phase, mode, duration }) => {
+  showPhaseIndicator(phase, mode);
+  startCountdown(duration);
+  
+  if (phase === 'SIGILIN' && currentMoment) {
+    // Now display the content we preloaded during SPOOL
+    renderCompleteMoment(currentMoment);
+  }
+});
+
+// Live percepts (shows what UNI sees during PERCEPTS phase)
 socket.on('perceptReceived', (percept) => {
   addPerceptToFeed(percept);
-});
-
-// Cognitive state (status indicator)
-socket.on('cognitiveState', ({ state }) => {
-  updateStatusBadge(state);
-});
-
-// The main event (complete moment)
-socket.on('mindMoment', (data) => {
-  renderCompleteMoment(data);
 });
 ```
 
@@ -330,19 +454,47 @@ socket.on('mindMoment', (data) => {
 
 ## Summary
 
-**For most clients, you only need ONE event**:
+**For rendering clients (Unity, web apps):**
 
 ```javascript
 socket.on('mindMoment', (data) => {
-  // Everything you need is here!
-  // Mind moment, sigil, sound brief, percepts, context
-  // All fully hydrated and ready to display
+  // Everything you need is here in one payload!
+  // - Mind moment text
+  // - Sigil code + PNG + SDF
+  // - Sound brief with file selections
+  // - Percepts, kinetic, lighting, context
+  
+  // Preload resources immediately (during SPOOL window)
+  preloadAudio(data.soundBrief.selections.music_filename);
+  preloadAudio(data.soundBrief.selections.texture_filename);
+});
+
+socket.on('phase', ({ phase }) => {
+  if (phase === 'SIGILIN') {
+    displayPreloadedContent();
+  }
 });
 ```
 
-**At SIGILIN (37s), the moment is 100% complete** ✅
+**For monitoring clients (dashboard):**
 
-The other events (`phase`, `perceptReceived`, `cognitiveState`) are optional polish for richer UX.
+```javascript
+// Get early feedback
+socket.on('mindMomentInit', (data) => {
+  displayMindMomentText(data.mindMoment);
+  showLoadingIndicators(data.status);
+});
+
+// Optional: show complete data when ready
+socket.on('mindMoment', (data) => {
+  updateToFullDisplay(data);
+});
+```
+
+**At SPOOL (35s), mindMoment fires with complete payload** ✅  
+**At SIGILIN (37s), you display it** ✅
+
+The other events (`perceptReceived`, `cognitiveState`, `sigil`) are optional or deprecated.
 
 ---
 
@@ -356,13 +508,14 @@ Cycle N:
 35s   PERCEPTS END      (dump percepts → background for Cycle N+1 starts)
       ↓ Background: LLM + Sigil + Sound (~6-8s for Cycle N+1)
       
-35s   SPOOL            ← 🎯 Cycle N data is READY in buffer!
-      ↓                   (prepared during Cycle N-1 @ 35s)
-      ↓                   Systems load from buffer (2s window)
+35s   SPOOL            ← 🎯 mindMoment event fires HERE!
+      ↓                   Cycle N data is READY (prepared during Cycle N-1)
+      ↓                   Clients receive complete moment
+      ↓                   Preload audio, prepare canvases (2s window)
       
-37s   SIGILIN          ← 🎯 mindMoment event fires HERE
-      ↓                   (fully hydrated with EVERYTHING)
-      ↓                   Broadcast to all clients
+37s   SIGILIN          ← 🎯 Display phase begins
+      ↓                   Clients render the preloaded content
+      ↓                   Smooth display (resources already loaded)
       
 40s   SIGILHOLD        (display continues)
       
@@ -373,12 +526,13 @@ Cycle N:
 60s   CYCLE RESTART    (back to 0s, now showing Cycle N+1)
 
 Cycle N+1: SPOOL (@ 35s)
-      ↓ Cycle N+1 is now ready (was prepared @ Cycle N's 35s mark)
+      ↓ mindMoment fires with Cycle N+1 data
+      ↓ Cycle N+1 was prepared during Cycle N's background @ 35s mark
 ```
 
 **Key Timing Points**:
-- **35s (SPOOL)**: Data is ready in buffer - systems load what they need
-- **37s (SIGILIN)**: Broadcast happens - clients receive complete moment
-- **The 2s SPOOL window** (35-37s) is for loading/preparation before display
+- **35s (SPOOL)**: mindMoment event fires - clients receive data and preload resources
+- **37s (SIGILIN)**: Display phase - clients render the preloaded content
+- **The 2s SPOOL window** (35-37s) is for preloading before display begins
 
-**The sweet spot**: By SPOOL at 35s, everything is ready. SIGILIN at 37s broadcasts it! 🎂✨
+**The sweet spot**: mindMoment fires at SPOOL (35s) so you have 2 seconds to preload before display at SIGILIN (37s)! 🎂✨

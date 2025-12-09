@@ -315,14 +315,14 @@ export class ConsciousnessLoop {
     // PHASE 2: SPOOL at 35s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SPOOL', SPOOL_PHASE_MS, dream.cycle, true);
-      console.log(`  💭 SPOOL (${SPOOL_PHASE_MS/1000}s)`);
+      console.log(`  💭 SPOOL (${SPOOL_PHASE_MS/1000}s) - broadcasting moment`);
+      this.broadcastMoment(dream);
     }, SPOOL_OFFSET_MS));
     
     // PHASE 3: SIGILIN at 37s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILIN', SIGILIN_PHASE_MS, dream.cycle, true);
-      console.log(`  💭 SIGILIN (${SIGILIN_PHASE_MS/1000}s) - emitting`);
-      this.broadcastMoment(dream);
+      console.log(`  💭 SIGILIN (${SIGILIN_PHASE_MS/1000}s)`);
     }, SIGILIN_OFFSET_MS));
     
     // PHASE 4: SIGILHOLD at 40s
@@ -493,14 +493,14 @@ export class ConsciousnessLoop {
     // PHASE 2: SPOOL at 35s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SPOOL', SPOOL_PHASE_MS, moment.cycle, false);
-      console.log(`  🧠 SPOOL (${SPOOL_PHASE_MS/1000}s)`);
+      console.log(`  🧠 SPOOL (${SPOOL_PHASE_MS/1000}s) - broadcasting moment`);
+      this.broadcastMoment(moment);
     }, SPOOL_OFFSET_MS));
     
     // PHASE 3: SIGILIN at 37s
     this.phaseTimeouts.push(setTimeout(() => {
       this.emitPhase('SIGILIN', SIGILIN_PHASE_MS, moment.cycle, false);
-      console.log(`  🧠 SIGILIN (${SIGILIN_PHASE_MS/1000}s) - emitting`);
-      this.broadcastMoment(moment);
+      console.log(`  🧠 SIGILIN (${SIGILIN_PHASE_MS/1000}s)`);
     }, SIGILIN_OFFSET_MS));
     
     // PHASE 4: SIGILHOLD at 40s
@@ -711,11 +711,15 @@ export class ConsciousnessLoop {
    * Broadcast a mind moment (works for both LIVE and DREAM)
    */
   broadcastMoment(moment) {
-    // Emit mind moment event
-    this.io.emit('mindMoment', {
+    // Emit mind moment event (fully hydrated with all data)
+    const mindMomentPayload = {
       cycle: moment.cycle,
       mindMoment: moment.mindMoment,
       sigilPhrase: moment.sigilPhrase,
+      
+      // Include sigil data (previously in separate 'sigil' event)
+      sigilCode: moment.sigilCode || null,
+      
       kinetic: moment.kinetic,
       lighting: moment.lighting,
       visualPercepts: moment.visualPercepts,
@@ -724,9 +728,29 @@ export class ConsciousnessLoop {
       soundBrief: moment.soundBrief,
       isDream: moment.isDream,
       timestamp: moment.timestamp || new Date().toISOString()
-    });
+    };
     
-    // Emit sigil event (if available)
+    // Add PNG if available (base64 encoded)
+    if (moment.png && moment.png.data) {
+      mindMomentPayload.sigilPNG = {
+        width: moment.png.width,
+        height: moment.png.height,
+        data: Buffer.from(moment.png.data).toString('base64')
+      };
+    }
+    
+    // Add SDF if available (base64 encoded, optional for advanced rendering)
+    if (moment.sdf && moment.sdf.data) {
+      mindMomentPayload.sigilSDF = {
+        width: moment.sdf.width,
+        height: moment.sdf.height,
+        data: Buffer.from(moment.sdf.data).toString('base64')
+      };
+    }
+    
+    this.io.emit('mindMoment', mindMomentPayload);
+    
+    // Emit sigil event for backward compatibility (DEPRECATED)
     if (moment.sigilCode) {
       const sigilData = {
         cycle: moment.cycle,
@@ -782,6 +806,24 @@ export class ConsciousnessLoop {
         isDream: false,
         isPlaceholder: false
       };
+      
+      // 🆕 Fire early notification (LIVE mode only)
+      // Dashboard gets mind moment text immediately, before sigil/sound generation
+      this.io.emit('mindMomentInit', {
+        cycle,
+        mindMoment,
+        sigilPhrase,
+        kinetic,
+        lighting,
+        visualPercepts,      // shallow copy, no PNGs yet
+        audioPercepts,       // shallow copy
+        priorMoments,
+        timestamp: new Date().toISOString(),
+        status: {
+          sigilReady: false,
+          soundBriefReady: false
+        }
+      });
     });
     
     // Sigil listener
@@ -917,11 +959,47 @@ export class ConsciousnessLoop {
     const isRunning = this.intervalId !== null;
     const intervalMs = this.mode === 'DREAM' ? DREAM_CYCLE_MS : LIVE_CYCLE_MS;
     
+    // Calculate time remaining in current phase
+    let msRemainingInPhase = null;
+    let phaseDurationMs = null;
+    
+    if (this.currentPhase && this.phaseStartTime) {
+      const elapsed = Date.now() - this.phaseStartTime;
+      
+      // Get duration for current phase
+      switch (this.currentPhase) {
+        case 'PERCEPTS':
+          phaseDurationMs = PERCEPTS_PHASE_MS;
+          break;
+        case 'SPOOL':
+          phaseDurationMs = SPOOL_PHASE_MS;
+          break;
+        case 'SIGILIN':
+          phaseDurationMs = SIGILIN_PHASE_MS;
+          break;
+        case 'SIGILHOLD':
+          phaseDurationMs = SIGILHOLD_PHASE_MS;
+          break;
+        case 'SIGILOUT':
+          phaseDurationMs = SIGILOUT_PHASE_MS;
+          break;
+        case 'RESET':
+          phaseDurationMs = RESET_PHASE_MS;
+          break;
+      }
+      
+      if (phaseDurationMs) {
+        msRemainingInPhase = Math.max(0, phaseDurationMs - elapsed);
+      }
+    }
+    
     return {
       isRunning,
       mode: this.mode,
       phase: this.currentPhase,
       phaseStartTime: this.phaseStartTime,
+      phaseDuration: phaseDurationMs,
+      msRemainingInPhase,
       intervalMs,
       nextCycleAt: null,  // Could calculate based on last cycle time if needed
       msUntilNextCycle: null

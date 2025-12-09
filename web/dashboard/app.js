@@ -410,14 +410,24 @@ function updateNextPhaseDisplay(nextPhase, timeRemaining) {
 
 /**
  * Start next phase countdown
+ * @param {string} nextPhase - Next phase name
+ * @param {number} duration - Total phase duration in ms
+ * @param {number} remainingMs - Optional: remaining ms if joining mid-phase
  */
-function startNextPhaseCountdown(nextPhase, duration) {
+function startNextPhaseCountdown(nextPhase, duration, remainingMs = null) {
   if (nextPhaseCountdownInterval) {
     clearInterval(nextPhaseCountdownInterval);
   }
   
-  phaseStartTime = Date.now();
-  phaseDuration = duration;
+  // If remainingMs provided, calculate adjusted start time
+  if (remainingMs !== null && remainingMs > 0) {
+    const elapsed = duration - remainingMs;
+    phaseStartTime = Date.now() - elapsed;
+    phaseDuration = duration;
+  } else {
+    phaseStartTime = Date.now();
+    phaseDuration = duration;
+  }
   
   nextPhaseCountdownInterval = setInterval(() => {
     const elapsed = Date.now() - phaseStartTime;
@@ -505,13 +515,31 @@ function connect() {
   });
   
   // Cycle status response - initial sync of displays
-  socket.on('cycleStatus', ({ isRunning, intervalMs, mode, phase }) => {
-    console.log('📊 Cycle status:', { isRunning, intervalMs, mode, phase });
-    cycleMs = intervalMs;
+  socket.on('cycleStatus', (status) => {
+    console.log('📊 Cycle status:', status);
+    cycleMs = status.intervalMs;
     
     // Update displays
-    if (mode) updateModeDisplay(mode);
-    if (phase) updatePhaseDisplay(phase);
+    if (status.mode) {
+      updateModeDisplay(status.mode);
+      currentMode = status.mode;
+    }
+    
+    if (status.phase) {
+      updatePhaseDisplay(status.phase);
+      currentPhase = status.phase;
+      
+      // Calculate next phase
+      const phaseSequence = ['PERCEPTS', 'SPOOL', 'SIGILIN', 'SIGILHOLD', 'SIGILOUT', 'RESET'];
+      const currentIndex = phaseSequence.indexOf(status.phase);
+      const nextPhase = phaseSequence[(currentIndex + 1) % phaseSequence.length];
+      
+      // Store phase timing for countdown
+      if (status.phaseDuration && status.msRemainingInPhase > 0) {
+        // Start countdown with remaining time
+        startNextPhaseCountdown(nextPhase, status.phaseDuration, status.msRemainingInPhase);
+      }
+    }
   });
   
   socket.on('disconnect', () => {
@@ -640,6 +668,69 @@ function connect() {
     addPercept(data);
   });
   
+  // Mind moment init - early notification when LLM completes (LIVE mode only)
+  socket.on('mindMomentInit', (data) => {
+    // Guard: ignore in EXPLORING mode
+    if (exploringMode) {
+      console.log('🔒 EXPLORING mode - ignoring live mindMomentInit');
+      return;
+    }
+    
+    console.log('⚡ Mind moment init (early):', data.mindMoment?.substring(0, 50) + '...');
+    
+    // Switch to content state (instant)
+    showContentState();
+    
+    // Update cycle
+    $cycle.textContent = data.cycle ? `#${data.cycle}` : '—';
+    
+    // Create/update moment card (without sigil yet)
+    updateMomentCard({
+      mindMoment: data.mindMoment,
+      sigilPhrase: data.sigilPhrase,
+      sigilCode: null // Wait for full mindMoment event
+    });
+    
+    // Display percepts (shallow, no PNGs yet)
+    displayPercepts(data.visualPercepts, data.audioPercepts);
+    
+    // Display prior mind moments
+    displayPriorMoments(data.priorMoments);
+    
+    // Lighting
+    updateLightingDisplay(data.lighting);
+    
+    // Timestamp
+    if (data.timestamp) {
+      const time = new Date(data.timestamp);
+      $timestamp.textContent = time.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: true 
+      });
+    } else {
+      $timestamp.textContent = '—';
+    }
+    
+    // Metadata - not available on live events, only from DB
+    $personalityName.textContent = '—';
+    $sigilPromptName.textContent = '—';
+    
+    // Show loading indicators based on status
+    if (data.status) {
+      $pngStatus.textContent = data.status.sigilReady ? 'Ready' : 'Generating sigil...';
+    } else {
+      $pngStatus.textContent = 'Generating...';
+    }
+    
+    // Clear PNG display (will be populated when full mindMoment arrives)
+    if ($pngDisplay) {
+      $pngDisplay.innerHTML = '';
+      $pngDisplay.classList.add('empty');
+    }
+  });
+  
   // Mind moment received - update all fields and create moment card
   socket.on('mindMoment', (data) => {
     // Guard: ignore in EXPLORING mode
@@ -656,11 +747,11 @@ function connect() {
     // Update cycle
     $cycle.textContent = data.cycle ? `#${data.cycle}` : '—';
     
-    // Create/update moment card (will get sigil later)
+    // Create/update moment card with sigil code (now included in mindMoment)
     updateMomentCard({
       mindMoment: data.mindMoment,
       sigilPhrase: data.sigilPhrase,
-      sigilCode: null // Wait for sigil event
+      sigilCode: data.sigilCode // ✅ Now included in mindMoment payload
     });
     
     // Display percepts
@@ -692,11 +783,23 @@ function connect() {
     // Display sound brief (if available)
     displaySoundBrief(data.soundBrief);
     
-    // Clear PNG display (will be populated after sigil generation)
-    $pngStatus.textContent = 'Generating...';
-    if ($pngDisplay) {
-      $pngDisplay.innerHTML = '';
-      $pngDisplay.classList.add('empty');
+    // Display PNG if available
+    if (data.sigilPNG) {
+      displaySigilPNG(data.sigilPNG);
+    } else {
+      $pngStatus.textContent = 'No PNG available';
+      if ($pngDisplay) {
+        $pngDisplay.innerHTML = '';
+        $pngDisplay.classList.add('empty');
+      }
+    }
+    
+    // In DREAM mode, clear Latest Percept when moment arrives
+    if (currentMode === 'DREAM' && currentPerceptExpanded) {
+      console.log('💭 Dream moment: clearing Latest Percept');
+      currentPerceptExpanded.remove();
+      currentPerceptExpanded = null;
+      $perceptExpandedContainer.innerHTML = '';
     }
   });
   
@@ -984,6 +1087,28 @@ function updateLightingDisplay(lighting) {
     <span class="color-swatch" style="background-color: ${cssColor};"></span>
     <span class="lighting-text">${pattern} <span class="lighting-speed">(${speed.toFixed(1)})</span></span>
   `;
+}
+
+/**
+ * Display sigil PNG in dashboard
+ * @param {Object} pngData - PNG data with width, height, data (base64)
+ */
+function displaySigilPNG(pngData) {
+  if (!$pngDisplay || !pngData || !pngData.data) {
+    return;
+  }
+  
+  $pngStatus.textContent = `${pngData.width}×${pngData.height}`;
+  
+  const img = document.createElement('img');
+  img.src = `data:image/png;base64,${pngData.data}`;
+  img.alt = 'Sigil PNG';
+  img.style.maxWidth = '100%';
+  img.style.height = 'auto';
+  
+  $pngDisplay.innerHTML = '';
+  $pngDisplay.appendChild(img);
+  $pngDisplay.classList.remove('empty');
 }
 
 /**
