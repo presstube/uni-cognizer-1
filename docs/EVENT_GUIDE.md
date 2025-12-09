@@ -36,6 +36,43 @@ Simple guide to the two essential events clients should listen for.
 
 ---
 
+## `perceptReceived` Event
+
+**Fired:** As percepts arrive during PERCEPTS phase (0-35s)  
+**Purpose:** Real-time percept stream for live display
+
+### Payload
+
+```javascript
+{
+  sessionId: "session-123" | "dream",
+  type: "visual" | "audio",
+  timestamp: "2025-12-09T...",
+  isDream: false,
+  
+  data: {
+    // Visual percepts
+    sigilPhrase: "Reaching Beyond",
+    drawCalls: "ctx.beginPath()...",    // Canvas code (visual only)
+    pngData: "base64...",               // PNG image (visual only)
+    pngWidth: 256,
+    pngHeight: 256,
+    description: "Text description",
+    valence: 0.4,                       // -1 to 1
+    arousal: 0.3,                       // -1 to 1
+    
+    // Audio percepts
+    transcript: "Hello there",          // Audio only
+    
+    timestamp: "2025-12-09T..."
+  }
+}
+```
+
+**Note:** Audio percepts have no `drawCalls` - only visual percepts can be rendered.
+
+---
+
 ## `mindMoment` Event
 
 **Fired:** At SPOOL phase (35s into cycle)  
@@ -188,26 +225,36 @@ Real payload from cycle 385:
 
 ```javascript
 const socket = io('http://localhost:3456');
+let currentPhase = null;
 
-// Track timing
-socket.on('phase', ({ phase, mode, duration }) => {
-  console.log(`${mode} mode - ${phase} phase (${duration}ms)`);
+// Track phase for conditional rendering
+socket.on('phase', ({ phase, mode }) => {
+  currentPhase = phase;
+  console.log(`${mode} mode - ${phase} phase`);
   
   if (phase === 'SPOOL') {
-    // mindMoment event fires during SPOOL
-    // Use this 2s window to preload resources
+    clearDisplay();
   }
   
   if (phase === 'SIGILIN') {
-    // Display the content you preloaded
+    displayMoment();
   }
 });
 
-// Get complete moment
+// Render percepts as they arrive (during PERCEPTS phase)
+socket.on('perceptReceived', (data) => {
+  if (currentPhase === 'PERCEPTS' && data.data.drawCalls) {
+    renderPercept(data.data);
+  }
+});
+
+// Cache complete moment (fires at SPOOL)
 socket.on('mindMoment', (data) => {
-  // Everything is here: text, sigil, sound, percepts, context
-  preloadResources(data);
+  cacheMoment(data);
 });
 ```
 
-**Key:** `mindMoment` fires at SPOOL with everything ready. Clients preload during SPOOL window (35-37s), then display at SIGILIN (37s+).
+**Key:** 
+- `perceptReceived` fires **during** PERCEPTS phase - render immediately
+- `mindMoment` fires at SPOOL with everything ready - cache for SIGILIN
+- `phase` event coordinates all timing
