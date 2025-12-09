@@ -329,19 +329,22 @@ body.exploring-mode .far-right {
 
 .color-triad-display {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  gap: 12px;
   margin-top: 10px;
+  align-items: flex-start;
 }
 
 .color-swatch-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex: 1;
 }
 
 .color-swatch {
-  width: 60px;
+  width: 100%;
   height: 60px;
   border-radius: 4px;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -349,10 +352,11 @@ body.exploring-mode .far-right {
 }
 
 .color-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
+  width: 100%;
 }
 
 .color-label {
@@ -364,7 +368,7 @@ body.exploring-mode .far-right {
 }
 
 .color-value {
-  font-size: 13px;
+  font-size: 11px;
   font-family: 'Monaco', 'Courier New', monospace;
   color: #fff;
   font-weight: 500;
