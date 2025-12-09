@@ -114,7 +114,19 @@ router.post('/personalities/:id/activate', async (req, res) => {
 // Test personality with mock percepts
 router.post('/personalities/:id/test', async (req, res) => {
   try {
+    console.log('🧪 POST /personalities/:id/test');
+    console.log('   req.params.id:', req.params.id);
+    
     const personality = await personalities.getFullPersonality(req.params.id);
+    
+    console.log('   Fetched personality from DB:', personality ? {
+      id: personality.id,
+      name: personality.name,
+      slug: personality.slug,
+      active: personality.active,
+      promptLength: personality.prompt?.length,
+      promptPreview: personality.prompt?.substring(0, 100) + '...'
+    } : null);
     
     if (!personality) {
       return res.status(404).json({ error: 'Personality not found' });
@@ -145,6 +157,9 @@ Audio: ${audioStr}
 Generate a complete cognitive response as JSON. Be specific about what you notice.
 
 Respond with ONLY valid JSON, nothing else.`;
+    
+    console.log('   Built prompt from personality.prompt');
+    console.log('   Prompt preview:', prompt.substring(0, 150) + '...');
     
     // Use LLM settings from request if provided (UI override), otherwise use saved personality settings
     const effectiveSettings = llmSettings || {
@@ -177,6 +192,9 @@ Respond with ONLY valid JSON, nothing else.`;
     const response = await callLLMDynamic(prompt, llmConfig);
     const text = response.trim();
     
+    console.log('   🤖 Raw LLM response:');
+    console.log(text);
+    
     // Parse response
     let jsonText = text;
     if (text.includes('```json')) {
@@ -187,12 +205,11 @@ Respond with ONLY valid JSON, nothing else.`;
     
     const parsed = JSON.parse(jsonText.trim());
     
-    res.json({
-      mindMoment: parsed.mindMoment || parsed.mind_moment || '',
-      sigilPhrase: parsed.sigilPhrase || parsed.sigil_phrase || null,
-      kinetic: parsed.kinetic || { pattern: 'IDLE' },
-      lighting: parsed.lighting || { color: '0xffffff', pattern: 'IDLE', speed: 0 }
-    });
+    console.log('   📦 Parsed JSON:');
+    console.log(JSON.stringify(parsed, null, 2));
+    
+    // Return exactly what the LLM produced, no defaults
+    res.json(parsed);
     
   } catch (error) {
     console.error(`POST /personalities/${req.params.id}/test error:`, error);

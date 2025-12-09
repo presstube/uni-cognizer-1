@@ -105,8 +105,7 @@ Respond with ONLY valid JSON, nothing else.`;
     return {
       mindMoment: parsed.mindMoment || parsed.mind_moment || '',
       sigilPhrase: parsed.sigilPhrase || parsed.sigil_phrase || null,
-      kinetic: parsed.kinetic || { pattern: 'IDLE' },
-      lighting: parsed.lighting || { color: '0xffffff', pattern: 'IDLE', speed: 0 }
+      circumplex: parsed.circumplex || { valence: 0, arousal: 0 }
     };
   } catch (error) {
     // Fallback to old text parsing format
@@ -117,8 +116,7 @@ Respond with ONLY valid JSON, nothing else.`;
     return {
       mindMoment: mindMomentMatch ? mindMomentMatch[1].trim() : text,
       sigilPhrase: sigilPhraseMatch ? sigilPhraseMatch[1].trim() : null,
-      kinetic: { pattern: 'IDLE' },
-      lighting: { color: '0xffffff', pattern: 'IDLE', speed: 0 }
+      circumplex: { valence: 0, arousal: 0 }
     };
   }
 }
@@ -250,9 +248,9 @@ async function getPriorMindMomentsWithDB(depth) {
   return getPriorMindMoments(depth);
 }
 
-function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) {
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex) {
   mindMomentListeners.forEach(listener => {
-    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting);
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex);
   });
 }
 
@@ -306,8 +304,7 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
     audioPercepts,
     mindMoment: "awaiting",
     sigilPhrase: "awaiting",
-    kinetic: "awaiting",
-    lighting: "awaiting",
+    circumplex: "awaiting",
     sigilCode: "awaiting"
   };
   
@@ -358,8 +355,7 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
       
       cognitiveHistory[thisCycle].mindMoment = result.mindMoment;
       cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
-      cognitiveHistory[thisCycle].kinetic = result.kinetic;
-      cognitiveHistory[thisCycle].lighting = result.lighting;
+      cognitiveHistory[thisCycle].circumplex = result.circumplex;
       
       // Percept PNGs are already generated (at arrival time)
       // No need to generate them here - they're already in the percept objects
@@ -375,8 +371,7 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
           mindMoment: result.mindMoment,
           sigilPhrase: result.sigilPhrase,
           sigilCode: null, // Not yet generated
-          kinetic: result.kinetic,
-          lighting: result.lighting,
+          circumplex: result.circumplex,
           visualPercepts,
           audioPercepts,
           priorMomentIds: priorIds,
@@ -406,14 +401,13 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         console.log(`Sigil Phrase:`);
         console.log(`   "${result.sigilPhrase}"`);
       }
-      console.log(`Kinetic: ${result.kinetic.pattern}`);
-      console.log(`Lighting: ${result.lighting.color} ${result.lighting.pattern} (speed: ${result.lighting.speed})`);
+      console.log(`Circumplex: valence=${result.circumplex.valence}, arousal=${result.circumplex.arousal}`);
       console.log(`Context Depth: ${priorMoments.length}`);
       console.log(`Duration: ${mindMomentDuration}ms`);
       console.log('');
       
       // Emit mind moment event (early notification)
-      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.kinetic, result.lighting);
+      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.circumplex);
       
       // STEP 2 & 3: Generate sigil AND sound brief IN PARALLEL
       // This ensures sound brief completes in time for SPOOL phase
@@ -597,8 +591,7 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         cycle: thisCycle,
         mindMoment: result.mindMoment,
         sigilPhrase: result.sigilPhrase,
-        kinetic: result.kinetic,
-        lighting: result.lighting,
+        circumplex: result.circumplex,
         sigilCode: cognitiveHistory[thisCycle].sigilCode,
         duration: totalDuration,
         timestamp: new Date().toISOString()
@@ -615,8 +608,7 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
       console.error(`\n❌ ERROR in Cycle ${thisCycle}:`, err.message);
       cognitiveHistory[thisCycle].mindMoment = `[error: ${err.message}]`;
       cognitiveHistory[thisCycle].sigilPhrase = null;
-      cognitiveHistory[thisCycle].kinetic = { pattern: 'IDLE' };
-      cognitiveHistory[thisCycle].lighting = { color: '0xff0000', pattern: 'HECTIC_NOISE', speed: 1 };
+      cognitiveHistory[thisCycle].circumplex = { valence: -1, arousal: 1 }; // Error state: negative, aroused
       cognitiveHistory[thisCycle].sigilCode = null;
       
       // Emit cycle failed event

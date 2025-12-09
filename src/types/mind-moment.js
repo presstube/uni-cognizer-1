@@ -11,8 +11,7 @@
  * @property {string} mindMoment - The cognitive observation/reflection
  * @property {string} sigilPhrase - Essence phrase for visualization
  * @property {string|null} sigilCode - Canvas drawing code for sigil
- * @property {Object} kinetic - Movement pattern data
- * @property {Object} lighting - Lighting pattern data
+ * @property {Object} circumplex - Emotional state (valence and arousal axes)
  * @property {Array} visualPercepts - Array of visual percept objects
  * @property {Array} audioPercepts - Array of audio percept objects
  * @property {Array} priorMoments - Array of prior moment references
@@ -29,7 +28,7 @@
  * @returns {boolean} True if valid structure
  */
 export function validateMindMoment(moment) {
-  const required = ['cycle', 'mindMoment', 'sigilPhrase', 'kinetic', 'lighting'];
+  const required = ['cycle', 'mindMoment', 'sigilPhrase', 'circumplex'];
   const hasRequired = required.every(field => moment[field] !== undefined);
   
   if (!hasRequired) {
@@ -52,8 +51,7 @@ export function normalizeMindMoment(data) {
     mindMoment: data.mindMoment || data.mind_moment,
     sigilPhrase: data.sigilPhrase || data.sigil_phrase,
     sigilCode: data.sigilCode || data.sigil_code || null,
-    kinetic: data.kinetic || { pattern: 'IDLE' },
-    lighting: data.lighting || { color: '0xffffff', pattern: 'IDLE', speed: 0 },
+    circumplex: data.circumplex || { valence: 0, arousal: 0 },
     visualPercepts: data.visualPercepts || data.visual_percepts || [],
     audioPercepts: data.audioPercepts || data.audio_percepts || [],
     priorMoments: data.priorMoments || data.prior_moments || data.priorMomentIds || data.prior_moment_ids || [],

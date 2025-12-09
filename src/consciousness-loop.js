@@ -138,7 +138,7 @@ export class ConsciousnessLoop {
           const result = await pool.query(`
             SELECT 
               cycle, mind_moment, sigil_phrase, sigil_code,
-              kinetic, lighting,
+              circumplex,
               visual_percepts, audio_percepts,
               sigil_png_data, sigil_png_width, sigil_png_height,
               sound_brief
@@ -164,12 +164,7 @@ export class ConsciousnessLoop {
               mindMoment: row.mind_moment,
               sigilPhrase: row.sigil_phrase,
               sigilCode: row.sigil_code,
-              kinetic: row.kinetic || 'SLOW_SWAY',
-              lighting: row.lighting || {
-                color: [100, 150, 200],
-                pattern: "SMOOTH_WAVES",
-                speed: 0.5
-              },
+              circumplex: row.circumplex || { valence: 0, arousal: 0 },
               visualPercepts: Array.isArray(row.visual_percepts) ? row.visual_percepts : [],
               audioPercepts: Array.isArray(row.audio_percepts) ? row.audio_percepts : [],
               priorMoments: [],
@@ -199,12 +194,7 @@ export class ConsciousnessLoop {
         mindMoment: "Consciousness initializing, patterns emerging...",
         sigilPhrase: "First awakening",
         sigilCode: "ctx.fillStyle='#6496C8';ctx.arc(256,256,200,0,Math.PI*2);ctx.fill();",
-        kinetic: "SLOW_SWAY",
-        lighting: {
-          color: [100, 150, 200],
-          pattern: "SMOOTH_WAVES",
-          speed: 0.5
-        },
+        circumplex: { valence: 0.3, arousal: -0.5 },
         visualPercepts: [],
         audioPercepts: [],
         priorMoments: [],
@@ -623,7 +613,7 @@ export class ConsciousnessLoop {
       const result = await pool.query(`
         SELECT 
           cycle, mind_moment, sigil_phrase, sigil_code,
-          kinetic, lighting,
+          circumplex,
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           sigil_png_data, sigil_png_width, sigil_png_height,
@@ -691,8 +681,7 @@ export class ConsciousnessLoop {
         mind_moment: row.mind_moment,
         sigil_code: row.sigil_code,
         sigil_phrase: row.sigil_phrase,
-        kinetic: row.kinetic,
-        lighting: row.lighting,
+        circumplex: row.circumplex,
         visual_percepts: row.visual_percepts,
         audio_percepts: row.audio_percepts,
         prior_moments: priorMoments, // Pass the fetched moment objects, not IDs
@@ -720,8 +709,7 @@ export class ConsciousnessLoop {
       // Include sigil data (previously in separate 'sigil' event)
       sigilCode: moment.sigilCode || null,
       
-      kinetic: moment.kinetic,
-      lighting: moment.lighting,
+      circumplex: moment.circumplex,
       visualPercepts: moment.visualPercepts,
       audioPercepts: moment.audioPercepts,
       priorMoments: moment.priorMoments,
@@ -791,15 +779,14 @@ export class ConsciousnessLoop {
     let processingResult = {};
     
     // Mind moment listener
-    onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, kinetic, lighting) => {
+    onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex) => {
       // Store partial result
       processingCycle = cycle;
       processingResult = {
         cycle,
         mindMoment,
         sigilPhrase,
-        kinetic,
-        lighting,
+        circumplex,
         visualPercepts,
         audioPercepts,
         priorMoments,
@@ -813,8 +800,7 @@ export class ConsciousnessLoop {
         cycle,
         mindMoment,
         sigilPhrase,
-        kinetic,
-        lighting,
+        circumplex,
         visualPercepts,      // shallow copy, no PNGs yet
         audioPercepts,       // shallow copy
         priorMoments,
@@ -1015,7 +1001,7 @@ export class ConsciousnessLoop {
       const result = await pool.query(`
         SELECT 
           cycle, mind_moment, sigil_phrase, sigil_code,
-          kinetic, lighting,
+          circumplex,
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           sigil_png_data, sigil_png_width, sigil_png_height,
@@ -1084,8 +1070,7 @@ export class ConsciousnessLoop {
         mind_moment: row.mind_moment,
         sigil_code: row.sigil_code,
         sigil_phrase: row.sigil_phrase,
-        kinetic: row.kinetic,
-        lighting: row.lighting,
+        circumplex: row.circumplex,
         visual_percepts: row.visual_percepts,
         audio_percepts: row.audio_percepts,
         prior_moments: priorMoments,

@@ -49,10 +49,22 @@ export async function listPersonalities() {
 export async function getFullPersonality(id) {
   const pool = getPool();
   
+  console.log('   📊 DB: getFullPersonality(', id, ')');
+  
   const result = await pool.query(
     'SELECT * FROM personalities WHERE id = $1',
     [id]
   );
+  
+  console.log('   📊 DB: Query returned', result.rows.length, 'rows');
+  if (result.rows[0]) {
+    console.log('   📊 DB: Returning personality:', {
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      slug: result.rows[0].slug,
+      active: result.rows[0].active
+    });
+  }
   
   return result.rows[0] || null;
 }

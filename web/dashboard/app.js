@@ -9,6 +9,7 @@ import { MomentCardHero } from '../shared/components/moment-card-hero/moment-car
 import { HistoryGrid } from '../shared/components/history-grid/history-grid.js';
 import { Sigil } from '../shared/sigil.standalone.js';
 import { UniBrand } from '../shared/components/uni-brand/uni-brand.js';
+import { CircumplexViz } from '../perceptor-circumplex/circumplex-viz.js';
 
 // ============================================
 // Configuration
@@ -55,7 +56,7 @@ const $contentState = document.getElementById('content-state');
 const $momentCardContainer = document.getElementById('moment-card-container');
 const $perceptsList = document.getElementById('percepts-list');
 const $priorMomentsList = document.getElementById('prior-moments-list');
-const $lighting = document.getElementById('lighting');
+const $circumplexValues = document.getElementById('circumplex-values');
 const $timestamp = document.getElementById('timestamp');
 const $personalityName = document.getElementById('personality-name');
 const $sigilPromptName = document.getElementById('sigil-prompt-name');
@@ -69,6 +70,32 @@ const $perceptExpandedContainer = document.getElementById('percept-expanded-cont
 const $collectingMessage = document.querySelector('.collecting-message');
 const $historyGrid = document.getElementById('history-grid');
 const $uniBrand = document.getElementById('uni-brand');
+
+// ============================================
+// Circumplex Visualization
+// ============================================
+
+let circumplexViz = null;
+
+/**
+ * Initialize Circumplex Visualization
+ */
+function initCircumplexViz() {
+  try {
+    circumplexViz = new CircumplexViz('circumplex-canvas', {
+      size: 350,
+      showLabels: true,
+      showGrid: false
+    });
+    
+    console.log('🎨 CircumplexViz initialized');
+  } catch (error) {
+    console.error('Failed to initialize CircumplexViz:', error);
+  }
+}
+
+// Initialize CircumplexViz
+initCircumplexViz();
 
 // ============================================
 // UniBrand Initialization
@@ -147,10 +174,10 @@ function onHistoryMomentClick(moment) {
     $priorMomentsList.innerHTML = '<div class="empty-prior">No prior moments</div>';
   }
   
-  // Lighting
-  if (moment.lighting) {
-    const lighting = typeof moment.lighting === 'object' ? moment.lighting : JSON.parse(moment.lighting);
-    updateLightingDisplay(lighting);
+  // Circumplex (emotional state)
+  if (moment.circumplex) {
+    const circumplex = typeof moment.circumplex === 'object' ? moment.circumplex : JSON.parse(moment.circumplex);
+    updateCircumplexDisplay(circumplex);
   }
   
   // Timestamp
@@ -606,7 +633,8 @@ function connect() {
         $momentCardContainer.innerHTML = '';
         $perceptsList.innerHTML = '';
         $priorMomentsList.innerHTML = '';
-        $lighting.innerHTML = '<span class="lighting-text">—</span>';
+        if (circumplexViz) circumplexViz.clear();
+        $circumplexValues.innerHTML = '<span class="circumplex-text">—</span>';
         $timestamp.textContent = '—';
         $personalityName.textContent = '—';
         $sigilPromptName.textContent = '—';
@@ -697,8 +725,8 @@ function connect() {
     // Display prior mind moments
     displayPriorMoments(data.priorMoments);
     
-    // Lighting
-    updateLightingDisplay(data.lighting);
+    // Circumplex (emotional state)
+    updateCircumplexDisplay(data.circumplex);
     
     // Timestamp
     if (data.timestamp) {
@@ -760,8 +788,8 @@ function connect() {
     // Display prior mind moments
     displayPriorMoments(data.priorMoments);
     
-    // Lighting
-    updateLightingDisplay(data.lighting);
+    // Circumplex (emotional state)
+    updateCircumplexDisplay(data.circumplex);
     
     // Timestamp
     if (data.timestamp) {
@@ -885,7 +913,8 @@ function connect() {
       $momentCardContainer.innerHTML = '';
       $perceptsList.innerHTML = '';
       $priorMomentsList.innerHTML = '';
-      $lighting.innerHTML = '<span class="lighting-text">—</span>';
+      if (circumplexViz) circumplexViz.clear();
+      $circumplexValues.innerHTML = '<span class="circumplex-text">—</span>';
       $timestamp.textContent = '—';
       $personalityName.textContent = '—';
       $sigilPromptName.textContent = '—';
@@ -1068,24 +1097,28 @@ function displayPriorMoments(priorMoments) {
 }
 
 /**
- * Update lighting display with color swatch and pattern info
+ * Update circumplex display with valence and arousal values
  */
-function updateLightingDisplay(lighting) {
-  if (!lighting) {
-    $lighting.innerHTML = '<span class="lighting-text">—</span>';
+function updateCircumplexDisplay(circumplex) {
+  if (!circumplex) {
+    if (circumplexViz) circumplexViz.clear();
+    $circumplexValues.innerHTML = '<span class="circumplex-text">—</span>';
     return;
   }
   
-  const color = lighting.color || '0xffffff';
-  const pattern = lighting.pattern || 'IDLE';
-  const speed = lighting.speed !== undefined ? lighting.speed : 0;
+  const valence = circumplex.valence !== undefined ? circumplex.valence : 0;
+  const arousal = circumplex.arousal !== undefined ? circumplex.arousal : 0;
   
-  // Convert hex color (0xffffff) to CSS hex (#ffffff)
-  const cssColor = color.replace('0x', '#');
+  // Update visualization
+  if (circumplexViz) {
+    circumplexViz.plot(valence, arousal);
+  }
   
-  $lighting.innerHTML = `
-    <span class="color-swatch" style="background-color: ${cssColor};"></span>
-    <span class="lighting-text">${pattern} <span class="lighting-speed">(${speed.toFixed(1)})</span></span>
+  // Update text values
+  $circumplexValues.innerHTML = `
+    <span class="circumplex-text">
+      Valence: <strong>${valence.toFixed(2)}</strong> · Arousal: <strong>${arousal.toFixed(2)}</strong>
+    </span>
   `;
 }
 

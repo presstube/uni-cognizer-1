@@ -295,29 +295,31 @@ body.exploring-mode .far-right {
   padding: var(--space-sm) 0;
 }
 
-/* Lighting Display */
-.lighting-display {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+/* Circumplex Display */
+.circumplex-section {
+  margin-top: 20px;
 }
 
-.color-swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  flex-shrink: 0;
+#circumplex-canvas {
+  display: block;
+  margin: 10px auto;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
 }
 
-.lighting-text {
-  font-size: var(--font-size-md);
-  color: var(--color-text-bright);
+.circumplex-values {
+  text-align: center;
+  margin-top: 10px;
 }
 
-.lighting-speed {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: var(--font-size-sm);
+.circumplex-text {
+  font-size: 13px;
+  color: #ccc;
+}
+
+.circumplex-text strong {
+  color: #fff;
+  font-weight: 600;
 }
 
 /* Context Stats */

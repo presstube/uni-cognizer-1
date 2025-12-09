@@ -92,9 +92,7 @@ const saveBtn = document.getElementById('save-btn');
 const activateBtn = document.getElementById('activate-btn');
 const statusDiv = document.getElementById('status');
 const resultsSection = document.getElementById('results');
-const resultMoment = document.getElementById('result-moment');
-const resultSigil = document.getElementById('result-sigil');
-const resultLighting = document.getElementById('result-lighting');
+const resultJson = document.getElementById('result-json');
 
 // LLM Settings DOM Elements
 const llmProviderSelect = document.getElementById('llm-provider');
@@ -212,21 +210,33 @@ async function activatePersonality(id) {
 }
 
 async function testPersonality(id, percepts, llmSettingsOverride = null) {
+  console.log('   📡 testPersonality() called');
+  console.log('      URL:', `${API_BASE}/personalities/${id}/test`);
+  
   const payload = {
     ...percepts,
     llmSettings: llmSettingsOverride  // Include LLM settings override if provided
   };
+  
+  console.log('      Payload:', payload);
   
   const res = await fetch(`${API_BASE}/personalities/${id}/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
+  
+  console.log('      Response status:', res.status);
+  
   if (!res.ok) {
     const error = await res.json();
+    console.error('      Response error:', error);
     throw new Error(error.details || error.error || 'Test failed');
   }
-  return await res.json();
+  
+  const result = await res.json();
+  console.log('      Response result:', result);
+  return result;
 }
 
 async function deletePersonality(id) {
@@ -264,10 +274,14 @@ async function loadPersonalities() {
 async function handlePersonalityChange() {
   const value = personalitySelect.value;
   
+  console.log('🔄 DROPDOWN CHANGED');
+  console.log('   Selected value:', value);
+  
   // Save to localStorage
   localStorage.setItem('forge_last_personality', value);
   
   if (value === 'new') {
+    console.log('   → Setting up NEW personality');
     clearForm();
     currentId = null;
     currentPersonality = null;
@@ -277,8 +291,17 @@ async function handlePersonalityChange() {
     resetLLMSettings();
   } else {
     try {
+      console.log('   → Fetching personality from API...');
       currentPersonality = await fetchPersonality(value);
       currentId = value;
+      
+      console.log('   → Loaded personality:', {
+        id: currentPersonality.id,
+        name: currentPersonality.name,
+        slug: currentPersonality.slug,
+        active: currentPersonality.active,
+        promptLength: currentPersonality.prompt?.length
+      });
       
       nameInput.value = currentPersonality.name;
       slugInput.value = currentPersonality.slug;
@@ -294,9 +317,12 @@ async function handlePersonalityChange() {
       hideResults();
       
     } catch (error) {
+      console.error('   ✗ Failed to load personality:', error);
       showStatus('error', `Failed to load personality: ${error.message}`);
     }
   }
+  
+  console.log('   currentId is now:', currentId);
 }
 
 function clearForm() {
@@ -334,15 +360,30 @@ function handlePresetChange() {
 }
 
 async function handleTest() {
+  console.log('🧪 TEST BUTTON CLICKED');
+  console.log('   currentId:', currentId);
+  console.log('   currentPersonality:', currentPersonality ? {
+    id: currentPersonality.id,
+    name: currentPersonality.name,
+    active: currentPersonality.active
+  } : null);
+  console.log('   promptTextarea value length:', promptTextarea.value?.length);
+  
   if (!currentId && !promptTextarea.value) {
+    console.log('   ✗ No currentId and no prompt text - aborting');
     showStatus('error', 'Please save the personality first or load an existing one');
     return;
   }
   
   // If new personality, save it first
   if (!currentId) {
+    console.log('   → No currentId, saving personality first...');
     const saved = await handleSave(true);
-    if (!saved) return;
+    if (!saved) {
+      console.log('   ✗ Save failed - aborting test');
+      return;
+    }
+    console.log('   ✓ Saved, currentId is now:', currentId);
   }
   
   try {
@@ -351,18 +392,24 @@ async function handleTest() {
     
     // Parse percepts
     const percepts = JSON.parse(perceptsTextarea.value);
+    console.log('   Percepts:', percepts);
+    
+    console.log('   → Calling testPersonality API...');
+    console.log('      ID to test:', currentId);
+    console.log('      LLM settings:', llmSettings);
     
     // Test with current UI settings (not saved settings)
     const result = await testPersonality(currentId, percepts, llmSettings);
     
-    // Display results
-    resultMoment.textContent = result.mindMoment;
-    resultSigil.textContent = result.sigilPhrase || '(none)';
-    resultLighting.textContent = `${result.lighting?.color} - ${result.lighting?.pattern} (speed: ${result.lighting?.speed})`;
+    console.log('   ✓ Test successful, result:', result);
+    
+    // Display raw LLM response as formatted JSON
+    resultJson.textContent = JSON.stringify(result, null, 2);
     
     resultsSection.classList.remove('hidden');
     
   } catch (error) {
+    console.error('   ✗ Test failed:', error);
     showStatus('error', `Test failed: ${error.message}`);
   } finally {
     setLoading(testBtn, false);
