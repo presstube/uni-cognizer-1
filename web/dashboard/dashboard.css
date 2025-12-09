@@ -322,6 +322,59 @@ body.exploring-mode .far-right {
   font-weight: 600;
 }
 
+/* Color Triad Display */
+.color-triad-section {
+  margin-top: 20px;
+}
+
+.color-triad-display {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.color-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-swatch {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.color-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.color-value {
+  font-size: 13px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  color: #fff;
+  font-weight: 500;
+}
+
+.color-text {
+  font-size: 13px;
+  color: #ccc;
+}
+
 /* Context Stats */
 .context-stats {
   font-size: var(--font-size-md);

@@ -4,6 +4,7 @@ import { generateSigil } from './sigil/generator.js';
 import { saveMindMoment as dbSaveMindMoment, getPriorMindMoments as dbGetPriorMindMoments } from './db/mind-moments.js';
 import { getActivePersonality } from './db/personalities.js';
 import { COGNIZER_VERSION } from './version.js';
+import { circumplexToColor, ETHEREAL_VAPOUR_PALETTE } from './circumplex-to-color.js';
 
 const cognitiveHistory = {};
 let cycleIndex = 0;
@@ -248,9 +249,9 @@ async function getPriorMindMomentsWithDB(depth) {
   return getPriorMindMoments(depth);
 }
 
-function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex) {
+function dispatchMindMoment(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex, color) {
   mindMomentListeners.forEach(listener => {
-    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex);
+    listener(cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex, color);
   });
 }
 
@@ -357,6 +358,10 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
       cognitiveHistory[thisCycle].sigilPhrase = result.sigilPhrase;
       cognitiveHistory[thisCycle].circumplex = result.circumplex;
       
+      // Generate color triad from circumplex
+      const color = circumplexToColor(result.circumplex, ETHEREAL_VAPOUR_PALETTE);
+      cognitiveHistory[thisCycle].color = color;
+      
       // Percept PNGs are already generated (at arrival time)
       // No need to generate them here - they're already in the percept objects
       
@@ -372,6 +377,7 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
           sigilPhrase: result.sigilPhrase,
           sigilCode: null, // Not yet generated
           circumplex: result.circumplex,
+          color: color,
           visualPercepts,
           audioPercepts,
           priorMomentIds: priorIds,
@@ -402,12 +408,13 @@ export async function cognize(visualPercepts, audioPercepts, depth = 3) {
         console.log(`   "${result.sigilPhrase}"`);
       }
       console.log(`Circumplex: valence=${result.circumplex.valence}, arousal=${result.circumplex.arousal}`);
+      console.log(`Color: primary=${color.primary}, secondary=${color.secondary}, accent=${color.accent}`);
       console.log(`Context Depth: ${priorMoments.length}`);
       console.log(`Duration: ${mindMomentDuration}ms`);
       console.log('');
       
       // Emit mind moment event (early notification)
-      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.circumplex);
+      dispatchMindMoment(thisCycle, result.mindMoment, visualPercepts, audioPercepts, priorMoments, result.sigilPhrase, result.circumplex, color);
       
       // STEP 2 & 3: Generate sigil AND sound brief IN PARALLEL
       // This ensures sound brief completes in time for SPOOL phase

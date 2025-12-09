@@ -57,6 +57,7 @@ const $momentCardContainer = document.getElementById('moment-card-container');
 const $perceptsList = document.getElementById('percepts-list');
 const $priorMomentsList = document.getElementById('prior-moments-list');
 const $circumplexValues = document.getElementById('circumplex-values');
+const $colorTriadDisplay = document.getElementById('color-triad-display');
 const $timestamp = document.getElementById('timestamp');
 const $personalityName = document.getElementById('personality-name');
 const $sigilPromptName = document.getElementById('sigil-prompt-name');
@@ -178,6 +179,14 @@ function onHistoryMomentClick(moment) {
   if (moment.circumplex) {
     const circumplex = typeof moment.circumplex === 'object' ? moment.circumplex : JSON.parse(moment.circumplex);
     updateCircumplexDisplay(circumplex);
+  }
+  
+  // Color triad (emotional palette)
+  if (moment.color) {
+    const color = typeof moment.color === 'object' ? moment.color : JSON.parse(moment.color);
+    updateColorTriadDisplay(color);
+  } else {
+    updateColorTriadDisplay(null);
   }
   
   // Timestamp
@@ -635,6 +644,7 @@ function connect() {
         $priorMomentsList.innerHTML = '';
         if (circumplexViz) circumplexViz.clear();
         $circumplexValues.innerHTML = '<span class="circumplex-text">—</span>';
+        $colorTriadDisplay.innerHTML = '<span class="color-text">—</span>';
         $timestamp.textContent = '—';
         $personalityName.textContent = '—';
         $sigilPromptName.textContent = '—';
@@ -728,6 +738,9 @@ function connect() {
     // Circumplex (emotional state)
     updateCircumplexDisplay(data.circumplex);
     
+    // Color triad (emotional palette)
+    updateColorTriadDisplay(data.color);
+    
     // Timestamp
     if (data.timestamp) {
       const time = new Date(data.timestamp);
@@ -790,6 +803,9 @@ function connect() {
     
     // Circumplex (emotional state)
     updateCircumplexDisplay(data.circumplex);
+    
+    // Color triad (emotional palette)
+    updateColorTriadDisplay(data.color);
     
     // Timestamp
     if (data.timestamp) {
@@ -915,6 +931,7 @@ function connect() {
       $priorMomentsList.innerHTML = '';
       if (circumplexViz) circumplexViz.clear();
       $circumplexValues.innerHTML = '<span class="circumplex-text">—</span>';
+      $colorTriadDisplay.innerHTML = '<span class="color-text">—</span>';
       $timestamp.textContent = '—';
       $personalityName.textContent = '—';
       $sigilPromptName.textContent = '—';
@@ -1119,6 +1136,40 @@ function updateCircumplexDisplay(circumplex) {
     <span class="circumplex-text">
       Valence: <strong>${valence.toFixed(2)}</strong> · Arousal: <strong>${arousal.toFixed(2)}</strong>
     </span>
+  `;
+}
+
+/**
+ * Update color triad display with primary, secondary, and accent colors
+ */
+function updateColorTriadDisplay(color) {
+  if (!color || !color.primary || !color.secondary || !color.accent) {
+    $colorTriadDisplay.innerHTML = '<span class="color-text">—</span>';
+    return;
+  }
+  
+  $colorTriadDisplay.innerHTML = `
+    <div class="color-swatch-row">
+      <div class="color-swatch" style="background-color: ${color.primary};"></div>
+      <div class="color-info">
+        <div class="color-label">Primary</div>
+        <div class="color-value">${color.primary}</div>
+      </div>
+    </div>
+    <div class="color-swatch-row">
+      <div class="color-swatch" style="background-color: ${color.secondary};"></div>
+      <div class="color-info">
+        <div class="color-label">Secondary</div>
+        <div class="color-value">${color.secondary}</div>
+      </div>
+    </div>
+    <div class="color-swatch-row">
+      <div class="color-swatch" style="background-color: ${color.accent};"></div>
+      <div class="color-info">
+        <div class="color-label">Accent</div>
+        <div class="color-value">${color.accent}</div>
+      </div>
+    </div>
   `;
 }
 

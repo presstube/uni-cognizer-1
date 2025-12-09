@@ -7,6 +7,7 @@ export async function saveMindMoment({
   sigilPhrase,
   sigilCode,
   circumplex,
+  color,
   visualPercepts,
   audioPercepts,
   priorMomentIds = [],
@@ -21,13 +22,14 @@ export async function saveMindMoment({
     const result = await pool.query(`
       INSERT INTO mind_moments (
         cycle, session_id, mind_moment, sigil_phrase, sigil_code,
-        circumplex, visual_percepts, audio_percepts, prior_moment_ids,
+        circumplex, color, visual_percepts, audio_percepts, prior_moment_ids,
         cognizer_version, personality_id, llm_provider, processing_duration_ms
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, created_at
     `, [
       cycle, sessionId, mindMoment, sigilPhrase, sigilCode,
       JSON.stringify(circumplex),
+      JSON.stringify(color),
       JSON.stringify(visualPercepts), JSON.stringify(audioPercepts),
       priorMomentIds,
       cognizerVersion, personalityId, llmProvider, processingDuration

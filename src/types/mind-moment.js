@@ -12,6 +12,7 @@
  * @property {string} sigilPhrase - Essence phrase for visualization
  * @property {string|null} sigilCode - Canvas drawing code for sigil
  * @property {Object} circumplex - Emotional state (valence and arousal axes)
+ * @property {Object|null} color - Color triad (primary, secondary, accent hex colors)
  * @property {Array} visualPercepts - Array of visual percept objects
  * @property {Array} audioPercepts - Array of audio percept objects
  * @property {Array} priorMoments - Array of prior moment references
@@ -52,6 +53,7 @@ export function normalizeMindMoment(data) {
     sigilPhrase: data.sigilPhrase || data.sigil_phrase,
     sigilCode: data.sigilCode || data.sigil_code || null,
     circumplex: data.circumplex || { valence: 0, arousal: 0 },
+    color: data.color || null,
     visualPercepts: data.visualPercepts || data.visual_percepts || [],
     audioPercepts: data.audioPercepts || data.audio_percepts || [],
     priorMoments: data.priorMoments || data.prior_moments || data.priorMomentIds || data.prior_moment_ids || [],

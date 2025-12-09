@@ -613,7 +613,7 @@ export class ConsciousnessLoop {
       const result = await pool.query(`
         SELECT 
           cycle, mind_moment, sigil_phrase, sigil_code,
-          circumplex,
+          circumplex, color,
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           sigil_png_data, sigil_png_width, sigil_png_height,
@@ -682,6 +682,7 @@ export class ConsciousnessLoop {
         sigil_code: row.sigil_code,
         sigil_phrase: row.sigil_phrase,
         circumplex: row.circumplex,
+        color: row.color,
         visual_percepts: row.visual_percepts,
         audio_percepts: row.audio_percepts,
         prior_moments: priorMoments, // Pass the fetched moment objects, not IDs
@@ -779,7 +780,7 @@ export class ConsciousnessLoop {
     let processingResult = {};
     
     // Mind moment listener
-    onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex) => {
+    onMindMoment((cycle, mindMoment, visualPercepts, audioPercepts, priorMoments, sigilPhrase, circumplex, color) => {
       // Store partial result
       processingCycle = cycle;
       processingResult = {
@@ -787,6 +788,7 @@ export class ConsciousnessLoop {
         mindMoment,
         sigilPhrase,
         circumplex,
+        color,
         visualPercepts,
         audioPercepts,
         priorMoments,
@@ -801,6 +803,7 @@ export class ConsciousnessLoop {
         mindMoment,
         sigilPhrase,
         circumplex,
+        color,
         visualPercepts,      // shallow copy, no PNGs yet
         audioPercepts,       // shallow copy
         priorMoments,
@@ -1001,7 +1004,7 @@ export class ConsciousnessLoop {
       const result = await pool.query(`
         SELECT 
           cycle, mind_moment, sigil_phrase, sigil_code,
-          circumplex,
+          circumplex, color,
           visual_percepts, audio_percepts, prior_moment_ids,
           sigil_sdf_data, sigil_sdf_width, sigil_sdf_height,
           sigil_png_data, sigil_png_width, sigil_png_height,
@@ -1071,6 +1074,7 @@ export class ConsciousnessLoop {
         sigil_code: row.sigil_code,
         sigil_phrase: row.sigil_phrase,
         circumplex: row.circumplex,
+        color: row.color,
         visual_percepts: row.visual_percepts,
         audio_percepts: row.audio_percepts,
         prior_moments: priorMoments,

@@ -39,7 +39,8 @@ export async function runMigrations() {
     '018_sound_prompts_csv_refs.sql',
     '019_csvs_system_wide.sql',
     '020_add_sound_brief.sql',
-    '021_replace_kinetic_lighting_with_circumplex.sql'
+    '021_replace_kinetic_lighting_with_circumplex.sql',
+    '022_add_color_triad.sql'
   ];
   
   try {
