@@ -62,6 +62,7 @@ const $sigilPromptName = document.getElementById('sigil-prompt-name');
 const $pngStatus = document.getElementById('png-status');
 const $pngDisplay = document.getElementById('sigil-png-display');
 const $perceptPngsSection = document.getElementById('percept-pngs-section');
+const $perceptPngStatus = document.getElementById('percept-png-status');
 const $perceptPngGridContainer = document.getElementById('percept-png-grid-container');
 const $percepts = document.getElementById('percepts');
 const $perceptExpandedContainer = document.getElementById('percept-expanded-container');
@@ -113,7 +114,7 @@ function onHistoryMomentClick(moment) {
   showContentState();
   
   // Scroll center pane to top
-  $center.scrollTop = 0;
+  // $center.scrollTop = 0;
   
   // Update cycle
   $cycle.textContent = moment.cycle ? `#${moment.cycle}` : '—';
@@ -735,8 +736,8 @@ function connect() {
         // Decode base64 to create a data URL for preview
         const pngDataUrl = `data:image/png;base64,${data.png.data}`;
         
-        // Update PNG status and preview immediately (no API call needed!)
-        $pngStatus.innerHTML = `${data.png.width}×${data.png.height} · <a href="${pngDataUrl}" download="sigil.png">Download</a>`;
+        // Update PNG status - dimensions only
+        $pngStatus.textContent = `${data.png.width}×${data.png.height}`;
         if ($pngDisplay) {
           $pngDisplay.innerHTML = `<img src="${pngDataUrl}" alt="Sigil PNG" />`;
           $pngDisplay.classList.remove('empty');
@@ -898,6 +899,7 @@ function displayPercepts(visualPercepts, audioPercepts) {
 
 /**
  * Create percept PNG grid (64×64px icons in chronological order)
+ * @returns {Object|null} { grid: HTMLElement, count: number, dimensions: string } or null
  */
 function createPerceptPNGGrid(allPercepts) {
   const perceptsWithPNG = allPercepts.filter(({ percept }) => percept.pngData);
@@ -916,6 +918,10 @@ function createPerceptPNGGrid(allPercepts) {
   const gridContainer = document.createElement('div');
   gridContainer.className = 'percept-png-grid';
   
+  // Get dimensions from first percept (they should all be 256×256)
+  const firstPercept = perceptsWithPNG[0].percept;
+  const dimensions = `${firstPercept.pngWidth || 256}×${firstPercept.pngHeight || 256}`;
+  
   perceptsWithPNG.forEach(({ percept, type }) => {
     const dataUrl = `data:image/png;base64,${percept.pngData}`;
     const title = percept.description || percept.sigilPhrase || percept.transcript || 'percept';
@@ -929,7 +935,11 @@ function createPerceptPNGGrid(allPercepts) {
     gridContainer.appendChild(img);
   });
   
-  return gridContainer;
+  return {
+    grid: gridContainer,
+    count: perceptsWithPNG.length,
+    dimensions
+  };
 }
 
 /**
@@ -1099,7 +1109,7 @@ async function updateSigilFormats(momentId, visualPercepts = [], audioPercepts =
     
     // Update PNG status and preview
     if (data.png && data.png.available) {
-      $pngStatus.innerHTML = `${data.png.width}×${data.png.height} · <a href="/api/sigils/${momentId}/png/raw" download="sigil-${data.cycle}.png" target="_blank">Download</a>`;
+      $pngStatus.textContent = `${data.png.width}×${data.png.height}`;
       
       // Show PNG preview as image
       if ($pngDisplay) {
@@ -1120,10 +1130,11 @@ async function updateSigilFormats(momentId, visualPercepts = [], audioPercepts =
         });
       }
       
-      const pngGrid = createPerceptPNGGrid(allPercepts);
-      if (pngGrid && $perceptPngsSection && $perceptPngGridContainer) {
+      const pngGridResult = createPerceptPNGGrid(allPercepts);
+      if (pngGridResult && $perceptPngsSection && $perceptPngGridContainer) {
         $perceptPngGridContainer.innerHTML = '';
-        $perceptPngGridContainer.appendChild(pngGrid);
+        $perceptPngGridContainer.appendChild(pngGridResult.grid);
+        $perceptPngStatus.textContent = `${pngGridResult.count} × ${pngGridResult.dimensions}`;
         $perceptPngsSection.style.display = 'flex';
       } else if ($perceptPngsSection) {
         $perceptPngsSection.style.display = 'none';

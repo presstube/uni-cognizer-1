@@ -329,6 +329,33 @@ body.exploring-mode .far-right {
   flex-wrap: wrap;
 }
 
+/* ============================================
+   PNG Display Container - Side by Side
+   ============================================ */
+
+/* Container for both PNG sections */
+.png-display-container {
+  display: flex;
+  gap: var(--space-lg);
+  margin-top: 20px;
+}
+
+/* Stack when container is less than 400px (roughly 200px per pane) */
+@container moment-pane (max-width: 400px) {
+  .png-display-container {
+    flex-direction: column;
+  }
+}
+
+/* Sigil PNG Section */
+.sigil-png-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0; /* Allow flex item to shrink */
+}
+
 /* Sigil PNG Display */
 .sigil-png-display {
   margin-top: var(--space-md);
@@ -356,10 +383,11 @@ body.exploring-mode .far-right {
 
 /* Percept PNGs Section - with label */
 .percept-pngs-section {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  margin-top: 20px;
+  min-width: 0; /* Allow flex item to shrink */
 }
 
 .percept-png-grid-container {
